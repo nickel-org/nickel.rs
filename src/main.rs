@@ -25,7 +25,7 @@ use http::headers::content_type::MediaType;
 #[deriving(Clone)]
 pub struct Floor{
     //routes: HashMap<String, fn(request: &Request, response: &mut ResponseWriter) -> ()>,
-    route_store: RouteStore,
+    route_store: Arc<RWLock<RouteStore>>,
     server: Option<Server>
 }
 
@@ -85,7 +85,7 @@ impl http::server::Server for Server {
 }
 
 impl Server {
-    fn new(route_store: Rc<RouteStore>) -> Server {
+    fn new(route_store: Arc<RWLock<RouteStore>>) -> Server {
         Server {
             route_store: route_store
         }
@@ -94,19 +94,20 @@ impl Server {
 
 impl Floor {
     pub fn get(&mut self, uri: &str, handler: fn(request: &Request, response: &mut ResponseWriter) -> ()){
-        self.route_store.routes.insert(String::from_str(uri), handler);
+        let routes = self.route_store.read();
+        routes.insert(String::from_str(uri), handler);
     }
 
     pub fn new() -> Floor {
         Floor {
-            route_store: RouteStore::new(),
+            route_store: Arc::new(RWLock::new(RouteStore::new())),
             server: None
         }
     }
 
     //why do we need this. Is serve_forever like a protected method in C# terms?
     pub fn run(&mut self) -> () {
-        self.server = Some(Server::new(Arc::new(RWLock(self.route_store))));
+        self.server = Some(Server::new(self.route_store.clone()));
         self.server.unwrap().serve_forever();
     }
 }
