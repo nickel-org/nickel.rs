@@ -8,11 +8,15 @@
 extern crate time;
 extern crate http;
 extern crate collections;
+extern crate alloc;
+extern crate sync;
 
 use collections::hashmap::HashMap;
 
 use std::io::net::ip::{SocketAddr, Ipv4Addr};
 use std::rc::Rc;
+use alloc::arc::Arc;
+use sync::RWLock;
 
 use http::server::request::{AbsolutePath};
 use http::server::{Config, Server, Request, ResponseWriter};
@@ -40,7 +44,7 @@ impl RouteStore {
 
 #[deriving(Clone)]
 pub struct Server {
-    route_store: Rc<RouteStore>
+    route_store: Arc<RWLock<RouteStore>>
 }
 
 impl http::server::Server for Server {
@@ -102,7 +106,7 @@ impl Floor {
 
     //why do we need this. Is serve_forever like a protected method in C# terms?
     pub fn run(&mut self) -> () {
-        self.server = Some(Server::new(Rc::new(self.route_store)));
+        self.server = Some(Server::new(Arc::new(RWLock(self.route_store))));
         self.server.unwrap().serve_forever();
     }
 }
