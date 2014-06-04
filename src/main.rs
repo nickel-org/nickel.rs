@@ -12,6 +12,7 @@ extern crate collections;
 use collections::hashmap::HashMap;
 
 use std::io::net::ip::{SocketAddr, Ipv4Addr};
+use std::rc::Rc;
 
 use http::server::request::{AbsolutePath};
 use http::server::{Config, Server, Request, ResponseWriter};
@@ -19,10 +20,30 @@ use http::headers::content_type::MediaType;
 
 #[deriving(Clone)]
 pub struct Floor{
+    //routes: HashMap<String, fn(request: &Request, response: &mut ResponseWriter) -> ()>,
+    route_store: RouteStore,
+    server: Option<Server>
+}
+
+#[deriving(Clone)]
+struct RouteStore{
     routes: HashMap<String, fn(request: &Request, response: &mut ResponseWriter) -> ()>,
 }
 
-impl Server for Floor {
+impl RouteStore {
+    fn new () -> RouteStore {
+        RouteStore {
+            routes: HashMap::new()
+        }
+    }
+}
+
+#[deriving(Clone)]
+pub struct Server {
+    route_store: Rc<RouteStore>
+}
+
+impl http::server::Server for Server {
     fn get_config(&self) -> Config {
         Config { bind_address: SocketAddr { ip: Ipv4Addr(127, 0, 0, 1), port: 8001 } }
     }
@@ -44,36 +65,44 @@ impl Server for Floor {
             w.headers.server = Some(String::from_str("Example"));
         }
 
-        match &_r.request_uri {
-            &AbsolutePath(ref url) => {
-                match self.routes.find(url) {
-                    Some(item) => { 
-                        set_headers(_r, w); 
-                        (*item)(_r, w);
-                    },
-                    None => {}
-                }
-            },
-            _ => set_headers(_r, w)
+        // match &_r.request_uri {
+        //     &AbsolutePath(ref url) => {
+        //         match self.app.routes.find(url) {
+        //             Some(item) => { 
+        //                 set_headers(_r, w); 
+        //                 (*item)(_r, w);
+        //             },
+        //             None => {}
+        //         }
+        //     },
+        //     _ => set_headers(_r, w)
+        // }
+    }
+}
+
+impl Server {
+    fn new(route_store: Rc<RouteStore>) -> Server {
+        Server {
+            route_store: route_store
         }
     }
-
-
 }
 
 impl Floor {
     pub fn get(&mut self, uri: &str, handler: fn(request: &Request, response: &mut ResponseWriter) -> ()){
-        self.routes.insert(String::from_str(uri), handler);
+        self.route_store.routes.insert(String::from_str(uri), handler);
     }
 
-    pub fn create_server() -> Floor {
+    pub fn new() -> Floor {
         Floor {
-            routes: HashMap::new()
+            route_store: RouteStore::new(),
+            server: None
         }
     }
 
     //why do we need this. Is serve_forever like a protected method in C# terms?
-    pub fn run(self) -> () {
-        self.serve_forever();
+    pub fn run(&mut self) -> () {
+        self.server = Some(Server::new(Rc::new(self.route_store)));
+        self.server.unwrap().serve_forever();
     }
 }
