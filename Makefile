@@ -10,9 +10,16 @@ floor:
 	rustc $(LIBS) --opt-level=3 src/main.rs --out-dir lib/
 
 deps:
+	@if [ -e .git ] ; then \
+		git submodule init; \
+		git submodule sync; \
+		git submodule update; \
+	fi
 	rm -f lib/libhttp*
-	# this will soon be a git submodule
-	cp /Applications/MAMP/htdocs/rust-http/build/libhttp* lib/
+	cd lib/rust-http; ./configure
+	make -C lib/rust-http clean
+	make -C lib/rust-http http
+	cp lib/rust-http/build/libhttp* lib/
 
 examples:
 	rustc $(LIBS) examples/example.rs -o examples/example

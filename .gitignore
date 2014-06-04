@@ -1,2 +1,4 @@
-lib
+*.so
+*.rlib
+*.dylib
 examples/example
