@@ -94,8 +94,7 @@ impl Server {
 
 impl Floor {
     pub fn get(&mut self, uri: &str, handler: fn(request: &Request, response: &mut ResponseWriter) -> ()){
-        let routes = self.route_store.read();
-        routes.insert(String::from_str(uri), handler);
+        self.route_store.write().routes.insert(String::from_str(uri), handler);
     }
 
     pub fn new() -> Floor {
@@ -108,6 +107,6 @@ impl Floor {
     //why do we need this. Is serve_forever like a protected method in C# terms?
     pub fn run(&mut self) -> () {
         self.server = Some(Server::new(self.route_store.clone()));
-        self.server.unwrap().serve_forever();
+        self.server.as_ref().unwrap().serve_forever();
     }
 }
