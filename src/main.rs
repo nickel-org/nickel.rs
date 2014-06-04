@@ -26,12 +26,12 @@ use http::headers::content_type::MediaType;
 pub struct Floor{
     //routes: HashMap<String, fn(request: &Request, response: &mut ResponseWriter) -> ()>,
     route_store: Arc<RWLock<RouteStore>>,
-    server: Option<Server>
+    server: Server
 }
 
 #[deriving(Clone)]
 struct RouteStore{
-    routes: HashMap<String, fn(request: &Request, response: &mut ResponseWriter) -> ()>,
+    routes: HashMap<String, fn(request: &Request, response: &mut ResponseWriter)>,
 }
 
 impl RouteStore {
@@ -56,18 +56,18 @@ impl http::server::Server for Server {
 
         //println!("{:?}", _r.request_uri)
 
-        fn set_headers(_r: &Request, w: &mut ResponseWriter) {
-            w.headers.date = Some(time::now_utc());
+        // fn set_headers(_r: &Request, w: &mut ResponseWriter) {
+        //     w.headers.date = Some(time::now_utc());
 
-            // we don't need to set this https://github.com/Ogeon/rustful/issues/3#issuecomment-44787613
-            w.headers.content_length = None;
-            w.headers.content_type = Some(MediaType {
-                type_: String::from_str("text"),
-                subtype: String::from_str("plain"),
-                parameters: vec!((String::from_str("charset"), String::from_str("UTF-8")))
-            });
-            w.headers.server = Some(String::from_str("Example"));
-        }
+        //     // we don't need to set this https://github.com/Ogeon/rustful/issues/3#issuecomment-44787613
+        //     w.headers.content_length = None;
+        //     w.headers.content_type = Some(MediaType {
+        //         type_: String::from_str("text"),
+        //         subtype: String::from_str("plain"),
+        //         parameters: vec!((String::from_str("charset"), String::from_str("UTF-8")))
+        //     });
+        //     w.headers.server = Some(String::from_str("Example"));
+        // }
 
         // match &_r.request_uri {
         //     &AbsolutePath(ref url) => {
@@ -93,20 +93,22 @@ impl Server {
 }
 
 impl Floor {
-    pub fn get(&mut self, uri: &str, handler: fn(request: &Request, response: &mut ResponseWriter) -> ()){
+    pub fn get(&mut self, uri: &str, handler: fn(request: &Request, response: &mut ResponseWriter)){
         self.route_store.write().routes.insert(String::from_str(uri), handler);
     }
 
     pub fn new() -> Floor {
+        let routes = Arc::new(RWLock::new(RouteStore::new()));
+        let server = Server::new(routes.clone());
         Floor {
-            route_store: Arc::new(RWLock::new(RouteStore::new())),
-            server: None
+            route_store: routes,
+            server: server,
         }
     }
 
     //why do we need this. Is serve_forever like a protected method in C# terms?
-    pub fn run(&mut self) -> () {
-        self.server = Some(Server::new(self.route_store.clone()));
-        self.server.as_ref().unwrap().serve_forever();
+    pub fn run(self) {
+        // self.server = Some(Server::new(self.route_store.clone()));
+        self.server.serve_forever();
     }
 }
