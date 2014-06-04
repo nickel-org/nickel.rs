@@ -12,10 +12,8 @@ extern crate collections;
 use collections::hashmap::HashMap;
 
 use std::io::net::ip::{SocketAddr, Ipv4Addr};
-use std::io::Writer;
 
 use http::server::request::{AbsolutePath};
-
 use http::server::{Config, Server, Request, ResponseWriter};
 use http::headers::content_type::MediaType;
 
