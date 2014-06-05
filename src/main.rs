@@ -101,7 +101,6 @@ impl Floor {
         }
     }
 
-    //why do we need this. Is serve_forever like a protected method in C# terms?
     pub fn listen(mut self, port: Port) {
         self.server = Some(Server::new(self.route_store.clone(), port));
         self.server.unwrap().serve_forever();
