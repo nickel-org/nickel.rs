@@ -12,7 +12,6 @@ make all
 
 ##How to run the example
 
-First you need to get the latest rustful from GitHub:
 ```shell
 make run
 ```
