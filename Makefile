@@ -7,7 +7,7 @@ clean:
 
 floor:
 	rm -f lib/libfloor-*
-	rustc $(LIBS) --opt-level=3 src/main.rs --out-dir lib/
+	rustc $(LIBS) --opt-level=3 src/lib.rs --out-dir lib/
 
 deps:
 	@if [ -e .git ] ; then \

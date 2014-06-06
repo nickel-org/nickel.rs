@@ -1,40 +1,13 @@
-//! A very simple HTTP server which responds with the plain text "Hello, World!" to every request.
-
-#![crate_id = "floor#0.0.1"]
-#![comment = "A expressjs inspired web framework for Rust"]
-#![license = "MIT"]
-#![crate_type = "rlib"]
-
-extern crate time;
-extern crate http;
-extern crate collections;
-
-use collections::hashmap::HashMap;
-
 use std::io::net::ip::{SocketAddr, Ipv4Addr, Port};
 
+use http;
 use http::server::request::{AbsolutePath};
 use http::server::{Config, Server, Request, ResponseWriter};
 use http::headers::content_type::MediaType;
 
-#[deriving(Clone)]
-pub struct Floor{
-    route_store: RouteStore,
-    server: Option<Server>
-}
+use time;
 
-#[deriving(Clone)]
-struct RouteStore{
-    routes: HashMap<String, fn(request: &Request, response: &mut ResponseWriter)>,
-}
-
-impl RouteStore {
-    fn new () -> RouteStore {
-        RouteStore {
-            routes: HashMap::new()
-        }
-    }
-}
+use routestore::RouteStore;
 
 #[deriving(Clone)]
 pub struct Server {
@@ -80,29 +53,15 @@ impl http::server::Server for Server {
 }
 
 impl Server {
-    fn new(route_store: RouteStore, port: Port) -> Server {
+    pub fn new(route_store: RouteStore, port: Port) -> Server {
         Server {
             route_store: route_store,
             port: port
         }
     }
-}
 
-impl Floor {
-    pub fn get(&mut self, uri: &str, handler: fn(request: &Request, response: &mut ResponseWriter)){
-        self.route_store.routes.insert(String::from_str(uri), handler);
-    }
-
-    pub fn new() -> Floor {
-        let routes = RouteStore::new();
-        Floor {
-            route_store: routes,
-            server: None,
-        }
-    }
-
-    pub fn listen(mut self, port: Port) {
-        self.server = Some(Server::new(self.route_store.clone(), port));
-        self.server.unwrap().serve_forever();
+    // why do we need this? Is the http::Server.serve_forever method protected in C# terms?
+    pub fn serve (self) {
+        self.serve_forever();
     }
 }
