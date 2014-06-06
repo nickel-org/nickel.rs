@@ -5,7 +5,6 @@ This may or may not become and expressjs inspired web framework for Rust. At it'
 
 ##How to build Floor
 
-First you need to get the latest rustful from GitHub:
 ```shell
 make all
 ```
