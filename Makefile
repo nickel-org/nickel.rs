@@ -9,6 +9,10 @@ floor:
 	rm -f lib/libfloor-*
 	rustc $(LIBS) --opt-level=3 src/lib.rs --out-dir lib/
 
+test:
+	rustc -L lib --opt-level=3 --test src/lib.rs -o floor-test
+	./floor-test --test --bench
+
 deps:
 	@if [ -e .git ] ; then \
 		git submodule init; \

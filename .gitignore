@@ -2,3 +2,4 @@
 *.rlib
 *.dylib
 examples/example
+floor-test
