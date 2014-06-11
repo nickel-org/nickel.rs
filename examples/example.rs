@@ -19,7 +19,7 @@ fn main() {
         response.write("hello from bar".as_bytes()); 
     };
 
-    server.get("/foo", fooHandler);
+    server.get("/foo/:userid", fooHandler);
     server.get("/bar", barHandler);
 
     server.listen(6767);

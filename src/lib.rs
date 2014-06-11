@@ -6,9 +6,10 @@
 extern crate time;
 extern crate http;
 extern crate collections;
+extern crate regex;
 
 pub use floor::Floor;
 
-mod routestore;
+mod router;
 mod server;
 mod floor;

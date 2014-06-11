@@ -2,23 +2,23 @@ use std::io::net::ip::{Port};
 
 use http::server::{Request, ResponseWriter};
 
-use routestore::RouteStore;
+use router::Router;
 use server::Server;
 
 #[deriving(Clone)]
 pub struct Floor{
-    route_store: RouteStore,
+    route_store: Router,
     server: Option<Server>
 }
 
 
 impl Floor {
     pub fn get(&mut self, uri: &str, handler: fn(request: &Request, response: &mut ResponseWriter)){
-        self.route_store.routes.insert(String::from_str(uri), handler);
+        self.route_store.add_route(String::from_str(uri), handler);
     }
 
     pub fn new() -> Floor {
-        let routes = RouteStore::new();
+        let routes = Router::new();
         Floor {
             route_store: routes,
             server: None,

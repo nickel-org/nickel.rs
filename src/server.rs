@@ -7,11 +7,11 @@ use http::headers::content_type::MediaType;
 
 use time;
 
-use routestore::RouteStore;
+use router::Router;
 
 #[deriving(Clone)]
 pub struct Server {
-    route_store: RouteStore,
+    router: Router,
     port: Port
 }
 
@@ -39,10 +39,10 @@ impl http::server::Server for Server {
 
         match &_r.request_uri {
             &AbsolutePath(ref url) => {
-                match self.route_store.routes.find(url) {
+                match self.router.match_route(url.clone()) {
                     Some(item) => { 
                         set_headers(_r, w); 
-                        (*item)(_r, w);
+                        (item.handler)(_r, w);
                     },
                     None => {}
                 }
@@ -53,9 +53,9 @@ impl http::server::Server for Server {
 }
 
 impl Server {
-    pub fn new(route_store: RouteStore, port: Port) -> Server {
+    pub fn new(router: Router, port: Port) -> Server {
         Server {
-            route_store: route_store,
+            router: router,
             port: port
         }
     }
