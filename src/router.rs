@@ -10,7 +10,7 @@ use request;
 struct Route {
     pub path: String,
     pub handler: fn(request: request::Request, response: &mut ResponseWriter),
-    pub variables: HashMap<String, int>,
+    pub variables: HashMap<String, uint>,
     matcher: Regex
 }
 
@@ -25,10 +25,10 @@ impl Clone for Route {
     }
 }
 
-// struct RouteResult {
-//     pub route: Route,
-//     pub variables: HashMap<String, String>
-// }
+struct RouteResult<'a> {
+    pub route: &'a Route,
+    pub variables: HashMap<String, String>
+}
 
 /// The RouteRegexFactory is responsible to convert paths to Regex patterns to
 /// match against concrete URLs
@@ -57,7 +57,7 @@ impl RouteRegexFactory {
         }
     }
 
-    fn get_variable_info (route_path: &str) -> HashMap<String, int> {
+    fn get_variable_info (route_path: &str) -> HashMap<String, uint> {
         // yep, that's duplicated. We'll fix that once we figured out how to use the regex macro
         let regex = match Regex::new(r":[a-zA-Z0-9_-]*") {
             Ok(re) => re,
@@ -104,8 +104,33 @@ impl Router {
         self.routes.push(route);
     }
 
-    pub fn match_route<'a>(&'a self, path: String) -> Option<&'a Route> {
-        self.routes.iter().find(|item| item.matcher.is_match(path.as_slice()))
+    pub fn match_route<'a>(&'a self, path: String) -> Option<RouteResult<'a>> {
+        let route = self.routes.iter().find(|item| item.matcher.is_match(path.as_slice())).unwrap();
+
+        let captures = route.matcher.captures(path.as_slice()).unwrap();
+
+        let mut i = 0;
+        let mut map = HashMap::new();
+
+        for (name, pos) in route.variables.iter() {
+            map.insert(name.to_string(), captures.at(pos + 1).to_string());
+        }
+
+        Some(RouteResult{
+            route: route,
+            variables: map
+        })
+
+        // match route {
+        //     Some(r) => {
+        //         match route.matcher.captures(path) {
+        //             Some(c) => {
+        //                 route.variables.iter().map(|key, value| )
+        //             }
+                    
+        //         }
+        //     }
+        // }
     }
 
     // pub fn match_route<'a>(&'a self, path: String) -> Option<&'a RouteResult> {
@@ -148,35 +173,35 @@ fn can_match_var_routes () {
     route_store.add_route("/foo/:userid".to_string(), handler);
     route_store.add_route("/bar".to_string(), handler);
     
-    let route = route_store.match_route("/foo/4711".to_string());
+    let route = route_store.match_route("/foo/4711".to_string()).unwrap().route;
 
     //assert the route has identified the variable
-    assert_eq!(route.unwrap().variables.len(), 1);
-    assert_eq!(route.unwrap().variables.get(&":userid".to_string()), &0);
+    assert_eq!(route.variables.len(), 1);
+    assert_eq!(route.variables.get(&":userid".to_string()), &0);
 
 
-    let result = match route {
-        Some(re) => true,
-        None => false
-    };
+    // let result = match route {
+    //     Some(re) => true,
+    //     None => false
+    // };
 
-    assert_eq!(result, true);
+    // assert_eq!(result, true);
 
-    let route = route_store.match_route("/bar/4711".to_string());
+    // let route = route_store.match_route("/bar/4711".to_string());
 
-    let result = match route {
-        Some(re) => true,
-        None => false
-    };
+    // let result = match route {
+    //     Some(re) => true,
+    //     None => false
+    // };
 
-    assert_eq!(result, false);
+    // assert_eq!(result, false);
 
-    let route = route_store.match_route("/foo".to_string());
+    // let route = route_store.match_route("/foo".to_string());
 
-    let result = match route {
-        Some(re) => true,
-        None => false
-    };
+    // let result = match route {
+    //     Some(re) => true,
+    //     None => false
+    // };
 
-    assert_eq!(result, false);
+    // assert_eq!(result, false);
 }

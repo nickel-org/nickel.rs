@@ -45,10 +45,11 @@ impl http::server::Server for Server {
                         set_headers(_r, w); 
 
                         let req = request::Request{
-                            origin: _r
+                            origin: _r,
+                            variables: item.variables.clone()
                         };
 
-                        (item.handler)(req, w);
+                        (item.route.handler)(req, w);
                     },
                     None => {}
                 }
