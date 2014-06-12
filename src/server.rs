@@ -8,6 +8,7 @@ use http::headers::content_type::MediaType;
 use time;
 
 use router::Router;
+use request;
 
 #[deriving(Clone)]
 pub struct Server {
@@ -42,7 +43,12 @@ impl http::server::Server for Server {
                 match self.router.match_route(url.clone()) {
                     Some(item) => { 
                         set_headers(_r, w); 
-                        (item.handler)(_r, w);
+
+                        let req = request::Request{
+                            origin: _r
+                        };
+
+                        (item.handler)(req, w);
                     },
                     None => {}
                 }

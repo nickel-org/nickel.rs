@@ -1,8 +1,8 @@
 extern crate http;
 extern crate floor;
 
-use floor::{ Floor };
-use http::server::{ Request, ResponseWriter };
+use floor::{ Floor, Request };
+use http::server::{ ResponseWriter };
 
 fn main() {
 
@@ -11,11 +11,11 @@ fn main() {
     // we would love to use a closure for the handler but it seems to be hard
     // to achieve with the current version of rust.
 
-    fn fooHandler (request: &Request, response: &mut ResponseWriter) -> () {
+    fn fooHandler (request: Request, response: &mut ResponseWriter) -> () {
         response.write("hello from foo".as_bytes()); 
     };
 
-    fn barHandler (request: &Request, response: &mut ResponseWriter) -> () { 
+    fn barHandler (request: Request, response: &mut ResponseWriter) -> () { 
         response.write("hello from bar".as_bytes()); 
     };
 

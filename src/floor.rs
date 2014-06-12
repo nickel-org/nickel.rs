@@ -4,6 +4,7 @@ use http::server::{Request, ResponseWriter};
 
 use router::Router;
 use server::Server;
+use request;
 
 #[deriving(Clone)]
 pub struct Floor{
@@ -13,7 +14,7 @@ pub struct Floor{
 
 
 impl Floor {
-    pub fn get(&mut self, uri: &str, handler: fn(request: &Request, response: &mut ResponseWriter)){
+    pub fn get(&mut self, uri: &str, handler: fn(request: request::Request, response: &mut ResponseWriter)){
         self.route_store.add_route(String::from_str(uri), handler);
     }
 

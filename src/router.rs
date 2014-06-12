@@ -2,13 +2,14 @@ use http::server::{Request, ResponseWriter};
 use regex::Regex;
 use collections::hashmap::HashMap;
 use std;
+use request;
 
 /// A Route is the basic data structure that stores both the path
 /// and the handler that gets executed for the route.
 /// The path can contain variable pattern such as `user/:userid/invoices`
 struct Route {
     pub path: String,
-    pub handler: fn(request: &Request, response: &mut ResponseWriter),
+    pub handler: fn(request: request::Request, response: &mut ResponseWriter),
     pub variables: HashMap<String, int>,
     matcher: Regex
 }
@@ -56,7 +57,7 @@ impl RouteRegexFactory {
         }
     }
 
-    fn get_variable_info<'a> (route_path: &'a str) -> HashMap<&'a str, int> {
+    fn get_variable_info (route_path: &str) -> HashMap<String, int> {
         // yep, that's duplicated. We'll fix that once we figured out how to use the regex macro
         let regex = match Regex::new(r":[a-zA-Z0-9_-]*") {
             Ok(re) => re,
@@ -67,8 +68,8 @@ impl RouteRegexFactory {
         let mut map = HashMap::new();
         let mut i = 0;
         for matched in regex.captures_iter(route_path) {
-            std::io::stdout().write_line(matched.at(0));
-            map.insert(matched.at(0), i);
+            //std::io::stdout().write_line(matched.at(0));
+            map.insert(matched.at(0).to_string(), i);
             i = i + 1;
         }
 
@@ -91,13 +92,14 @@ impl Router {
         }
     }
 
-    pub fn add_route (&mut self, path: String, handler: fn(request: &Request, response: &mut ResponseWriter)) -> () {
+    pub fn add_route (&mut self, path: String, handler: fn(request: request::Request, response: &mut ResponseWriter)) -> () {
         let matcher = RouteRegexFactory::create_regex(path.as_slice());
+        let variable_infos = RouteRegexFactory::get_variable_info(path.as_slice());
         let route = Route {
             path: path,
             matcher: matcher,
             handler: handler,
-            variables: HashMap::new()
+            variables: variable_infos
         };
         self.routes.push(route);
     }
@@ -119,8 +121,8 @@ fn creates_valid_regex_for_var_routes () {
     let map = RouteRegexFactory::get_variable_info("foo/:uid/bar/:groupid");
     
     assert_eq!(map.len(), 2);
-    assert_eq!(map.get(&":uid"), &0);
-    assert_eq!(map.get(&":groupid"), &1);
+    assert_eq!(map.get(&":uid".to_string()), &0);
+    assert_eq!(map.get(&":groupid".to_string()), &1);
 }
 
 #[test]
@@ -139,7 +141,7 @@ fn can_get_variable_infos () {
 fn can_match_var_routes () {
     let route_store = &mut Router::new();
 
-    fn handler (request: &Request, response: &mut ResponseWriter) -> () {
+    fn handler (request: request::Request, response: &mut ResponseWriter) -> () {
         response.write("hello from foo".as_bytes()); 
     };
 
@@ -147,6 +149,11 @@ fn can_match_var_routes () {
     route_store.add_route("/bar".to_string(), handler);
     
     let route = route_store.match_route("/foo/4711".to_string());
+
+    //assert the route has identified the variable
+    assert_eq!(route.unwrap().variables.len(), 1);
+    assert_eq!(route.unwrap().variables.get(&":userid".to_string()), &0);
+
 
     let result = match route {
         Some(re) => true,
