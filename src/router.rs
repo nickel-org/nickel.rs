@@ -56,17 +56,10 @@ impl PathUtils {
     }
 
     fn get_variable_info (route_path: &str) -> HashMap<String, uint> {
-
-        // this is very imperative. Let's improve on that.
-        let mut map = HashMap::new();
-        let mut i = 0;
-        for matched in REGEX_VAR_SEQ.captures_iter(route_path) {
-            //std::io::stdout().write_line(matched.at(0));
-            map.insert(matched.at(1).to_string(), i);
-            i = i + 1;
-        }
-
-        map
+        REGEX_VAR_SEQ.captures_iter(route_path)
+             .enumerate()
+             .map(|(i, matched)| (matched.at(1).to_string(), i))
+             .collect()
     }
 }
 
