@@ -33,25 +33,20 @@ struct RouteResult<'a> {
     pub params: HashMap<String, String>
 }
 
-/// The RouteRegexFactory is responsible to convert paths to Regex patterns to
-/// match against concrete URLs
-struct RouteRegexFactory;
+/// The PathUtils collects some small helper methods that operate on the path
+struct PathUtils;
 
-impl RouteRegexFactory {
+static REGEX_VAR_SEQ: Regex            = regex!(r":([a-zA-Z0-9_-]*)");
+static VARIABLE_SEQUENCE:&'static str  = "(.[a-zA-Z0-9_-]*)";
+static REGEX_START:&'static str        = "^";
+static REGEX_END:&'static str          = "$";
+
+
+impl PathUtils {
     fn create_regex (route_path: &str) -> Regex {
 
-        static VARIABLE_SEQUENCE:&'static str  = "(.[a-zA-Z0-9_-]*)";
-        static REGEX_START:&'static str        = "^";
-        static REGEX_END:&'static str          = "$";
-
-        // this should better be a regex! macro but I couldn't get it to work
-        let regex = match Regex::new(r":[a-zA-Z0-9_-]*") {
-            Ok(re) => re,
-            Err(err) => fail!("{}", err)
-        };
-
         let result = REGEX_START.to_string()
-                                .append(regex.replace_all(route_path, VARIABLE_SEQUENCE).as_slice())
+                                .append(REGEX_VAR_SEQ.replace_all(route_path, VARIABLE_SEQUENCE).as_slice())
                                 .append(REGEX_END);
 
         match Regex::new(result.as_slice()) {
@@ -61,16 +56,11 @@ impl RouteRegexFactory {
     }
 
     fn get_variable_info (route_path: &str) -> HashMap<String, uint> {
-        // yep, that's duplicated. We'll fix that once we figured out how to use the regex macro
-        let regex = match Regex::new(r":([a-zA-Z0-9_-]*)") {
-            Ok(re) => re,
-            Err(err) => fail!("{}", err)
-        };
 
         // this is very imperative. Let's improve on that.
         let mut map = HashMap::new();
         let mut i = 0;
-        for matched in regex.captures_iter(route_path) {
+        for matched in REGEX_VAR_SEQ.captures_iter(route_path) {
             //std::io::stdout().write_line(matched.at(0));
             map.insert(matched.at(1).to_string(), i);
             i = i + 1;
@@ -96,8 +86,8 @@ impl Router {
     }
 
     pub fn add_route (&mut self, path: String, handler: fn(request: request::Request, response: &mut ResponseWriter)) -> () {
-        let matcher = RouteRegexFactory::create_regex(path.as_slice());
-        let variable_infos = RouteRegexFactory::get_variable_info(path.as_slice());
+        let matcher = PathUtils::create_regex(path.as_slice());
+        let variable_infos = PathUtils::get_variable_info(path.as_slice());
         let route = Route {
             path: path,
             matcher: matcher,
@@ -139,7 +129,7 @@ impl Router {
 
 #[test]
 fn creates_map_with_var_variable_infos () {
-    let map = RouteRegexFactory::get_variable_info("foo/:uid/bar/:groupid");
+    let map = PathUtils::get_variable_info("foo/:uid/bar/:groupid");
     
     assert_eq!(map.len(), 2);
     assert_eq!(map.get(&"uid".to_string()), &0);
@@ -148,7 +138,7 @@ fn creates_map_with_var_variable_infos () {
 
 #[test]
 fn creates_regex_with_captures () {
-    let regex = RouteRegexFactory::create_regex("foo/:uid/bar/:groupid");
+    let regex = PathUtils::create_regex("foo/:uid/bar/:groupid");
     assert_eq!(regex.is_match("foo/4711/bar/5490"), true);
 
     let caps = regex.captures("foo/4711/bar/5490").unwrap();
