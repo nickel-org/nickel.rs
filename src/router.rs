@@ -45,10 +45,11 @@ impl RouteRegexFactory {
         static REGEX_END:&'static str          = "$";
 
         // this should better be a regex! macro but I couldn't get it to work
-        let regex = match Regex::new(r":[a-zA-Z0-9_-]*") {
-            Ok(re) => re,
-            Err(err) => fail!("{}", err)
-        };
+        // let regex = match Regex::new(r":[a-zA-Z0-9_-]*") {
+        //     Ok(re) => re,
+        //     Err(err) => fail!("{}", err)
+        // };
+        regex!(r":[a-zA-Z0-9_-]*");
 
         let result = REGEX_START.to_string()
                                 .append(regex.replace_all(route_path, VARIABLE_SEQUENCE).as_slice())

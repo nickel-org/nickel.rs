@@ -2,11 +2,14 @@
 #![comment = "A expressjs inspired web framework for Rust"]
 #![license = "MIT"]
 #![crate_type = "rlib"]
+#![feature(macro_rules, phase)]
+
 
 extern crate time;
 extern crate http;
 extern crate collections;
 extern crate regex;
+#[phase(plugin)]extern crate regex_macros;
 
 pub use floor::Floor;
 pub use request::Request;
