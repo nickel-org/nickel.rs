@@ -1,4 +1,4 @@
-use collections::hashmap::HashMap;
+use std::collections::hashmap::HashMap;
 use http;
 
 pub struct Request<'a> {

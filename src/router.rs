@@ -1,6 +1,6 @@
 use http::server::{Request, ResponseWriter};
 use regex::Regex;
-use collections::hashmap::HashMap;
+use std::collections::hashmap::HashMap;
 use request;
 
 /// A Route is the basic data structure that stores both the path
