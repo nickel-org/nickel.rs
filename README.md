@@ -1,7 +1,13 @@
 Floor
 =======
 
-This may or may not become and expressjs inspired web framework for Rust. At it's current stage it's actually just a very tiny experiment and far from being a full framework.
+Floor is supposed to be a simple and lightweight foundation for web applications written in Rust. It's API is inspired by the popular express framework for JavaScript.
+
+Some of the features are:
+
+* Easy handlers: A handler is just a function that takes an `Request` and `ResponseWriter`
+* Variables in routes. Just write `my/route/:someid`
+* Easy parameter access: `request.params.get(&"someid")`
 
 ##How to build Floor
 
