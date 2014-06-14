@@ -9,13 +9,22 @@ Some of the features are:
 * Variables in routes. Just write `my/route/:someid`
 * Easy parameter access: `request.params.get(&"someid")`
 
-##How to build Floor
+#Getting started
+The easiest way to get started is to get the examples running and tinker with them. Let's do that real quick!
+
+##Clone the repository
+
+```shell
+git clone --recursive https://github.com/cburgdorf/Floor.git
+```
+
+##Build Floor
 
 ```shell
 make all
 ```
 
-##How to run the example
+##Run the example
 
 ```shell
 make run
@@ -24,7 +33,7 @@ make run
 Then try `localhost:6767/foo` and `localhost:6767/bar` 
 
 
-##Write your server
+##Take a look at the example code
 Here is how sample server in `example.rs` looks like:
 ```rust
 extern crate http;
