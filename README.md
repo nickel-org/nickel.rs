@@ -5,7 +5,7 @@ Floor is supposed to be a simple and lightweight foundation for web applications
 
 Some of the features are:
 
-* Easy handlers: A handler is just a function that takes an `Request` and `ResponseWriter`
+* Easy handlers: A handler is just a function that takes a `Request` and `ResponseWriter`
 * Variables in routes. Just write `my/route/:someid`
 * Easy parameter access: `request.params.get(&"someid")`
 
@@ -30,7 +30,7 @@ make all
 make run
 ```
 
-Then try `localhost:6767/foo` and `localhost:6767/bar` 
+Then try `localhost:6767/user/4711` and `localhost:6767/bar` 
 
 
 ##Take a look at the example code
