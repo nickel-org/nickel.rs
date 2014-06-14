@@ -10,7 +10,7 @@ Some of the features are:
 * Easy parameter access: `request.params.get(&"someid")`
 
 #Getting started
-The easiest way to get started is to get the examples running and tinker with them. Let's do that real quick!
+The easiest way to get started is to get the example running and play around with it. Let's do that real quick!
 
 ##Clone the repository
 
@@ -72,6 +72,13 @@ fn main() {
 }
 ```
 
+##License
+
+Floor is open source and licensed with the [MIT license](https://github.com/cburgdorf/Floor/blob/master/LICENSE)
+
+
 ##Contributing
 
 I would love to find a helping hand. Especially if you know Rust, because I don't :)
+There is list of [open issues](https://github.com/cburgdorf/Floor/issues?state=open) right here on github.
+And hey, did you know you can also contribute by just starring the project here on github :)
