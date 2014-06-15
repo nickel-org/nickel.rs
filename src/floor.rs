@@ -11,7 +11,7 @@ use request;
 
 #[deriving(Clone)]
 pub struct Floor{
-    route_store: Router,
+    router: Router,
     server: Option<Server>
 }
 impl Floor {
@@ -25,7 +25,7 @@ impl Floor {
     pub fn new() -> Floor {
         let routes = Router::new();
         Floor {
-            route_store: routes,
+            router: routes,
             server: None,
         }
     }
@@ -72,7 +72,7 @@ impl Floor {
     /// server.get("/user/**/:userid", handler);
     /// ```
     pub fn get(&mut self, uri: &str, handler: fn(request: request::Request, response: &mut ResponseWriter)){
-        self.route_store.add_route(String::from_str(uri), handler);
+        self.router.add_route(String::from_str(uri), handler);
     }
 
     /// Bind and listen for connections on the given host and port
@@ -83,7 +83,7 @@ impl Floor {
     /// server.listen(6767);
     /// ```
     pub fn listen(mut self, port: Port) {
-        self.server = Some(Server::new(self.route_store.clone(), port));
+        self.server = Some(Server::new(self.router.clone(), port));
         self.server.unwrap().serve();
     }
 }
