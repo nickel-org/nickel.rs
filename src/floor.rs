@@ -7,8 +7,7 @@ use server::Server;
 use request;
 
 ///Floor is the application object. It's the surface that 
-///holds all public APIs one needs to create a web application
-/// with Floor.
+///holds all public APIs.
 
 #[deriving(Clone)]
 pub struct Floor{
