@@ -28,6 +28,9 @@ deps:
 examples:
 	rustc $(LIBS) examples/example.rs -o examples/example
 
+doc:
+	rustdoc $(LIBS) src/lib.rs
+
 all: clean deps floor examples
 
 run:

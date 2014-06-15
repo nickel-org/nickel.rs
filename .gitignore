@@ -3,3 +3,4 @@
 *.dylib
 examples/example
 floor-test
+doc
