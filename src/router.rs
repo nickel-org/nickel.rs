@@ -1,3 +1,5 @@
+//!Router asigns handlers to paths and resolves them per request
+
 use http::server::{Request, ResponseWriter};
 use regex::Regex;
 use std::collections::hashmap::HashMap;
