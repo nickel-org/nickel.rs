@@ -11,6 +11,8 @@ Some of the features are:
 * simple wildcard routes: `/some/*/route`
 * double wildcard routes: `/a/**/route`
 
+##[Jump to the Full Documentation](http://cburgdorf.github.io/Floor/doc/floor/index.html)
+
 #Getting started
 The easiest way to get started is to get the example running and play around with it. Let's do that real quick!
 
@@ -87,6 +89,8 @@ fn main() {
     server.listen(6767);
 }
 ```
+
+##[Jump to the Full Documentation](http://cburgdorf.github.io/Floor/doc/floor/index.html)
 
 ##License
 
