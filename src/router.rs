@@ -2,6 +2,7 @@ use http::server::{Request, ResponseWriter};
 use regex::Regex;
 use std::collections::hashmap::HashMap;
 use request;
+use std;
 
 /// A Route is the basic data structure that stores both the path
 /// and the handler that gets executed for the route.
@@ -36,17 +37,30 @@ struct RouteResult<'a> {
 /// The PathUtils collects some small helper methods that operate on the path
 struct PathUtils;
 
-static REGEX_VAR_SEQ: Regex            = regex!(r":([a-zA-Z0-9_-]*)");
-static VARIABLE_SEQUENCE:&'static str  = "(.[a-zA-Z0-9_-]*)";
-static REGEX_START:&'static str        = "^";
-static REGEX_END:&'static str          = "$";
+static REGEX_VAR_SEQ: Regex                 = regex!(r":([a-zA-Z0-9_-]*)");
+static VAR_SEQ:&'static str                 = "[a-zA-Z0-9_-]*";
+static VAR_SEQ_WITH_SLASH:&'static str      = "[/a-zA-Z0-9_-]*";
+static VAR_SEQ_WITH_CAPTURE:&'static str    = "([a-zA-Z0-9_-]*)";
+static REGEX_START:&'static str             = "^";
+static REGEX_END:&'static str               = "$";
 
 
 impl PathUtils {
     fn create_regex (route_path: &str) -> Regex {
 
+        let updated_path = route_path.to_string()
+                                     // first mark all double wildcards for replacement. We can't directly replace them
+                                     // since the replacement does contain the * symbol as well, which would get overwritten
+                                     // with the next replace call
+                                     .replace("**", "___DOUBLE_WILDCARD___")
+                                     // then replace the regular wildcard symbols (*) with the appropriate regex
+                                     .replace("*", VAR_SEQ)
+                                     // now replace the previously marked double wild cards (**)
+                                     .replace("___DOUBLE_WILDCARD___", VAR_SEQ_WITH_SLASH);
+
+        // then replace the variable symbols (:variable) with the appropriate regex
         let result = REGEX_START.to_string()
-                                .append(REGEX_VAR_SEQ.replace_all(route_path, VARIABLE_SEQUENCE).as_slice())
+                                .append(REGEX_VAR_SEQ.replace_all(updated_path.as_slice(), VAR_SEQ_WITH_CAPTURE).as_slice())
                                 .append(REGEX_END);
 
         match Regex::new(result.as_slice()) {
@@ -132,14 +146,40 @@ fn creates_map_with_var_variable_infos () {
 #[test]
 fn creates_regex_with_captures () {
     let regex = PathUtils::create_regex("foo/:uid/bar/:groupid");
-    assert_eq!(regex.is_match("foo/4711/bar/5490"), true);
-
     let caps = regex.captures("foo/4711/bar/5490").unwrap();
 
     assert_eq!(caps.at(1), "4711");
     assert_eq!(caps.at(2), "5490");
-    assert_eq!(regex.is_match("foo/"), false);
+    
+    let regex = PathUtils::create_regex("foo/*/:uid/bar/:groupid");
+    let caps = regex.captures("foo/test/4711/bar/5490").unwrap();
+
+    assert_eq!(caps.at(1), "4711");
+    assert_eq!(caps.at(2), "5490");
+
+    let regex = PathUtils::create_regex("foo/**/:uid/bar/:groupid");
+    let caps = regex.captures("foo/test/another/4711/bar/5490").unwrap();
+
+    assert_eq!(caps.at(1), "4711");
+    assert_eq!(caps.at(2), "5490");
 }
+
+#[test]
+fn creates_valid_regex_for_routes () {
+    let regex1 = PathUtils::create_regex("foo/:uid/bar/:groupid");
+    let regex2 = PathUtils::create_regex("foo/*/bar");
+    let regex3 = PathUtils::create_regex("foo/**/bar");
+
+    assert_eq!(regex1.is_match("foo/4711/bar/5490"), true);
+    assert_eq!(regex1.is_match("foo/4711/bar"), false);
+
+    assert_eq!(regex2.is_match("foo/4711/bar"), true);
+    assert_eq!(regex2.is_match("foo/4711/4712/bar"), false);
+
+    assert_eq!(regex3.is_match("foo/4711/bar"), true);
+    assert_eq!(regex3.is_match("foo/4711/4712/bar"), true);
+}
+
 
 #[test]
 fn can_match_var_routes () {
