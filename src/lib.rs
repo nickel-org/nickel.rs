@@ -4,7 +4,7 @@
 #![crate_type = "rlib"]
 #![feature(macro_rules, phase)]
 
-//!Floor is supposed to be a simple and lightweight foundation for web applications written in Rust. It's API is inspired by the popular express framework for JavaScript.
+//!Floor is supposed to be a simple and lightweight foundation for web applications written in Rust. Its API is inspired by the popular express framework for JavaScript.
 //!
 //!Some of the features are:
 //!
