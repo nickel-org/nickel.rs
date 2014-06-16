@@ -12,12 +12,7 @@ fn main() {
     // to achieve with the current version of rust.
 
     fn user_handler (request: Request, response: &mut ResponseWriter) {
-
-        let text = String::new()
-                    .append("This is user: ")
-                    .append(request.params.get(&"userid".to_string()).as_slice());
-
-        response.write(text.as_bytes()); 
+        let _ = write!(response, "This is user: {}", request.params.get(&"userid".to_string()));
     };
 
     fn bar_handler (request: Request, response: &mut ResponseWriter) { 
