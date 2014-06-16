@@ -41,7 +41,7 @@ fn main() {
     // go to http://localhost:6767/some/crazy/route to see this route in action
     server.get("/some/*/route", simple_wildcard);
 
-    // go to http://localhost:6767/some/nice/route or http://localhost:6767/some/super/nice/route to see this route in action
+    // go to http://localhost:6767/a/nice/route or http://localhost:6767/a/super/nice/route to see this route in action
     server.get("/a/**/route", double_wildcard);
 
     server.listen(6767);
