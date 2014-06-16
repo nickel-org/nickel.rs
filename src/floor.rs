@@ -31,7 +31,7 @@ impl Floor {
     }
 
     /// Register a handler to be used for a specific GET request.
-    /// Handlers are asigned to paths and paths are allowed to contain
+    /// Handlers are assigned to paths and paths are allowed to contain
     /// variables and wildcards.
     ///
     /// # Example without variables and wildcards
