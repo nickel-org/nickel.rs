@@ -40,7 +40,7 @@ impl http::server::Server for Server {
 
         match &_r.request_uri {
             &AbsolutePath(ref url) => {
-                match self.router.match_route(url.clone()) {
+                match self.router.match_route(_r.method.clone(), url.clone()) {
                     Some(route_result) => { 
                         set_headers(_r, w); 
 

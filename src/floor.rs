@@ -1,6 +1,7 @@
 use std::io::net::ip::{Port};
 
 use http::server::{Request, ResponseWriter};
+use http::method;
 
 use router::Router;
 use server::Server;
@@ -30,7 +31,7 @@ impl Floor {
         }
     }
 
-    /// Register a handler to be used for a specific GET request.
+    /// Registers a handler to be used for a specific GET request.
     /// Handlers are assigned to paths and paths are allowed to contain
     /// variables and wildcards.
     ///
@@ -67,7 +68,52 @@ impl Floor {
     /// server.get("/user/**/:userid", handler);
     /// ```
     pub fn get(&mut self, uri: &str, handler: fn(request: request::Request, response: &mut ResponseWriter)){
-        self.router.add_route(String::from_str(uri), handler);
+        self.router.add_route(method::Get, String::from_str(uri), handler);
+    }
+
+    /// Registers a handler to be used for a specific POST request.
+    /// 
+    /// # Example
+    ///
+    /// ```rust
+    /// fn handler (request: Request, response: &mut ResponseWriter) {
+    ///     response.write("This matches a POST request to /a/post/request".as_bytes());  
+    /// };
+    /// server.post("/a/post/request", handler);
+    /// ```
+    /// Take a look at `get()` for a more detailed description.
+    pub fn post(&mut self, uri: &str, handler: fn(request: request::Request, response: &mut ResponseWriter)){
+        self.router.add_route(method::Post, String::from_str(uri), handler);
+    }
+
+    /// Registers a handler to be used for a specific PUT request.
+    /// 
+    /// # Example
+    ///
+    /// ```rust
+    /// fn handler (request: Request, response: &mut ResponseWriter) {
+    ///     response.write("This matches a POST request to /a/put/request".as_bytes());  
+    /// };
+    /// server.put("/a/put/request", handler);
+    /// ```
+    /// Take a look at `get(..)` for a more detailed description.
+    pub fn put(&mut self, uri: &str, handler: fn(request: request::Request, response: &mut ResponseWriter)){
+        self.router.add_route(method::Put, String::from_str(uri), handler);
+    }
+
+    /// Registers a handler to be used for a specific DELETE request.
+    /// 
+    /// # Example
+    ///
+    /// ```rust
+    /// fn handler (request: Request, response: &mut ResponseWriter) {
+    ///     response.write("This matches a DELETE request to /a/delete/request".as_bytes());  
+    /// };
+    /// server.delete("/a/delete/request", handler);
+    /// ```
+    /// Take a look at `get(...)` for a more detailed description.
+    pub fn delete(&mut self, uri: &str, handler: fn(request: request::Request, response: &mut ResponseWriter)){
+        self.router.add_route(method::Put, String::from_str(uri), handler);
     }
 
     /// Bind and listen for connections on the given host and port

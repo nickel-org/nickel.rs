@@ -57,32 +57,40 @@ fn main() {
         let _ = write!(response, "This is user: {}", request.params.get(&"userid".to_string()));
     };
 
+    // go to http://localhost:6767/user/4711 to see this route in action
+    server.get("/user/:userid", user_handler);
+
     fn bar_handler (request: Request, response: &mut ResponseWriter) { 
         response.write("This is the /bar handler".as_bytes()); 
     };
+
+    // go to http://localhost:6767/bar to see this route in action
+    server.get("/bar", bar_handler);
 
     fn simple_wildcard (request: Request, response: &mut ResponseWriter) { 
         response.write("This matches /some/crazy/route but not /some/super/crazy/route".as_bytes()); 
     };
 
+    // go to http://localhost:6767/some/crazy/route to see this route in action
+    server.get("/some/*/route", simple_wildcard);
+
     fn double_wildcard (request: Request, response: &mut ResponseWriter) { 
         response.write("This matches /a/crazy/route and also /a/super/crazy/route".as_bytes()); 
     };
 
-    // go to http://localhost:6767/user/4711 to see this route in action
-    server.get("/user/:userid", user_handler);
-
-    // go to http://localhost:6767/bar to see this route in action
-    server.get("/bar", bar_handler);
-
-    // go to http://localhost:6767/some/crazy/route to see this route in action
-    server.get("/some/*/route", simple_wildcard);
-
     // go to http://localhost:6767/a/nice/route or http://localhost:6767/a/super/nice/route to see this route in action
     server.get("/a/**/route", double_wildcard);
 
+    fn post_handler (request: Request, response: &mut ResponseWriter) { 
+        response.write("This matches a POST request to /a/post/request".as_bytes()); 
+    };
+
+    // go to http://localhost:6767/a/post/request to see this route in action
+    server.post("/a/post/request", post_handler);
+
     server.listen(6767);
 }
+
 ```
 
 ##[Jump to the Full Documentation](http://cburgdorf.github.io/Floor/doc/floor/index.html)

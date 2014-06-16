@@ -1,6 +1,8 @@
 //!Router asigns handlers to paths and resolves them per request
 
 use http::server::{Request, ResponseWriter};
+use http::method;
+use http::method::Method;
 use regex::Regex;
 use std::collections::hashmap::HashMap;
 use request;
@@ -10,6 +12,7 @@ use request;
 /// The path can contain variable pattern such as `user/:userid/invoices`
 struct Route {
     pub path: String,
+    pub method: Method,
     pub handler: fn(request: request::Request, response: &mut ResponseWriter),
     pub variables: HashMap<String, uint>,
     matcher: Regex
@@ -19,6 +22,7 @@ impl Clone for Route {
     fn clone(&self) -> Route {
         Route { 
             path: self.path.clone(), 
+            method: self.method.clone(),
             handler: self.handler, 
             matcher: self.matcher.clone(),
             variables: self.variables.clone() 
@@ -93,11 +97,12 @@ impl Router {
         }
     }
 
-    pub fn add_route (&mut self, path: String, handler: fn(request: request::Request, response: &mut ResponseWriter)) -> () {
+    pub fn add_route (&mut self, method: Method, path: String, handler: fn(request: request::Request, response: &mut ResponseWriter)) -> () {
         let matcher = PathUtils::create_regex(path.as_slice());
         let variable_infos = PathUtils::get_variable_info(path.as_slice());
         let route = Route {
             path: path,
+            method: method,
             matcher: matcher,
             handler: handler,
             variables: variable_infos
@@ -105,8 +110,8 @@ impl Router {
         self.routes.push(route);
     }
 
-    pub fn match_route<'a>(&'a self, path: String) -> Option<RouteResult<'a>> {
-        let route = self.routes.iter().find(|item| item.matcher.is_match(path.as_slice()));
+    pub fn match_route<'a>(&'a self, method: Method, path: String) -> Option<RouteResult<'a>> {
+        let route = self.routes.iter().find(|item| item.method == method && item.matcher.is_match(path.as_slice()));
 
         // can we improve on all this nested stuff? Is this the intended way to handle it?
         match route {
@@ -190,10 +195,10 @@ fn can_match_var_routes () {
         response.write("hello from foo".as_bytes()); 
     };
 
-    route_store.add_route("/foo/:userid".to_string(), handler);
-    route_store.add_route("/bar".to_string(), handler);
+    route_store.add_route(method::Get, "/foo/:userid".to_string(), handler);
+    route_store.add_route(method::Get, "/bar".to_string(), handler);
     
-    let route_result = route_store.match_route("/foo/4711".to_string()).unwrap();
+    let route_result = route_store.match_route(method::Get, "/foo/4711".to_string()).unwrap();
     let route = route_result.route;
 
     assert_eq!(route_result.params.get(&"userid".to_string()), &"4711".to_string());
@@ -203,7 +208,7 @@ fn can_match_var_routes () {
     assert_eq!(route.variables.get(&"userid".to_string()), &0);
 
 
-    let route_result = route_store.match_route("/bar/4711".to_string());
+    let route_result = route_store.match_route(method::Get, "/bar/4711".to_string());
 
     let result = match route_result {
         Some(res) => true,
@@ -212,7 +217,7 @@ fn can_match_var_routes () {
 
     assert_eq!(result, false);
 
-    let route_result = route_store.match_route("/foo".to_string());
+    let route_result = route_store.match_route(method::Get, "/foo".to_string());
 
     let result = match route_result{
         Some(res) => true,
