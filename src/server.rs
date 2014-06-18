@@ -3,9 +3,6 @@ use std::io::net::ip::{SocketAddr, Ipv4Addr, Port};
 use http;
 use http::server::request::{AbsolutePath};
 use http::server::{Config, Server, Request, ResponseWriter};
-use http::headers::content_type::MediaType;
-
-use time;
 
 use router::Router;
 use request;
@@ -24,26 +21,10 @@ impl http::server::Server for Server {
 
     fn handle_request(&self, req: &Request, res: &mut ResponseWriter) {
 
-        //println!("{:?}", req.request_uri)
-
-        fn set_headers(req: &Request, res: &mut ResponseWriter) {
-            res.headers.date = Some(time::now_utc());
-
-            // we don't need to set this https://github.com/Ogeon/rustful/issues/3#issuecomment-44787613
-            res.headers.content_length = None;
-            res.headers.content_type = Some(MediaType {
-                type_: String::from_str("text"),
-                subtype: String::from_str("plain"),
-                parameters: vec!((String::from_str("charset"), String::from_str("UTF-8")))
-            });
-            res.headers.server = Some(String::from_str("Example"));
-        }
-
         match &req.request_uri {
             &AbsolutePath(ref url) => {
                 match self.router.match_route(req.method.clone(), url.clone()) {
                     Some(route_result) => { 
-                        set_headers(req, res); 
 
                         let floor_req = request::Request{
                             origin: req,
@@ -59,7 +40,8 @@ impl http::server::Server for Server {
                     None => {}
                 }
             },
-            _ => set_headers(req, res)
+            // TODO: Return 404
+            _ => {}
         }
     }
 }
