@@ -13,6 +13,7 @@
 //!* Easy parameter access: `request.params.get(&"someid")`
 //!* simple wildcard routes: `/some/*/route`
 //!* double wildcard routes: `/a/**/route`
+//!* middleware
 
 extern crate time;
 extern crate http;
@@ -28,3 +29,4 @@ mod server;
 mod floor;
 mod request;
 mod response;
+mod middleware;
