@@ -9,6 +9,7 @@ use time;
 
 use router::Router;
 use request;
+use response;
 
 #[deriving(Clone)]
 pub struct Server {
@@ -21,40 +22,44 @@ impl http::server::Server for Server {
         Config { bind_address: SocketAddr { ip: Ipv4Addr(127, 0, 0, 1), port: self.port } }
     }
 
-    fn handle_request(&self, _r: &Request, w: &mut ResponseWriter) {
+    fn handle_request(&self, req: &Request, res: &mut ResponseWriter) {
 
-        //println!("{:?}", _r.request_uri)
+        //println!("{:?}", req.request_uri)
 
-        fn set_headers(_r: &Request, w: &mut ResponseWriter) {
-            w.headers.date = Some(time::now_utc());
+        fn set_headers(req: &Request, res: &mut ResponseWriter) {
+            res.headers.date = Some(time::now_utc());
 
             // we don't need to set this https://github.com/Ogeon/rustful/issues/3#issuecomment-44787613
-            w.headers.content_length = None;
-            w.headers.content_type = Some(MediaType {
+            res.headers.content_length = None;
+            res.headers.content_type = Some(MediaType {
                 type_: String::from_str("text"),
                 subtype: String::from_str("plain"),
                 parameters: vec!((String::from_str("charset"), String::from_str("UTF-8")))
             });
-            w.headers.server = Some(String::from_str("Example"));
+            res.headers.server = Some(String::from_str("Example"));
         }
 
-        match &_r.request_uri {
+        match &req.request_uri {
             &AbsolutePath(ref url) => {
-                match self.router.match_route(_r.method.clone(), url.clone()) {
+                match self.router.match_route(req.method.clone(), url.clone()) {
                     Some(route_result) => { 
-                        set_headers(_r, w); 
+                        set_headers(req, res); 
 
-                        let req = request::Request{
-                            origin: _r,
+                        let floor_req = request::Request{
+                            origin: req,
                             params: route_result.params.clone()
                         };
 
-                        (route_result.route.handler)(req, w);
+                        let mut floor_res = response::Response{
+                            origin: res
+                        };
+
+                        (route_result.route.handler)(floor_req, &mut floor_res);
                     },
                     None => {}
                 }
             },
-            _ => set_headers(_r, w)
+            _ => set_headers(req, res)
         }
     }
 }
