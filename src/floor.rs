@@ -39,32 +39,33 @@ impl Floor {
     /// # Example without variables and wildcards
     ///
     /// ```rust
-    /// fn handler (request: Request, response: &mut ResponseWriter) { 
-    ///     response.write("This matches /user".as_bytes()); 
+    /// fn handler (request: Request, response: &mut Response) { 
+    ///     response.write("This matches /user"); 
     /// };
     /// server.get("/user", handler);
     /// ```
     /// # Example with variables
     ///
     /// ```rust
-    /// fn handler (request: Request, response: &mut ResponseWriter) {
-    ///     let _ = write!(response, "This is user: {}", request.params.get(&"userid".to_string()));
+    /// fn handler (request: Request, response: &mut Response) {
+    ///     let text = format!("This is user: {}", request.params.get(&"userid".to_string()));
+    ///     response.write(text.as_slice());
     /// };
     /// server.get("/user/:userid", handler);
     /// ```
     /// # Example with simple wildcard
     ///
     /// ```rust
-    /// fn handler (request: Request, response: &mut ResponseWriter) {
-    ///     response.write("This matches /user/list/4711 but not /user/extended/list/4711".as_bytes());  
+    /// fn handler (request: Request, response: &mut Response) {
+    ///     response.write("This matches /user/list/4711 but not /user/extended/list/4711");  
     /// };
     /// server.get("/user/*/:userid", handler);
     /// ```
     /// # Example with double wildcard
     ///
     /// ```rust
-    /// fn handler (request: Request, response: &mut ResponseWriter) {
-    ///     response.write("This matches /user/list/4711 and also /user/extended/list/4711".as_bytes());  
+    /// fn handler (request: Request, response: &mut Response) {
+    ///     response.write("This matches /user/list/4711 and also /user/extended/list/4711");  
     /// };
     /// server.get("/user/**/:userid", handler);
     /// ```
@@ -77,8 +78,8 @@ impl Floor {
     /// # Example
     ///
     /// ```rust
-    /// fn handler (request: Request, response: &mut ResponseWriter) {
-    ///     response.write("This matches a POST request to /a/post/request".as_bytes());  
+    /// fn handler (request: Request, response: &mut Response) {
+    ///     response.write("This matches a POST request to /a/post/request");  
     /// };
     /// server.post("/a/post/request", handler);
     /// ```
@@ -92,8 +93,8 @@ impl Floor {
     /// # Example
     ///
     /// ```rust
-    /// fn handler (request: Request, response: &mut ResponseWriter) {
-    ///     response.write("This matches a POST request to /a/put/request".as_bytes());  
+    /// fn handler (request: Request, response: &mut Response) {
+    ///     response.write("This matches a POST request to /a/put/request");  
     /// };
     /// server.put("/a/put/request", handler);
     /// ```
@@ -107,8 +108,8 @@ impl Floor {
     /// # Example
     ///
     /// ```rust
-    /// fn handler (request: Request, response: &mut ResponseWriter) {
-    ///     response.write("This matches a DELETE request to /a/delete/request".as_bytes());  
+    /// fn handler (request: Request, response: &mut Response) {
+    ///     response.write("This matches a DELETE request to /a/delete/request");  
     /// };
     /// server.delete("/a/delete/request", handler);
     /// ```
