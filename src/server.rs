@@ -50,7 +50,7 @@ impl http::server::Server for Server {
                             params: route_result.params.clone()
                         };
 
-                        let floor_res = response::Response{
+                        let mut floor_res = response::Response{
                             origin: res
                         };
 
