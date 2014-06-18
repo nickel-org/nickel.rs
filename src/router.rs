@@ -6,6 +6,7 @@ use http::method::Method;
 use regex::Regex;
 use std::collections::hashmap::HashMap;
 use request;
+use response;
 
 /// A Route is the basic data structure that stores both the path
 /// and the handler that gets executed for the route.
@@ -13,7 +14,7 @@ use request;
 struct Route {
     pub path: String,
     pub method: Method,
-    pub handler: fn(request: request::Request, response: &mut ResponseWriter),
+    pub handler: fn(request: request::Request, response: &mut response::Response),
     pub variables: HashMap<String, uint>,
     matcher: Regex
 }
@@ -97,7 +98,7 @@ impl Router {
         }
     }
 
-    pub fn add_route (&mut self, method: Method, path: String, handler: fn(request: request::Request, response: &mut ResponseWriter)) -> () {
+    pub fn add_route (&mut self, method: Method, path: String, handler: fn(request: request::Request, response: &mut response::Response)) -> () {
         let matcher = PathUtils::create_regex(path.as_slice());
         let variable_infos = PathUtils::get_variable_info(path.as_slice());
         let route = Route {
