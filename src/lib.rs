@@ -21,8 +21,10 @@ extern crate regex;
 
 pub use floor::Floor;
 pub use request::Request;
+pub use response::Response;
 
 mod router;
 mod server;
 mod floor;
 mod request;
+mod response;

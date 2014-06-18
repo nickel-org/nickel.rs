@@ -6,6 +6,7 @@ use http::method;
 use router::Router;
 use server::Server;
 use request;
+use response;
 
 ///Floor is the application object. It's the surface that 
 ///holds all public APIs.
@@ -67,7 +68,7 @@ impl Floor {
     /// };
     /// server.get("/user/**/:userid", handler);
     /// ```
-    pub fn get(&mut self, uri: &str, handler: fn(request: request::Request, response: &mut ResponseWriter)){
+    pub fn get(&mut self, uri: &str, handler: fn(request: request::Request, response: &mut response::Response)){
         self.router.add_route(method::Get, String::from_str(uri), handler);
     }
 
@@ -82,7 +83,7 @@ impl Floor {
     /// server.post("/a/post/request", handler);
     /// ```
     /// Take a look at `get()` for a more detailed description.
-    pub fn post(&mut self, uri: &str, handler: fn(request: request::Request, response: &mut ResponseWriter)){
+    pub fn post(&mut self, uri: &str, handler: fn(request: request::Request, response: &mut response::Response)){
         self.router.add_route(method::Post, String::from_str(uri), handler);
     }
 
@@ -97,7 +98,7 @@ impl Floor {
     /// server.put("/a/put/request", handler);
     /// ```
     /// Take a look at `get(..)` for a more detailed description.
-    pub fn put(&mut self, uri: &str, handler: fn(request: request::Request, response: &mut ResponseWriter)){
+    pub fn put(&mut self, uri: &str, handler: fn(request: request::Request, response: &mut response::Response)){
         self.router.add_route(method::Put, String::from_str(uri), handler);
     }
 
@@ -112,7 +113,7 @@ impl Floor {
     /// server.delete("/a/delete/request", handler);
     /// ```
     /// Take a look at `get(...)` for a more detailed description.
-    pub fn delete(&mut self, uri: &str, handler: fn(request: request::Request, response: &mut ResponseWriter)){
+    pub fn delete(&mut self, uri: &str, handler: fn(request: request::Request, response: &mut response::Response)){
         self.router.add_route(method::Put, String::from_str(uri), handler);
     }
 
