@@ -14,7 +14,7 @@ use response::Response;
 struct Route {
     pub path: String,
     pub method: Method,
-    pub handler: fn(request: Request, response: &mut Response),
+    pub handler: fn(request: &Request, response: &mut Response),
     pub variables: HashMap<String, uint>,
     matcher: Regex
 }
@@ -98,7 +98,7 @@ impl Router {
         }
     }
 
-    pub fn add_route (&mut self, method: Method, path: String, handler: fn(request: Request, response: &mut Response)) -> () {
+    pub fn add_route (&mut self, method: Method, path: String, handler: fn(request: &Request, response: &mut Response)) -> () {
         let matcher = PathUtils::create_regex(path.as_slice());
         let variable_infos = PathUtils::get_variable_info(path.as_slice());
         let route = Route {

@@ -4,6 +4,7 @@ use http::server::{Request, ResponseWriter};
 use http::method;
 
 use router::Router;
+use middleware::Middleware;
 use server::Server;
 use request;
 use response;
@@ -14,6 +15,7 @@ use response;
 #[deriving(Clone)]
 pub struct Floor{
     router: Router,
+    middleware: Middleware,
     server: Option<Server>
 }
 impl Floor {
@@ -25,9 +27,11 @@ impl Floor {
     /// let mut server = Floor::new();
     /// ```
     pub fn new() -> Floor {
-        let routes = Router::new();
+        let router = Router::new();
+        let middleware = Middleware::new();
         Floor {
-            router: routes,
+            router: router,
+            middleware: middleware,
             server: None,
         }
     }
@@ -69,7 +73,7 @@ impl Floor {
     /// };
     /// server.get("/user/**/:userid", handler);
     /// ```
-    pub fn get(&mut self, uri: &str, handler: fn(request: request::Request, response: &mut response::Response)){
+    pub fn get(&mut self, uri: &str, handler: fn(request: &request::Request, response: &mut response::Response)){
         self.router.add_route(method::Get, String::from_str(uri), handler);
     }
 
@@ -84,7 +88,7 @@ impl Floor {
     /// server.post("/a/post/request", handler);
     /// ```
     /// Take a look at `get()` for a more detailed description.
-    pub fn post(&mut self, uri: &str, handler: fn(request: request::Request, response: &mut response::Response)){
+    pub fn post(&mut self, uri: &str, handler: fn(request: &request::Request, response: &mut response::Response)){
         self.router.add_route(method::Post, String::from_str(uri), handler);
     }
 
@@ -99,7 +103,7 @@ impl Floor {
     /// server.put("/a/put/request", handler);
     /// ```
     /// Take a look at `get(..)` for a more detailed description.
-    pub fn put(&mut self, uri: &str, handler: fn(request: request::Request, response: &mut response::Response)){
+    pub fn put(&mut self, uri: &str, handler: fn(request: &request::Request, response: &mut response::Response)){
         self.router.add_route(method::Put, String::from_str(uri), handler);
     }
 
@@ -114,8 +118,12 @@ impl Floor {
     /// server.delete("/a/delete/request", handler);
     /// ```
     /// Take a look at `get(...)` for a more detailed description.
-    pub fn delete(&mut self, uri: &str, handler: fn(request: request::Request, response: &mut response::Response)){
+    pub fn delete(&mut self, uri: &str, handler: fn(request: &request::Request, response: &mut response::Response)){
         self.router.add_route(method::Put, String::from_str(uri), handler);
+    }
+
+    pub fn utilize(&mut self, handler: fn(request: &request::Request, response: &mut response::Response) -> bool){
+        self.middleware.add(handler);
     }
 
     /// Bind and listen for connections on the given host and port
@@ -126,7 +134,7 @@ impl Floor {
     /// server.listen(6767);
     /// ```
     pub fn listen(mut self, port: Port) {
-        self.server = Some(Server::new(self.router.clone(), port));
+        self.server = Some(Server::new(self.router, self.middleware, port));
         self.server.unwrap().serve();
     }
 }

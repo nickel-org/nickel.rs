@@ -1,16 +1,19 @@
 use std::io::net::ip::{SocketAddr, Ipv4Addr, Port};
+use std::collections::hashmap::HashMap;
 
 use http;
 use http::server::request::{AbsolutePath};
 use http::server::{Config, Server, Request, ResponseWriter};
 
 use router::Router;
+use middleware::Middleware;
 use request;
 use response;
 
 #[deriving(Clone)]
 pub struct Server {
     router: Router,
+    middleware: Middleware,
     port: Port
 }
 
@@ -21,21 +24,23 @@ impl http::server::Server for Server {
 
     fn handle_request(&self, req: &Request, res: &mut ResponseWriter) {
 
+        let floor_req = &mut request::Request{
+            origin: req,
+            params: HashMap::new()
+        };
+
+        let floor_res = &mut response::Response{
+            origin: res
+        };
+
+        self.middleware.invoke(floor_req, floor_res);
+
         match &req.request_uri {
             &AbsolutePath(ref url) => {
                 match self.router.match_route(req.method.clone(), url.clone()) {
                     Some(route_result) => { 
-
-                        let floor_req = request::Request{
-                            origin: req,
-                            params: route_result.params.clone()
-                        };
-
-                        let mut floor_res = response::Response{
-                            origin: res
-                        };
-
-                        (route_result.route.handler)(floor_req, &mut floor_res);
+                        floor_req.params = route_result.params.clone();
+                        (route_result.route.handler)(floor_req, floor_res);
                     },
                     None => {}
                 }
@@ -47,9 +52,10 @@ impl http::server::Server for Server {
 }
 
 impl Server {
-    pub fn new(router: Router, port: Port) -> Server {
+    pub fn new(router: Router, middleware: Middleware, port: Port) -> Server {
         Server {
             router: router,
+            middleware: middleware,
             port: port
         }
     }
