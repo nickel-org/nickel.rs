@@ -9,6 +9,13 @@ pub struct Response<'a, 'b> {
 }
 
 impl<'a, 'b> Response<'a, 'b> {
+
+    /// Writes a response
+    ///
+    /// # Example
+    /// ```rust
+    /// response.write("hello world");
+    /// ```
     pub fn write (&mut self, text: &str) {
         // TODO: This needs to be more sophisticated to return the correct headers
         // not just "some headers" :)
