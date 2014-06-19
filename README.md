@@ -40,6 +40,7 @@ Then try `localhost:6767/user/4711` and `localhost:6767/bar`
 
 ##Take a look at the example code
 Here is how sample server in `example.rs` looks like:
+
 ```rust
 extern crate http;
 extern crate floor;
@@ -68,35 +69,35 @@ fn main() {
 
     fn user_handler (request: &Request, response: &mut Response) {
         let text = format!("This is user: {}", request.params.get(&"userid".to_string()));
-        response.write(text.as_slice());
+        response.send(text.as_slice());
     };
 
     // go to http://localhost:6767/user/4711 to see this route in action
     server.get("/user/:userid", user_handler);
 
     fn bar_handler (request: &Request, response: &mut Response) { 
-        response.write("This is the /bar handler"); 
+        response.send("This is the /bar handler"); 
     };
 
     // go to http://localhost:6767/bar to see this route in action
     server.get("/bar", bar_handler);
 
     fn simple_wildcard (request: &Request, response: &mut Response) { 
-        response.write("This matches /some/crazy/route but not /some/super/crazy/route"); 
+        response.send("This matches /some/crazy/route but not /some/super/crazy/route"); 
     };
 
     // go to http://localhost:6767/some/crazy/route to see this route in action
     server.get("/some/*/route", simple_wildcard);
 
     fn double_wildcard (request: &Request, response: &mut Response) { 
-        response.write("This matches /a/crazy/route and also /a/super/crazy/route"); 
+        response.send("This matches /a/crazy/route and also /a/super/crazy/route"); 
     };
 
     // go to http://localhost:6767/a/nice/route or http://localhost:6767/a/super/nice/route to see this route in action
     server.get("/a/**/route", double_wildcard);
 
     fn post_handler (request: &Request, response: &mut Response) { 
-        response.write("This matches a POST request to /a/post/request"); 
+        response.send("This matches a POST request to /a/post/request"); 
     };
 
     // go to http://localhost:6767/a/post/request to see this route in action
@@ -104,8 +105,6 @@ fn main() {
 
     server.listen(6767);
 }
-
-
 ```
 
 ##[Jump to the Full Documentation](http://cburgdorf.github.io/Floor/doc/floor/index.html)

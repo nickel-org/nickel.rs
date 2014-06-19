@@ -44,7 +44,7 @@ impl Floor {
     ///
     /// ```rust
     /// fn handler (request: Request, response: &mut Response) { 
-    ///     response.write("This matches /user"); 
+    ///     response.send("This matches /user"); 
     /// };
     /// server.get("/user", handler);
     /// ```
@@ -53,7 +53,7 @@ impl Floor {
     /// ```rust
     /// fn handler (request: Request, response: &mut Response) {
     ///     let text = format!("This is user: {}", request.params.get(&"userid".to_string()));
-    ///     response.write(text.as_slice());
+    ///     response.send(text.as_slice());
     /// };
     /// server.get("/user/:userid", handler);
     /// ```
@@ -61,7 +61,7 @@ impl Floor {
     ///
     /// ```rust
     /// fn handler (request: Request, response: &mut Response) {
-    ///     response.write("This matches /user/list/4711 but not /user/extended/list/4711");  
+    ///     response.send("This matches /user/list/4711 but not /user/extended/list/4711");  
     /// };
     /// server.get("/user/*/:userid", handler);
     /// ```
@@ -69,7 +69,7 @@ impl Floor {
     ///
     /// ```rust
     /// fn handler (request: Request, response: &mut Response) {
-    ///     response.write("This matches /user/list/4711 and also /user/extended/list/4711");  
+    ///     response.send("This matches /user/list/4711 and also /user/extended/list/4711");  
     /// };
     /// server.get("/user/**/:userid", handler);
     /// ```
@@ -83,7 +83,7 @@ impl Floor {
     ///
     /// ```rust
     /// fn handler (request: Request, response: &mut Response) {
-    ///     response.write("This matches a POST request to /a/post/request");  
+    ///     response.send("This matches a POST request to /a/post/request");  
     /// };
     /// server.post("/a/post/request", handler);
     /// ```
@@ -98,7 +98,7 @@ impl Floor {
     ///
     /// ```rust
     /// fn handler (request: Request, response: &mut Response) {
-    ///     response.write("This matches a POST request to /a/put/request");  
+    ///     response.send("This matches a POST request to /a/put/request");  
     /// };
     /// server.put("/a/put/request", handler);
     /// ```
@@ -113,7 +113,7 @@ impl Floor {
     ///
     /// ```rust
     /// fn handler (request: Request, response: &mut Response) {
-    ///     response.write("This matches a DELETE request to /a/delete/request");  
+    ///     response.send("This matches a DELETE request to /a/delete/request");  
     /// };
     /// server.delete("/a/delete/request", handler);
     /// ```

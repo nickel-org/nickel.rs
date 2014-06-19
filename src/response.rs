@@ -14,9 +14,9 @@ impl<'a, 'b> Response<'a, 'b> {
     ///
     /// # Example
     /// ```rust
-    /// response.write("hello world");
+    /// response.send("hello world");
     /// ```
-    pub fn write (&mut self, text: &str) {
+    pub fn send (&mut self, text: &str) {
         // TODO: This needs to be more sophisticated to return the correct headers
         // not just "some headers" :)
         Response::set_headers(self.origin);
