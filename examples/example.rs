@@ -1,7 +1,8 @@
 extern crate http;
 extern crate floor;
 
-use floor::{ Floor, Request, Response };
+use floor::{ Floor, Request, Response, FromFn };
+
 
 fn main() {
 
@@ -13,15 +14,15 @@ fn main() {
     //this is an example middleware function that just logs each request
     fn logger (req: &Request, res: &mut Response) -> bool{
         println!("logging request: {}", req.origin.request_uri);
-
+        
         // a request is supposed to return a `bool` to indicate whether additional
         // middleware should continue executing or should be stopped.
         true
     }
 
-    // middleware is optional and can be registered with `utilize` which is roughly similar
-    // to the `app.use(callback)`.
-    server.utilize(logger);
+    // middleware is optional and can be registered with `utilize`
+    server.utilize(FromFn::new(logger));
+    server.utilize(Floor::static_files("some/absolute/path"));
 
     fn user_handler (request: &Request, response: &mut Response) {
         let text = format!("This is user: {}", request.params.get(&"userid".to_string()));

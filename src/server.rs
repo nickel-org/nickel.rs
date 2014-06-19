@@ -6,14 +6,14 @@ use http::server::request::{AbsolutePath};
 use http::server::{Config, Server, Request, ResponseWriter};
 
 use router::Router;
-use middleware::Middleware;
+use middleware::MiddlewareStack;
 use request;
 use response;
 
 #[deriving(Clone)]
 pub struct Server {
     router: Router,
-    middleware: Middleware,
+    middleware_stack: MiddlewareStack,
     port: Port
 }
 
@@ -33,7 +33,7 @@ impl http::server::Server for Server {
             origin: res
         };
 
-        self.middleware.invoke(floor_req, floor_res);
+        self.middleware_stack.invoke(floor_req, floor_res);
 
         match &req.request_uri {
             &AbsolutePath(ref url) => {
@@ -52,10 +52,10 @@ impl http::server::Server for Server {
 }
 
 impl Server {
-    pub fn new(router: Router, middleware: Middleware, port: Port) -> Server {
+    pub fn new(router: Router, middleware_stack: MiddlewareStack, port: Port) -> Server {
         Server {
             router: router,
-            middleware: middleware,
+            middleware_stack: middleware_stack,
             port: port
         }
     }

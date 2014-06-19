@@ -4,10 +4,13 @@ use http::server::{Request, ResponseWriter};
 use http::method;
 
 use router::Router;
-use middleware::Middleware;
+use middleware::{ MiddlewareStack, Middleware };
 use server::Server;
 use request;
 use response;
+
+//pre defined middleware
+use static_files_handler::StaticFilesHandler;    
 
 ///Floor is the application object. It's the surface that 
 ///holds all public APIs.
@@ -15,7 +18,7 @@ use response;
 #[deriving(Clone)]
 pub struct Floor{
     router: Router,
-    middleware: Middleware,
+    middleware_stack: MiddlewareStack,
     server: Option<Server>
 }
 impl Floor {
@@ -28,10 +31,10 @@ impl Floor {
     /// ```
     pub fn new() -> Floor {
         let router = Router::new();
-        let middleware = Middleware::new();
+        let middleware_stack = MiddlewareStack::new();
         Floor {
             router: router,
-            middleware: middleware,
+            middleware_stack: middleware_stack,
             server: None,
         }
     }
@@ -139,8 +142,12 @@ impl Floor {
     ///     true
     /// }
     /// ```
-    pub fn utilize(&mut self, handler: fn(request: &request::Request, response: &mut response::Response) -> bool){
-        self.middleware.add(handler);
+    pub fn utilize<T: Middleware>(&mut self, handler: T){
+        self.middleware_stack.add(handler);
+    }
+
+    pub fn static_files(root_path: &str) -> StaticFilesHandler {
+        StaticFilesHandler::new(root_path)
     }
 
     /// Bind and listen for connections on the given host and port
@@ -151,7 +158,7 @@ impl Floor {
     /// server.listen(6767);
     /// ```
     pub fn listen(mut self, port: Port) {
-        self.server = Some(Server::new(self.router, self.middleware, port));
+        self.server = Some(Server::new(self.router, self.middleware_stack, port));
         self.server.unwrap().serve();
     }
 }

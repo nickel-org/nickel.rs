@@ -23,6 +23,7 @@ extern crate regex;
 pub use floor::Floor;
 pub use request::Request;
 pub use response::Response;
+pub use middleware::FromFn;
 
 mod router;
 mod server;
@@ -30,3 +31,5 @@ mod floor;
 mod request;
 mod response;
 mod middleware;
+mod static_files_handler;
+mod mimes;
