@@ -2,6 +2,8 @@ LIBS=-L lib
 
 .PHONY: clean floor deps examples
 
+all: clean deps floor examples
+
 clean:
 	rm -rf lib && mkdir lib
 
@@ -30,8 +32,6 @@ examples: floor
 
 doc: deps
 	rustdoc $(LIBS) src/lib.rs
-
-all: clean deps floor examples
 
 run: examples
 	./examples/example
