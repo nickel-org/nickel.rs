@@ -192,7 +192,7 @@ fn creates_valid_regex_for_routes () {
 fn can_match_var_routes () {
     let route_store = &mut Router::new();
 
-    fn handler (request: Request, response: &mut Response) -> () {
+    fn handler (request: &Request, response: &mut Response) -> () {
         response.origin.write("hello from foo".as_bytes()); 
     };
 
