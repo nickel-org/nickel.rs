@@ -30,3 +30,5 @@ mod floor;
 mod request;
 mod response;
 mod middleware;
+mod static_files_handler;
+mod mimes;

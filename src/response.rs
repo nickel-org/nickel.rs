@@ -1,6 +1,9 @@
+use std::io::{IoResult, File};
+use std::io::util::copy;
 use http;
 use http::headers::content_type::MediaType;
 use time;
+use mimes::get_media_type;
 
 ///A container for the response
 pub struct Response<'a, 'b> {
@@ -33,6 +36,24 @@ impl<'a, 'b> Response<'a, 'b> {
             subtype: String::from_str("plain"),
             parameters: vec!((String::from_str("charset"), String::from_str("UTF-8")))
         });
-        response_writer.headers.server = Some(String::from_str("Example"));
+        response_writer.headers.server = Some(String::from_str("Floor"));
     }
+
+    pub fn send_file(&mut self, path: &Path) -> IoResult<()> {
+        let mut file = try!(File::open(path));
+        self.origin.headers.content_length = None;
+
+        self.origin.headers.content_type = path.extension_str().and_then(get_media_type);
+        self.origin.headers.server = Some(String::from_str("Floor"));
+        copy(&mut file, self.origin)
+    }
+}
+
+#[test]
+fn matches_content_type () {
+    let path = &Path::new("test.txt");
+    let content_type = path.extension_str().and_then(get_media_type).unwrap();
+
+    assert_eq!(content_type.type_.as_slice(), "text");
+    assert_eq!(content_type.subtype.as_slice(), "plain");
 }

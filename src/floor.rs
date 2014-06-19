@@ -4,10 +4,13 @@ use http::server::{Request, ResponseWriter};
 use http::method;
 
 use router::Router;
-use middleware::Middleware;
+use middleware::{ Middleware, MiddlewareHandler };
 use server::Server;
 use request;
 use response;
+
+//pre defined middleware
+use static_files_handler::StaticFilesHandler;    
 
 ///Floor is the application object. It's the surface that 
 ///holds all public APIs.
@@ -139,8 +142,12 @@ impl Floor {
     ///     true
     /// }
     /// ```
-    pub fn utilize(&mut self, handler: fn(request: &request::Request, response: &mut response::Response) -> bool){
+    pub fn utilize<T: MiddlewareHandler>(&mut self, handler: T){
         self.middleware.add(handler);
+    }
+
+    pub fn static_files(root_path: &str) -> StaticFilesHandler {
+        StaticFilesHandler::new(root_path)
     }
 
     /// Bind and listen for connections on the given host and port

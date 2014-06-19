@@ -3,6 +3,7 @@ extern crate floor;
 
 use floor::{ Floor, Request, Response };
 
+
 fn main() {
 
     let mut server = Floor::new();
@@ -13,7 +14,7 @@ fn main() {
     //this is an example middleware function that just logs each request
     fn logger (req: &Request, res: &mut Response) -> bool{
         println!("logging request: {}", req.origin.request_uri);
-
+        
         // a request is supposed to return a `bool` to indicate whether additional
         // middleware should continue executing or should be stopped.
         true
@@ -22,6 +23,7 @@ fn main() {
     // middleware is optional and can be registered with `utilize` which is roughly similar
     // to the `app.use(callback)`.
     server.utilize(logger);
+    server.utilize(Floor::static_files("/Users/cburgdorf/Documents/hacking/floor/examples/assets"));
 
     fn user_handler (request: &Request, response: &mut Response) {
         let text = format!("This is user: {}", request.params.get(&"userid".to_string()));
