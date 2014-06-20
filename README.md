@@ -1,7 +1,7 @@
-Floor
+floor
 =======
 
-Floor is supposed to be a simple and lightweight foundation for web applications written in Rust. It's API is inspired by the popular express framework for JavaScript.
+floor is supposed to be a simple and lightweight foundation for web applications written in Rust. It's API is inspired by the popular express framework for JavaScript.
 
 Some of the features are:
 
