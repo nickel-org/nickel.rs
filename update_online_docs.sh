@@ -3,9 +3,9 @@
 echo -e "\033[0;32mDeploying new Floor documentation to Github...\033[0m"
 
 # delete old gh-pages branch
-git branch -D gh-pages
+git branch -D docs
 
-git checkout -b gh-pages
+git checkout -b docs
 
 # Build the docs
 make doc
@@ -20,5 +20,10 @@ if [ $# -eq 1 ]
 fi
 git commit -m "$msg"
 
+git subtree split -P doc -b docs-deploy
+
 # Push source and build repos.
-git push -f origin gh-pages
+git push -f docs docs-deploy:master
+git branch -D docs-deploy
+git checkout master
+git branch -D docs
