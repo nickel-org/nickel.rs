@@ -12,7 +12,7 @@ Some of the features are:
 * double wildcard routes: `/a/**/route`
 * middleware
 
-##[Jump to the Full Documentation](http://cburgdorf.github.io/Floor/doc/floor/index.html)
+##[Jump to the Full Documentation](http://floor-org.github.io/floor/)
 
 #Getting started
 The easiest way to get started is to get the example running and play around with it. Let's do that real quick!
@@ -20,7 +20,7 @@ The easiest way to get started is to get the example running and play around wit
 ##Clone the repository
 
 ```shell
-git clone --recursive https://github.com/cburgdorf/Floor.git
+git clone --recursive https://github.com/floor-org/floor.git
 ```
 
 ##Build Floor
@@ -107,15 +107,15 @@ fn main() {
 }
 ```
 
-##[Jump to the Full Documentation](http://cburgdorf.github.io/Floor/doc/floor/index.html)
+##[Jump to the Full Documentation](http://floor-org.github.io/floor/)
 
 ##License
 
-Floor is open source and licensed with the [MIT license](https://github.com/cburgdorf/Floor/blob/master/LICENSE)
+Floor is open source and licensed with the [MIT license](https://github.com/floor-org/floor/blob/master/LICENSE)
 
 
 ##Contributing
 
 I would love to find a helping hand. Especially if you know Rust, because I don't :)
-There is list of [open issues](https://github.com/cburgdorf/Floor/issues?state=open) right here on github.
+There is list of [open issues](https://github.com/floor-org/floor/issues?state=open) right here on github.
 And hey, did you know you can also contribute by just starring the project here on github :)
