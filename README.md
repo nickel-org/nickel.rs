@@ -23,7 +23,7 @@ The easiest way to get started is to get the example running and play around wit
 git clone --recursive https://github.com/floor-org/floor.git
 ```
 
-##Build Floor
+##Build floor
 
 ```shell
 make all
