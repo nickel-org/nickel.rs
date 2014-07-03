@@ -22,10 +22,10 @@ impl http::server::Server for Server {
         Config { bind_address: SocketAddr { ip: Ipv4Addr(127, 0, 0, 1), port: self.port } }
     }
 
-    fn handle_request(&self, req: &Request, res: &mut ResponseWriter) {
+    fn handle_request(&self, req: Request, res: &mut ResponseWriter) {
 
         let floor_req = &mut request::Request{
-            origin: req,
+            origin: &req,
             params: HashMap::new()
         };
 
