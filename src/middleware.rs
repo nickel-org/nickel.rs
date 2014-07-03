@@ -9,8 +9,8 @@ pub trait MiddlewareHandler: Clone + Send {
     }
 
     // we need this because otherwise clone() would be ambiguous
-    fn clone_box(&self) -> Box<MiddlewareHandler> { 
-        box self.clone() as Box<MiddlewareHandler> 
+    fn clone_box(&self) -> Box<MiddlewareHandler + Send> { 
+        box self.clone() as Box<MiddlewareHandler + Send> 
     }
 }
 
@@ -20,8 +20,8 @@ impl MiddlewareHandler for fn (req: &Request, res: &mut Response) -> bool {
     }
 }
 
-impl Clone for Box<MiddlewareHandler> {
-    fn clone(&self) -> Box<MiddlewareHandler> { 
+impl Clone for Box<MiddlewareHandler + Send> {
+    fn clone(&self) -> Box<MiddlewareHandler + Send> { 
         self.clone_box() 
     }
 }
