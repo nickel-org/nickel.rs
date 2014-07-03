@@ -25,7 +25,7 @@ deps:
 	cd lib/rust-http; ./configure
 	make -C lib/rust-http clean
 	make -C lib/rust-http http
-	cp lib/rust-http/build/libhttp* lib/
+	cp lib/rust-http/target/libhttp* lib/
 
 examples: floor
 	rustc $(LIBS) examples/example.rs -o examples/example
