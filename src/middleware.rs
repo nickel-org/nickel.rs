@@ -14,11 +14,14 @@ pub trait MiddlewareHandler: Clone + Send {
     }
 }
 
-impl MiddlewareHandler for fn (req: &Request, res: &mut Response) -> bool {
-    fn invoke(&self, req: &mut Request, res: &mut Response) -> bool{
-        (*self)(req, res)
-    }
-}
+// this is temporally not possible anymore
+// Read https://github.com/iron/iron/issues/76 for more details
+
+// impl MiddlewareHandler for fn (req: &Request, res: &mut Response) -> bool {
+//     fn invoke(&self, req: &mut Request, res: &mut Response) -> bool{
+//         (*self)(req, res)
+//     }
+// }
 
 impl Clone for Box<MiddlewareHandler + Send> {
     fn clone(&self) -> Box<MiddlewareHandler + Send> { 
