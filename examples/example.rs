@@ -22,7 +22,9 @@ fn main() {
 
     // middleware is optional and can be registered with `utilize`
     server.utilize(FromFn::new(logger));
-    server.utilize(Floor::static_files("some/absolute/path"));
+
+    // go to http://localhost:6767/thoughtram_logo_brain.png to see static file serving in action
+    server.utilize(Floor::static_files("examples/assets/"));
 
     fn user_handler (request: &Request, response: &mut Response) {
         let text = format!("This is user: {}", request.params.get(&"userid".to_string()));
