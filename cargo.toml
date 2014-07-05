@@ -1,0 +1,14 @@
+[package]
+
+name = "floor"
+version = "0.1.0"
+authors = [ "christoph@thoughtram.io" ]
+
+[[lib]]
+
+name = "floor"
+path = "src/lib.rs"
+
+[dependencies.http]
+
+git = "https://github.com/chris-morgan/rust-http.git"

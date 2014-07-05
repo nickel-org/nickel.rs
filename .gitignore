@@ -5,3 +5,4 @@ examples/example
 floor-test
 doc
 .DS_Store
+/target/
