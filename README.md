@@ -11,6 +11,7 @@ Some of the features are:
 * simple wildcard routes: `/some/*/route`
 * double wildcard routes: `/a/**/route`
 * middleware
+    * static file support 
 
 ##[Jump to the Full Documentation](http://floor-org.github.io/floor/)
 
