@@ -146,6 +146,16 @@ impl Floor {
         self.middleware_stack.add(handler);
     }
 
+    /// Create a new middleware to serve files from within a given root directory. 
+    /// The file to serve will be determined by combining the requested Url with 
+    /// the provided root directory.
+    ///
+    ///
+    /// # Example
+    /// ```rust
+    /// let mut server = Floor::new();
+    /// server.utilize(Floor::static_files("/path/to/serve/"));
+    /// ```
     pub fn static_files(root_path: &str) -> StaticFilesHandler {
         StaticFilesHandler::new(root_path)
     }
