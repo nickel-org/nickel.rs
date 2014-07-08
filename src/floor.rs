@@ -9,7 +9,8 @@ use request::Request;
 use response::Response;
 
 //pre defined middleware
-use static_files_handler::StaticFilesHandler;    
+use static_files_handler::StaticFilesHandler;
+use json_body_parser::JsonBodyParser;
 
 ///Floor is the application object. It's the surface that 
 ///holds all public APIs.
@@ -157,6 +158,27 @@ impl Floor {
     /// ```
     pub fn static_files(root_path: &str) -> StaticFilesHandler {
         StaticFilesHandler::new(root_path)
+    }
+
+    /// Create a new middleware to parse JSON bodies. 
+    ///
+    ///
+    /// # Example
+    /// ```rust
+    /// let mut server = Floor::new();
+    /// server.utilize(Floor::json_body_parser();
+    ///
+    /// fn post_handler (request: &Request, response: &mut Response) { 
+    /// 
+    ///     let person = request.json_as::<Person>().unwrap();
+    ///     let text = format!("Hello {} {}", person.firstname, person.lastname);
+    ///     response.send(text.as_slice()); 
+    /// };
+    ///
+    /// server.post("/a/post/request", post_handler);
+    /// ```
+    pub fn json_body_parser() -> JsonBodyParser {
+        JsonBodyParser
     }
 
     /// Bind and listen for connections on the given host and port

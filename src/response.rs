@@ -13,6 +13,12 @@ pub struct Response<'a, 'b> {
 
 impl<'a, 'b> Response<'a, 'b> {
 
+    pub fn from_internal<'c, 'd>(response: &'c mut http::server::ResponseWriter<'d>) -> Response<'c, 'd> {
+        Response {
+            origin: response
+        }
+    }
+
     /// Writes a response
     ///
     /// # Example

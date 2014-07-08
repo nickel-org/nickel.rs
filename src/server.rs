@@ -1,5 +1,4 @@
 use std::io::net::ip::{SocketAddr, Ipv4Addr, Port};
-use std::collections::hashmap::HashMap;
 
 use http;
 use http::server::request::{AbsolutePath};
@@ -24,14 +23,8 @@ impl http::server::Server for Server {
 
     fn handle_request(&self, req: Request, res: &mut ResponseWriter) {
 
-        let floor_req = &mut request::Request{
-            origin: &req,
-            params: HashMap::new()
-        };
-
-        let floor_res = &mut response::Response{
-            origin: res
-        };
+        let floor_req = &mut request::Request::from_internal(&req);
+        let floor_res = &mut response::Response::from_internal(res);
 
         self.middleware_stack.invoke(floor_req, floor_res);
 

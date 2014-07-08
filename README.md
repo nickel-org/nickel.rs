@@ -44,10 +44,16 @@ Here is how sample server in `example.rs` looks like:
 
 ```rust
 extern crate http;
+extern crate serialize;
 extern crate floor;
 
 use floor::{ Floor, Request, Response, FromFn };
 
+#[deriving(Decodable, Encodable)]
+pub struct Person {
+    pub firstname: String,
+    pub lastname:  String,
+}
 
 fn main() {
 
@@ -57,8 +63,8 @@ fn main() {
     // to achieve with the current version of rust.
 
     //this is an example middleware function that just logs each request
-    fn logger (req: &Request, res: &mut Response) -> bool{
-        println!("logging request: {}", req.origin.request_uri);
+    fn logger (request: &Request, _response: &mut Response) -> bool{
+        println!("logging request: {}", request.origin.request_uri);
         
         // a request is supposed to return a `bool` to indicate whether additional
         // middleware should continue executing or should be stopped.
@@ -74,35 +80,43 @@ fn main() {
     fn user_handler (request: &Request, response: &mut Response) {
         let text = format!("This is user: {}", request.params.get(&"userid".to_string()));
         response.send(text.as_slice());
-    };
+    }
 
     // go to http://localhost:6767/user/4711 to see this route in action
     server.get("/user/:userid", user_handler);
 
-    fn bar_handler (request: &Request, response: &mut Response) { 
+    fn bar_handler (_request: &Request, response: &mut Response) { 
         response.send("This is the /bar handler"); 
-    };
+    }
 
     // go to http://localhost:6767/bar to see this route in action
     server.get("/bar", bar_handler);
 
-    fn simple_wildcard (request: &Request, response: &mut Response) { 
+    fn simple_wildcard (_request: &Request, response: &mut Response) { 
         response.send("This matches /some/crazy/route but not /some/super/crazy/route"); 
-    };
+    }
 
     // go to http://localhost:6767/some/crazy/route to see this route in action
     server.get("/some/*/route", simple_wildcard);
 
-    fn double_wildcard (request: &Request, response: &mut Response) { 
+    fn double_wildcard (_request: &Request, response: &mut Response) { 
         response.send("This matches /a/crazy/route and also /a/super/crazy/route"); 
-    };
+    }
 
     // go to http://localhost:6767/a/nice/route or http://localhost:6767/a/super/nice/route to see this route in action
     server.get("/a/**/route", double_wildcard);
 
+    // this will cause json bodies automatically being parsed
+    server.utilize(Floor::json_body_parser());
+
+    // try it with curl
+    // curl 'http://localhost:6767/a/post/request' -H 'Content-Type: application/json;charset=UTF-8'  --data-binary $'{ "firstname": "John","lastname": "Connor" }'
     fn post_handler (request: &Request, response: &mut Response) { 
-        response.send("This matches a POST request to /a/post/request"); 
-    };
+
+        let person = request.json_as::<Person>().unwrap();
+        let text = format!("Hello {} {}", person.firstname, person.lastname);
+        response.send(text.as_slice()); 
+    }
 
     // go to http://localhost:6767/a/post/request to see this route in action
     server.post("/a/post/request", post_handler);
