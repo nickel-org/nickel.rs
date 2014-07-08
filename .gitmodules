@@ -1,3 +1,0 @@
-[submodule "lib/rust-http"]
-	path = lib/rust-http
-	url = https://github.com/chris-morgan/rust-http.git
