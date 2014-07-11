@@ -1,13 +1,12 @@
 use std::io::net::ip::{Port};
 
-use http::server::{Request, ResponseWriter};
 use http::method;
 
 use router::Router;
 use middleware::{ MiddlewareStack, Middleware };
 use server::Server;
-use request;
-use response;
+use request::Request;
+use response::Response;
 
 //pre defined middleware
 use static_files_handler::StaticFilesHandler;    
@@ -76,7 +75,7 @@ impl Floor {
     /// };
     /// server.get("/user/**/:userid", handler);
     /// ```
-    pub fn get(&mut self, uri: &str, handler: fn(request: &request::Request, response: &mut response::Response)){
+    pub fn get(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
         self.router.add_route(method::Get, String::from_str(uri), handler);
     }
 
@@ -91,7 +90,7 @@ impl Floor {
     /// server.post("/a/post/request", handler);
     /// ```
     /// Take a look at `get()` for a more detailed description.
-    pub fn post(&mut self, uri: &str, handler: fn(request: &request::Request, response: &mut response::Response)){
+    pub fn post(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
         self.router.add_route(method::Post, String::from_str(uri), handler);
     }
 
@@ -106,7 +105,7 @@ impl Floor {
     /// server.put("/a/put/request", handler);
     /// ```
     /// Take a look at `get(..)` for a more detailed description.
-    pub fn put(&mut self, uri: &str, handler: fn(request: &request::Request, response: &mut response::Response)){
+    pub fn put(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
         self.router.add_route(method::Put, String::from_str(uri), handler);
     }
 
@@ -121,7 +120,7 @@ impl Floor {
     /// server.delete("/a/delete/request", handler);
     /// ```
     /// Take a look at `get(...)` for a more detailed description.
-    pub fn delete(&mut self, uri: &str, handler: fn(request: &request::Request, response: &mut response::Response)){
+    pub fn delete(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
         self.router.add_route(method::Put, String::from_str(uri), handler);
     }
 

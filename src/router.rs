@@ -1,6 +1,6 @@
 //!Router asigns handlers to paths and resolves them per request
 
-use http::server::{Request, ResponseWriter};
+#[cfg(test)]
 use http::method;
 use http::method::Method;
 use regex::Regex;
