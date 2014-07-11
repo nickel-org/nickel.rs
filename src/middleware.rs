@@ -64,7 +64,7 @@ impl MiddlewareStack {
     }
 
     pub fn invoke (&self, req: &mut Request, res: &mut Response) {
-        self.handlers.iter().advance(|handler| (*handler).invoke(req, res));
+        self.handlers.iter().all(|handler| (*handler).invoke(req, res));
     }
 
     pub fn new () -> MiddlewareStack {
