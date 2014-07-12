@@ -112,31 +112,25 @@ impl Router {
     }
 
     pub fn match_route<'a>(&'a self, method: Method, path: String) -> Option<RouteResult<'a>> {
-        let route = self.routes.iter().find(|item| item.method == method && item.matcher.is_match(path.as_slice()));
-
-        // can we improve on all this nested stuff? Is this the intended way to handle it?
-        match route {
-            Some(r) => {
-                match r.matcher.captures(path.as_slice()) {
+        self.routes.iter().find(|item| item.method == method && item.matcher.is_match(path.as_slice()))
+            .and_then(|route| {
+                match route.matcher.captures(path.as_slice()) {
                     Some(captures) => {
                         let mut map = HashMap::new();
-                        for (name, pos) in r.variables.iter() {
+                        for (name, pos) in route.variables.iter() {
                             map.insert(name.to_string(), captures.at(pos + 1).to_string());
                         }
-
                         Some(RouteResult {
-                            route: r,
+                            route: route,
                             params: map
                         })
                     },
                     None => Some(RouteResult{
-                        route: r,
+                        route: route,
                         params: HashMap::new()
                     })
                 }
-            },
-            None => None
-        }
+            })
     }
 }
 
