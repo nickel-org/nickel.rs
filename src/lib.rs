@@ -1,3 +1,4 @@
+#![crate_name = "floor"]
 #![comment = "A expressjs inspired web framework for Rust"]
 #![license = "MIT"]
 #![crate_type = "rlib"]
