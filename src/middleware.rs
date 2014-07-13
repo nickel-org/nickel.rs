@@ -4,7 +4,7 @@ use response::Response;
 // the usage of + Send is weird here because what we really want is + Static
 // but that's not possible as of today. We have to use + Send for now.
 pub trait Middleware: Clone + Send {
-    fn invoke (&self, req: &mut Request, res: &mut Response) -> bool {
+    fn invoke (&self, _req: &mut Request, _res: &mut Response) -> bool {
         true
     }
 

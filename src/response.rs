@@ -23,7 +23,7 @@ impl<'a, 'b> Response<'a, 'b> {
         // TODO: This needs to be more sophisticated to return the correct headers
         // not just "some headers" :)
         Response::set_headers(self.origin);
-        self.origin.write(text.as_bytes());
+        let _ = self.origin.write(text.as_bytes());
     }
 
     fn set_headers(response_writer: &mut http::server::ResponseWriter) {

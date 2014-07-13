@@ -1,4 +1,3 @@
-#![crate_name = "floor"]
 #![comment = "A expressjs inspired web framework for Rust"]
 #![license = "MIT"]
 #![crate_type = "rlib"]
@@ -24,6 +23,7 @@ pub use floor::Floor;
 pub use request::Request;
 pub use response::Response;
 pub use middleware::FromFn;
+pub use static_files_handler::StaticFilesHandler;
 
 mod router;
 mod server;
