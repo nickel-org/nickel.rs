@@ -165,6 +165,13 @@ impl Floor {
     ///
     /// # Example
     /// ```rust
+    ///
+    /// #[deriving(Decodable, Encodable)]
+    /// pub struct Person {
+    ///     pub firstname: String,
+    ///     pub lastname:  String,
+    /// }
+    /// 
     /// let mut server = Floor::new();
     /// server.utilize(Floor::json_body_parser();
     ///
