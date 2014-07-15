@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo -e "\033[0;32mDeploying new Floor documentation to Github...\033[0m"
+echo -e "\033[0;32mDeploying new Nickel documentation to Github...\033[0m"
 
 # delete old gh-pages branch
 git branch -D docs

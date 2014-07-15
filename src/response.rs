@@ -42,7 +42,7 @@ impl<'a, 'b> Response<'a, 'b> {
             subtype: String::from_str("plain"),
             parameters: vec!((String::from_str("charset"), String::from_str("UTF-8")))
         });
-        response_writer.headers.server = Some(String::from_str("Floor"));
+        response_writer.headers.server = Some(String::from_str("Nickel"));
     }
 
     pub fn send_file(&mut self, path: &Path) -> IoResult<()> {
@@ -50,7 +50,7 @@ impl<'a, 'b> Response<'a, 'b> {
         self.origin.headers.content_length = None;
 
         self.origin.headers.content_type = path.extension_str().and_then(get_media_type);
-        self.origin.headers.server = Some(String::from_str("Floor"));
+        self.origin.headers.server = Some(String::from_str("Nickel"));
         copy(&mut file, self.origin)
     }
 }

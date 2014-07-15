@@ -23,17 +23,17 @@ impl http::server::Server for Server {
 
     fn handle_request(&self, req: Request, res: &mut ResponseWriter) {
 
-        let floor_req = &mut request::Request::from_internal(&req);
-        let floor_res = &mut response::Response::from_internal(res);
+        let nickel_req = &mut request::Request::from_internal(&req);
+        let nickel_res = &mut response::Response::from_internal(res);
 
-        self.middleware_stack.invoke(floor_req, floor_res);
+        self.middleware_stack.invoke(nickel_req, nickel_res);
 
         match &req.request_uri {
             &AbsolutePath(ref url) => {
                 match self.router.match_route(req.method.clone(), url.clone()) {
                     Some(route_result) => { 
-                        floor_req.params = route_result.params.clone();
-                        (route_result.route.handler)(floor_req, floor_res);
+                        nickel_req.params = route_result.params.clone();
+                        (route_result.route.handler)(nickel_req, nickel_res);
                     },
                     None => {}
                 }

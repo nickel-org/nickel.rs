@@ -1,7 +1,7 @@
-floor
+nickel.rs
 =======
 
-floor is supposed to be a simple and lightweight foundation for web applications written in Rust. It's API is inspired by the popular express framework for JavaScript.
+nickel is supposed to be a simple and lightweight foundation for web applications written in Rust. It's API is inspired by the popular express framework for JavaScript.
 
 Some of the features are:
 
@@ -13,7 +13,7 @@ Some of the features are:
 * middleware
     * static file support 
 
-##[Jump to the Full Documentation](http://floor-org.github.io/floor/)
+##[Jump to the Full Documentation](http://nickel-org.github.io/nickel/)
 
 #Getting started
 The easiest way to get started is to get the example running and play around with it. Let's do that real quick!
@@ -21,10 +21,10 @@ The easiest way to get started is to get the example running and play around wit
 ##Clone the repository
 
 ```shell
-git clone --recursive https://github.com/floor-org/floor.git
+git clone --recursive https://github.com/nickel-org/nickel.git
 ```
 
-##Build floor
+##Build nickel
 
 ```shell
 make all
@@ -45,9 +45,9 @@ Here is how sample server in `example.rs` looks like:
 ```rust
 extern crate http;
 extern crate serialize;
-extern crate floor;
+extern crate nickel;
 
-use floor::{ Floor, Request, Response, FromFn };
+use nickel::{ Nickel, Request, Response, FromFn };
 
 #[deriving(Decodable, Encodable)]
 pub struct Person {
@@ -57,7 +57,7 @@ pub struct Person {
 
 fn main() {
 
-    let mut server = Floor::new();
+    let mut server = Nickel::new();
     
     // we would love to use a closure for the handler but it seems to be hard
     // to achieve with the current version of rust.
@@ -75,7 +75,7 @@ fn main() {
     server.utilize(FromFn::new(logger));
 
     // go to http://localhost:6767/thoughtram_logo_brain.png to see static file serving in action
-    server.utilize(Floor::static_files("examples/assets/"));
+    server.utilize(Nickel::static_files("examples/assets/"));
 
     fn user_handler (request: &Request, response: &mut Response) {
         let text = format!("This is user: {}", request.params.get(&"userid".to_string()));
@@ -107,7 +107,7 @@ fn main() {
     server.get("/a/**/route", double_wildcard);
 
     // this will cause json bodies automatically being parsed
-    server.utilize(Floor::json_body_parser());
+    server.utilize(Nickel::json_body_parser());
 
     // try it with curl
     // curl 'http://localhost:6767/a/post/request' -H 'Content-Type: application/json;charset=UTF-8'  --data-binary $'{ "firstname": "John","lastname": "Connor" }'
@@ -125,15 +125,15 @@ fn main() {
 }
 ```
 
-##[Jump to the Full Documentation](http://floor-org.github.io/floor/)
+##[Jump to the Full Documentation](http://nickel-org.github.io/nickel/)
 
 ##License
 
-Floor is open source and licensed with the [MIT license](https://github.com/floor-org/floor/blob/master/LICENSE)
+Nickel is open source and licensed with the [MIT license](https://github.com/nickel-org/nickel/blob/master/LICENSE)
 
 
 ##Contributing
 
 I would love to find a helping hand. Especially if you know Rust, because I don't :)
-There is list of [open issues](https://github.com/floor-org/floor/issues?state=open) right here on github.
+There is list of [open issues](https://github.com/nickel-org/nickel/issues?state=open) right here on github.
 And hey, did you know you can also contribute by just starring the project here on github :)

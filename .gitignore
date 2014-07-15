@@ -3,7 +3,7 @@
 *.rlib
 *.dylib
 examples/example
-floor-test
+nickel-test
 doc
 .DS_Store
 /target/

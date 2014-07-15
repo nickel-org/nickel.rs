@@ -12,27 +12,27 @@ use response::Response;
 use static_files_handler::StaticFilesHandler;
 use json_body_parser::JsonBodyParser;
 
-///Floor is the application object. It's the surface that 
+///Nickel is the application object. It's the surface that 
 ///holds all public APIs.
 
 #[deriving(Clone)]
-pub struct Floor{
+pub struct Nickel{
     router: Router,
     middleware_stack: MiddlewareStack,
     server: Option<Server>
 }
-impl Floor {
+impl Nickel {
 
-    /// In order to use Floors API one first has to create an instance.
+    /// In order to use Nickels API one first has to create an instance.
     ///
     /// # Example
     /// ```rust
-    /// let mut server = Floor::new();
+    /// let mut server = Nickel::new();
     /// ```
-    pub fn new() -> Floor {
+    pub fn new() -> Nickel {
         let router = Router::new();
         let middleware_stack = MiddlewareStack::new();
-        Floor {
+        Nickel {
             router: router,
             middleware_stack: middleware_stack,
             server: None,
@@ -153,8 +153,8 @@ impl Floor {
     ///
     /// # Example
     /// ```rust
-    /// let mut server = Floor::new();
-    /// server.utilize(Floor::static_files("/path/to/serve/"));
+    /// let mut server = Nickel::new();
+    /// server.utilize(Nickel::static_files("/path/to/serve/"));
     /// ```
     pub fn static_files(root_path: &str) -> StaticFilesHandler {
         StaticFilesHandler::new(root_path)
@@ -172,8 +172,8 @@ impl Floor {
     ///     pub lastname:  String,
     /// }
     /// 
-    /// let mut server = Floor::new();
-    /// server.utilize(Floor::json_body_parser();
+    /// let mut server = Nickel::new();
+    /// server.utilize(Nickel::json_body_parser();
     ///
     /// fn post_handler (request: &Request, response: &mut Response) { 
     /// 
@@ -192,7 +192,7 @@ impl Floor {
     ///
     /// # Example
     /// ```rust
-    /// let mut server = Floor::new();
+    /// let mut server = Nickel::new();
     /// server.listen(6767);
     /// ```
     pub fn listen(mut self, port: Port) {

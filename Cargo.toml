@@ -1,12 +1,12 @@
 [package]
 
-name = "floor"
+name = "nickel"
 version = "0.1.0"
 authors = [ "christoph@thoughtram.io" ]
 
 [[lib]]
 
-name = "floor"
+name = "nickel"
 path = "src/lib.rs"
 
 [dependencies.http]

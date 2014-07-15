@@ -1,8 +1,8 @@
 extern crate http;
 extern crate serialize;
-extern crate floor;
+extern crate nickel;
 
-use floor::{ Floor, Request, Response, FromFn };
+use nickel::{ Nickel, Request, Response, FromFn };
 
 #[deriving(Decodable, Encodable)]
 pub struct Person {
@@ -12,7 +12,7 @@ pub struct Person {
 
 fn main() {
 
-    let mut server = Floor::new();
+    let mut server = Nickel::new();
     
     // we would love to use a closure for the handler but it seems to be hard
     // to achieve with the current version of rust.
@@ -30,7 +30,7 @@ fn main() {
     server.utilize(FromFn::new(logger));
 
     // go to http://localhost:6767/thoughtram_logo_brain.png to see static file serving in action
-    server.utilize(Floor::static_files("examples/assets/"));
+    server.utilize(Nickel::static_files("examples/assets/"));
 
     fn user_handler (request: &Request, response: &mut Response) {
         let text = format!("This is user: {}", request.params.get(&"userid".to_string()));
@@ -62,7 +62,7 @@ fn main() {
     server.get("/a/**/route", double_wildcard);
 
     // this will cause json bodies automatically being parsed
-    server.utilize(Floor::json_body_parser());
+    server.utilize(Nickel::json_body_parser());
 
     // try it with curl
     // curl 'http://localhost:6767/a/post/request' -H 'Content-Type: application/json;charset=UTF-8'  --data-binary $'{ "firstname": "John","lastname": "Connor" }'
