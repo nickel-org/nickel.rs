@@ -13,7 +13,7 @@ Some of the features are:
 * middleware
     * static file support 
 
-##[Jump to the Full Documentation](http://nickel-org.github.io/nickel/)
+##[Jump to the nickel.rs website](http://nickel-org.github.io/site/)
 
 #Getting started
 The easiest way to get started is to get the example running and play around with it. Let's do that real quick!
