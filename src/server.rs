@@ -1,4 +1,4 @@
-use std::io::net::ip::{SocketAddr, Ipv4Addr, Port};
+use std::io::net::ip::{SocketAddr, IpAddr, Port};
 
 use http;
 use http::server::request::{AbsolutePath};
@@ -13,12 +13,13 @@ use response;
 pub struct Server {
     router: Router,
     middleware_stack: MiddlewareStack,
+    ip: IpAddr,
     port: Port
 }
 
 impl http::server::Server for Server {
     fn get_config(&self) -> Config {
-        Config { bind_address: SocketAddr { ip: Ipv4Addr(127, 0, 0, 1), port: self.port } }
+        Config { bind_address: SocketAddr { ip: self.ip, port: self.port } }
     }
 
     fn handle_request(&self, req: Request, res: &mut ResponseWriter) {
@@ -45,10 +46,11 @@ impl http::server::Server for Server {
 }
 
 impl Server {
-    pub fn new(router: Router, middleware_stack: MiddlewareStack, port: Port) -> Server {
+    pub fn new(router: Router, middleware_stack: MiddlewareStack, ip: IpAddr, port: Port) -> Server {
         Server {
             router: router,
             middleware_stack: middleware_stack,
+            ip: ip,
             port: port
         }
     }
