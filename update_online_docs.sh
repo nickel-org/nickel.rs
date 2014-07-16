@@ -10,6 +10,8 @@ git checkout -b docs
 # Build the docs
 make doc
 
+echo docs.nickel.rs > doc/CNAME
+
 # Add changes to git.
 git add -A -f doc
 
