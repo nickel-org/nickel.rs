@@ -1,8 +1,8 @@
-extern crate http;
 extern crate serialize;
 extern crate nickel;
 
 use nickel::{ Nickel, Request, Response, FromFn };
+use std::io::net::ip::Ipv4Addr;
 
 #[deriving(Decodable, Encodable)]
 pub struct Person {
@@ -76,5 +76,5 @@ fn main() {
     // go to http://localhost:6767/a/post/request to see this route in action
     server.post("/a/post/request", post_handler);
 
-    server.listen(6767);
+    server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
 }

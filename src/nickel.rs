@@ -1,4 +1,4 @@
-use std::io::net::ip::{Port};
+use std::io::net::ip::{Port, IpAddr};
 
 use http::method;
 
@@ -193,10 +193,10 @@ impl Nickel {
     /// # Example
     /// ```rust
     /// let mut server = Nickel::new();
-    /// server.listen(6767);
+    /// server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
     /// ```
-    pub fn listen(mut self, port: Port) {
-        self.server = Some(Server::new(self.router, self.middleware_stack, port));
+    pub fn listen(mut self, ip: IpAddr, port: Port) {
+        self.server = Some(Server::new(self.router, self.middleware_stack, ip, port));
         self.server.unwrap().serve();
     }
 }
