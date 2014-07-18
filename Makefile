@@ -15,6 +15,10 @@ examples: deps
 doc: deps
 	rustdoc $(LIBS) src/lib.rs
 
+clean:
+	cargo clean
+	rm examples/lib/*
+
 run: 
 	./examples/example
 
