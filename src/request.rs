@@ -13,7 +13,7 @@ pub struct Request<'a> {
 }
 
 impl<'a> Request<'a> {
-    pub fn from_internal<'b>(req: &'b http::server::Request) -> Request<'b>{
+    pub fn from_internal(req: &http::server::Request) -> Request{
         Request {
             origin: req,
             params: HashMap::new(),

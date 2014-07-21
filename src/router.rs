@@ -111,7 +111,7 @@ impl Router {
         self.routes.push(route);
     }
 
-    pub fn match_route<'a>(&'a self, method: Method, path: String) -> Option<RouteResult<'a>> {
+    pub fn match_route(&self, method: Method, path: String) -> Option<RouteResult> {
         self.routes.iter().find(|item| item.method == method && item.matcher.is_match(path.as_slice()))
             .and_then(|route| {
                 match route.matcher.captures(path.as_slice()) {
