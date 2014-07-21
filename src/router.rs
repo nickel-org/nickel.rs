@@ -186,8 +186,8 @@ fn creates_valid_regex_for_routes () {
 fn can_match_var_routes () {
     let route_store = &mut Router::new();
 
-    fn handler (request: &Request, response: &mut Response) -> () {
-        response.origin.write("hello from foo".as_bytes()); 
+    fn handler (_request: &Request, response: &mut Response) -> () {
+        let _ = response.origin.write("hello from foo".as_bytes()); 
     };
 
     route_store.add_route(method::Get, "/foo/:userid".to_string(), handler);
@@ -206,7 +206,7 @@ fn can_match_var_routes () {
     let route_result = route_store.match_route(method::Get, "/bar/4711".to_string());
 
     let result = match route_result {
-        Some(res) => true,
+        Some(_res) => true,
         None => false
     };
 
@@ -215,7 +215,7 @@ fn can_match_var_routes () {
     let route_result = route_store.match_route(method::Get, "/foo".to_string());
 
     let result = match route_result{
-        Some(res) => true,
+        Some(_res) => true,
         None => false
     };
 
