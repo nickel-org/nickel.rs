@@ -167,9 +167,9 @@ impl Nickel {
     /// ```rust
     ///
     /// #[deriving(Decodable, Encodable)]
-    /// pub struct Person {
-    ///     pub firstname: String,
-    ///     pub lastname:  String,
+    /// struct Person {
+    ///     firstname: String,
+    ///     lastname:  String,
     /// }
     /// 
     /// let mut server = Nickel::new();
