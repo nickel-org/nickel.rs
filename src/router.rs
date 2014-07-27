@@ -11,7 +11,7 @@ use response::Response;
 /// A Route is the basic data structure that stores both the path
 /// and the handler that gets executed for the route.
 /// The path can contain variable pattern such as `user/:userid/invoices`
-struct Route {
+pub struct Route {
     pub path: String,
     pub method: Method,
     pub handler: fn(request: &Request, response: &mut Response),
@@ -35,7 +35,7 @@ impl Clone for Route {
 /// It contains the matched `route` and also a `params` property holding
 /// a HashMap with the keys being the variable names and the value being the
 /// evaluated string
-struct RouteResult<'a> {
+pub struct RouteResult<'a> {
     pub route: &'a Route,
     pub params: HashMap<String, String>
 }
