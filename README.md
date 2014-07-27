@@ -51,9 +51,9 @@ use std::io::net::ip::Ipv4Addr;
 use nickel::{ Nickel, Request, Response, FromFn };
 
 #[deriving(Decodable, Encodable)]
-pub struct Person {
-    pub firstname: String,
-    pub lastname:  String,
+struct Person {
+    firstname: String,
+    lastname:  String,
 }
 
 fn main() {
