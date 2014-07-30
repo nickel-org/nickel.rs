@@ -43,7 +43,6 @@ Then try `localhost:6767/user/4711` and `localhost:6767/bar`
 Here is how sample server in `example.rs` looks like:
 
 ```rust
-extern crate http;
 extern crate serialize;
 extern crate nickel;
 
