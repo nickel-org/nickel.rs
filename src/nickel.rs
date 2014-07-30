@@ -137,9 +137,9 @@ impl Nickel {
     /// # Example
     ///
     /// ```rust
-    /// fn logger (req: &Request, res: &mut Response) -> bool{
+    /// fn logger (req: &Request, res: &mut Response) -> Action{
     ///     println!("logging request: {}", req.origin.request_uri);
-    ///     true
+    ///     Continue
     /// }
     /// ```
     pub fn utilize<T: Middleware>(&mut self, handler: T){
