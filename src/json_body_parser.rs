@@ -4,26 +4,26 @@ use serialize::json::{ Json, Decoder, DecoderError};
 use request;
 use request::Request;
 use response::Response;
-use middleware::Middleware;
+use middleware::{Action, Continue, Middleware};
 
 #[deriving(Clone)]
 pub struct JsonBodyParser;
 
 impl Middleware for JsonBodyParser {
-    fn invoke (&self, req: &mut Request, _res: &mut Response) -> bool {
+    fn invoke (&self, req: &mut Request, _res: &mut Response) -> Action {
 
         if !req.origin.body.is_empty() {
             match json::from_str(req.origin.body.as_slice()) {
                 Ok(parsed) => {
                     req.map.insert(parsed);
-                    return true;
+                    return Continue;
                 },
                 Err(_) => {
-                    return true;
+                    return Continue;
                 }
             }
         }
-        true
+        Continue
     }
 }
 

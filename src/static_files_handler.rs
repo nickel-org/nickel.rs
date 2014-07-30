@@ -5,7 +5,7 @@ use http::server::request::AbsolutePath;
 
 use request;
 use response;
-use middleware::Middleware;
+use middleware::{Action, Halt, Continue, Middleware};
 
 // this should be much simpler after unboxed closures land in Rust.
 
@@ -15,7 +15,7 @@ pub struct StaticFilesHandler {
 }
 
 impl Middleware for StaticFilesHandler {
-    fn invoke (&self, req: &mut request::Request, res: &mut response::Response) -> bool{
+    fn invoke (&self, req: &mut request::Request, res: &mut response::Response) -> Action {
         match req.origin.request_uri {
             AbsolutePath(ref path) => {
                 println!("GET {}{}.", from_utf8(self.root_path.container_as_bytes()).unwrap(), path);
@@ -26,12 +26,12 @@ impl Middleware for StaticFilesHandler {
                     relative_path.shift_char();
                 }
                 match res.send_file(&self.root_path.join(Path::new(relative_path.to_string()))) {
-                    Ok(()) => false,
-                    Err(_) => true
+                    Ok(()) => Halt,
+                    Err(_) => Continue
                 }
             },
             _ => {
-                true
+                Continue
             }
         }
     }

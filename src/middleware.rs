@@ -1,11 +1,17 @@
 use request::Request;
 use response::Response;
 
+#[deriving(PartialEq)]
+pub enum Action {
+  Continue,
+  Halt
+}
+
 // the usage of + Send is weird here because what we really want is + Static
 // but that's not possible as of today. We have to use + Send for now.
 pub trait Middleware: Clone + Send {
-    fn invoke (&self, _req: &mut Request, _res: &mut Response) -> bool {
-        true
+    fn invoke (&self, _req: &mut Request, _res: &mut Response) -> Action {
+        Continue
     }
 
     // we need this because otherwise clone() would be ambiguous
@@ -30,11 +36,11 @@ impl Clone for Box<Middleware + Send> {
 // }
 
 pub struct FromFn {
-    func: fn (req: &Request, res: &mut Response) -> bool
+    func: fn (req: &Request, res: &mut Response) -> Action
 }
 
 impl FromFn {
-    pub fn new (func: fn (req: &Request, res: &mut Response) -> bool) -> FromFn {
+    pub fn new (func: fn (req: &Request, res: &mut Response) -> Action) -> FromFn {
         FromFn {
             func: func
         }
@@ -42,7 +48,7 @@ impl FromFn {
 }
 
 impl Middleware for FromFn {
-    fn invoke (&self, req: &mut Request, res: &mut Response) -> bool{
+    fn invoke (&self, req: &mut Request, res: &mut Response) -> Action {
         (self.func)(req, res)
     }
 }
@@ -64,7 +70,7 @@ impl MiddlewareStack {
     }
 
     pub fn invoke (&self, req: &mut Request, res: &mut Response) {
-        self.handlers.iter().all(|handler| (*handler).invoke(req, res));
+        self.handlers.iter().all(|handler| (*handler).invoke(req, res) == Continue);
     }
 
     pub fn new () -> MiddlewareStack {
