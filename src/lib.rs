@@ -25,7 +25,7 @@ extern crate anymap;
 pub use nickel::Nickel;
 pub use request::Request;
 pub use response::Response;
-pub use middleware::FromFn;
+pub use middleware::{Action, Continue, Halt, FromFn};
 pub use static_files_handler::StaticFilesHandler;
 pub use json_body_parser::JsonBodyParser;
 
