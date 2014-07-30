@@ -48,7 +48,7 @@ extern crate serialize;
 extern crate nickel;
 
 use std::io::net::ip::Ipv4Addr;
-use nickel::{ Nickel, Request, Response, FromFn };
+use nickel::{ Nickel, Action, Continue, Request, Response, FromFn };
 
 #[deriving(Decodable, Encodable)]
 struct Person {
@@ -64,12 +64,12 @@ fn main() {
     // to achieve with the current version of rust.
 
     //this is an example middleware function that just logs each request
-    fn logger (request: &Request, _response: &mut Response) -> bool{
+    fn logger (request: &Request, _response: &mut Response) -> Action {
         println!("logging request: {}", request.origin.request_uri);
         
         // a request is supposed to return a `bool` to indicate whether additional
         // middleware should continue executing or should be stopped.
-        true
+        Continue
     }
 
     // middleware is optional and can be registered with `utilize`
