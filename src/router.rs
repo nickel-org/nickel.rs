@@ -192,13 +192,6 @@ fn creates_valid_regex_for_routes () {
     assert_eq!(regex3.is_match("foo/4711/4712/bar?foo=true&bar=false"), true);
 }
 
-// #[test]
-//     fn test_querystring_match() {
-//         // Does this work with url parameters?
-//         let glob_regex = deglob("/users".to_string());
-//         assert!(glob_regex.is_match("/users?foo=bar"));
-//     }
-
 #[test]
 fn can_match_var_routes () {
     let route_store = &mut Router::new();
