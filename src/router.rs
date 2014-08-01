@@ -43,10 +43,13 @@ pub struct RouteResult<'a> {
 /// The PathUtils collects some small helper methods that operate on the path
 struct PathUtils;
 
+// matches named variables (e.g. :userid)
 static REGEX_VAR_SEQ: Regex                 = regex!(r":([a-zA-Z0-9_-]*)");
 static VAR_SEQ:&'static str                 = "[a-zA-Z0-9_-]*";
 static VAR_SEQ_WITH_SLASH:&'static str      = "[/a-zA-Z0-9_-]*";
 static VAR_SEQ_WITH_CAPTURE:&'static str    = "([a-zA-Z0-9_-]*)";
+// matches request params (e.g. ?foo=true&bar=false)
+static REGEX_PARAM_SEQ:&'static str               = "[a-zA-Z0-9_=&?-]*";
 static REGEX_START:&'static str             = "^";
 static REGEX_END:&'static str               = "$";
 
@@ -67,6 +70,7 @@ impl PathUtils {
         // then replace the variable symbols (:variable) with the appropriate regex
         let result = REGEX_START.to_string()
                                 .append(REGEX_VAR_SEQ.replace_all(updated_path.as_slice(), VAR_SEQ_WITH_CAPTURE).as_slice())
+                                .append(REGEX_PARAM_SEQ)
                                 .append(REGEX_END);
 
         match Regex::new(result.as_slice()) {
@@ -172,15 +176,28 @@ fn creates_valid_regex_for_routes () {
     let regex3 = PathUtils::create_regex("foo/**/bar");
 
     assert_eq!(regex1.is_match("foo/4711/bar/5490"), true);
+    assert_eq!(regex1.is_match("foo/4711/bar/5490?foo=true&bar=false"), true);
     assert_eq!(regex1.is_match("foo/4711/bar"), false);
+    assert_eq!(regex1.is_match("foo/4711/bar?foo=true&bar=false"), false);
+
 
     assert_eq!(regex2.is_match("foo/4711/bar"), true);
+    assert_eq!(regex2.is_match("foo/4711/bar?foo=true&bar=false"), true);
     assert_eq!(regex2.is_match("foo/4711/4712/bar"), false);
+    assert_eq!(regex2.is_match("foo/4711/4712/bar?foo=true&bar=false"), false);
 
     assert_eq!(regex3.is_match("foo/4711/bar"), true);
+    assert_eq!(regex3.is_match("foo/4711/bar?foo=true&bar=false"), true);
     assert_eq!(regex3.is_match("foo/4711/4712/bar"), true);
+    assert_eq!(regex3.is_match("foo/4711/4712/bar?foo=true&bar=false"), true);
 }
 
+// #[test]
+//     fn test_querystring_match() {
+//         // Does this work with url parameters?
+//         let glob_regex = deglob("/users".to_string());
+//         assert!(glob_regex.is_match("/users?foo=bar"));
+//     }
 
 #[test]
 fn can_match_var_routes () {
