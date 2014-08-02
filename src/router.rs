@@ -49,7 +49,7 @@ static VAR_SEQ:&'static str                 = "[a-zA-Z0-9_-]*";
 static VAR_SEQ_WITH_SLASH:&'static str      = "[/a-zA-Z0-9_-]*";
 static VAR_SEQ_WITH_CAPTURE:&'static str    = "([a-zA-Z0-9_-]*)";
 // matches request params (e.g. ?foo=true&bar=false)
-static REGEX_PARAM_SEQ:&'static str               = "[a-zA-Z0-9_=&?-]*";
+static REGEX_PARAM_SEQ:&'static str         = "[a-zA-Z0-9_=&?-]*";
 static REGEX_START:&'static str             = "^";
 static REGEX_END:&'static str               = "$";
 
