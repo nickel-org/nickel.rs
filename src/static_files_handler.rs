@@ -1,7 +1,10 @@
 use std::path::BytesContainer;
 use std::str::from_utf8;
+use std::io::{IoError, IoResult, FileNotFound};
 
 use http::server::request::AbsolutePath;
+use http::method::{Get, Head};
+use http::status::NotFound;
 
 use request;
 use response;
@@ -14,25 +17,47 @@ pub struct StaticFilesHandler {
     root_path: Path
 }
 
-impl Middleware for StaticFilesHandler {
-    fn invoke (&self, req: &mut request::Request, res: &mut response::Response) -> Action {
+impl StaticFilesHandler {
+    fn extract_path(&self, req: &mut request::Request) -> Option<String> {
         match req.origin.request_uri {
             AbsolutePath(ref path) => {
-                println!("GET {}{}.", from_utf8(self.root_path.container_as_bytes()).unwrap(), path);
+                println!("{} {}{}",req.origin.method, from_utf8(self.root_path.container_as_bytes()).unwrap(), path); 
                 let mut relative_path = path.clone();
                 if relative_path.eq(&"/".to_string()) {
                     relative_path = "index.html".to_string();
                 } else {
                     relative_path.shift_char();
                 }
-                match res.send_file(&self.root_path.join(Path::new(relative_path.to_string()))) {
+                Some(relative_path)
+            }
+            _ => None
+        }
+    }
+
+    fn with_file(&self, relative_path: Option<String>, res: &mut response::Response) -> IoResult<()> {
+        match relative_path {
+            Some(path) => res.send_file(&self.root_path.join(Path::new(path))),
+            None => Err(IoError::last_error())
+        }
+    }
+}
+
+impl Middleware for StaticFilesHandler {
+    fn invoke (&self, req: &mut request::Request, res: &mut response::Response) -> Action {
+        match req.origin.method {
+            Get | Head => {
+                match self.with_file(self.extract_path(req), res) {
                     Ok(()) => Halt,
-                    Err(_) => Continue
+                    Err(err) => match err.kind {
+                        FileNotFound => {
+                            res.origin.status = NotFound;
+                            Continue
+                        },
+                        _ => Continue
+                    }
                 }
             },
-            _ => {
-                Continue
-            }
+            _ => Continue
         }
     }
 }

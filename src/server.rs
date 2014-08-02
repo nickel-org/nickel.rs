@@ -3,6 +3,7 @@ use std::io::net::ip::{SocketAddr, IpAddr, Port};
 use http;
 use http::server::request::{AbsolutePath};
 use http::server::{Config, Server, Request, ResponseWriter};
+use http::status::Ok;
 
 use router::Router;
 use middleware::MiddlewareStack;
@@ -33,6 +34,7 @@ impl http::server::Server for Server {
             &AbsolutePath(ref url) => {
                 match self.router.match_route(req.method.clone(), url.clone()) {
                     Some(route_result) => { 
+                        nickel_res.origin.status = Ok;
                         nickel_req.params = route_result.params.clone();
                         (route_result.route.handler)(nickel_req, nickel_res);
                     },
