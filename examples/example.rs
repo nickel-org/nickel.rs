@@ -2,7 +2,7 @@ extern crate serialize;
 extern crate nickel;
 
 use nickel::{ Nickel, Action, Continue, Request, Response, FromFn };
-use std::io::net::ip::Ipv4Addr;
+use std::io::net::ip::IpAddr;
 
 #[deriving(Decodable, Encodable)]
 struct Person {
@@ -76,5 +76,10 @@ fn main() {
     // go to http://localhost:6767/a/post/request to see this route in action
     server.post("/a/post/request", post_handler);
 
-    server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
+    let port: u16 = 6767;
+    let ipaddr = "127.0.0.1";
+    let ip: Option<IpAddr> = from_str(ipaddr);
+
+    println!("Serving {}:{}", ip.unwrap(), port);
+    server.listen(ip.unwrap(), port);
 }
