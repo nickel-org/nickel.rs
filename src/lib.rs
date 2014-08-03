@@ -20,6 +20,7 @@ extern crate http;
 extern crate serialize;
 extern crate regex;
 extern crate anymap;
+extern crate url;
 #[phase(plugin)]extern crate regex_macros;
 
 pub use nickel::Nickel;
@@ -28,6 +29,7 @@ pub use response::Response;
 pub use middleware::{ Action, Continue, Halt, FromFn, Middleware };
 pub use static_files_handler::StaticFilesHandler;
 pub use json_body_parser::JsonBodyParser;
+pub use query_string::QueryStringParser;
 
 mod router;
 mod server;
@@ -38,3 +40,5 @@ mod middleware;
 mod static_files_handler;
 mod json_body_parser;
 mod mimes;
+mod query_string;
+mod urlencoded;
