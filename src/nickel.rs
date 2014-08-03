@@ -11,8 +11,9 @@ use response::Response;
 //pre defined middleware
 use static_files_handler::StaticFilesHandler;
 use json_body_parser::JsonBodyParser;
+use query_string::QueryStringParser;
 
-///Nickel is the application object. It's the surface that 
+///Nickel is the application object. It's the surface that
 ///holds all public APIs.
 
 #[deriving(Clone)]
@@ -46,8 +47,8 @@ impl Nickel {
     /// # Example without variables and wildcards
     ///
     /// ```rust
-    /// fn handler (request: Request, response: &mut Response) { 
-    ///     response.send("This matches /user"); 
+    /// fn handler (request: Request, response: &mut Response) {
+    ///     response.send("This matches /user");
     /// };
     /// server.get("/user", handler);
     /// ```
@@ -64,7 +65,7 @@ impl Nickel {
     ///
     /// ```rust
     /// fn handler (request: Request, response: &mut Response) {
-    ///     response.send("This matches /user/list/4711 but not /user/extended/list/4711");  
+    ///     response.send("This matches /user/list/4711 but not /user/extended/list/4711");
     /// };
     /// server.get("/user/*/:userid", handler);
     /// ```
@@ -72,7 +73,7 @@ impl Nickel {
     ///
     /// ```rust
     /// fn handler (request: Request, response: &mut Response) {
-    ///     response.send("This matches /user/list/4711 and also /user/extended/list/4711");  
+    ///     response.send("This matches /user/list/4711 and also /user/extended/list/4711");
     /// };
     /// server.get("/user/**/:userid", handler);
     /// ```
@@ -81,12 +82,12 @@ impl Nickel {
     }
 
     /// Registers a handler to be used for a specific POST request.
-    /// 
+    ///
     /// # Example
     ///
     /// ```rust
     /// fn handler (request: Request, response: &mut Response) {
-    ///     response.send("This matches a POST request to /a/post/request");  
+    ///     response.send("This matches a POST request to /a/post/request");
     /// };
     /// server.post("/a/post/request", handler);
     /// ```
@@ -96,12 +97,12 @@ impl Nickel {
     }
 
     /// Registers a handler to be used for a specific PUT request.
-    /// 
+    ///
     /// # Example
     ///
     /// ```rust
     /// fn handler (request: Request, response: &mut Response) {
-    ///     response.send("This matches a POST request to /a/put/request");  
+    ///     response.send("This matches a POST request to /a/put/request");
     /// };
     /// server.put("/a/put/request", handler);
     /// ```
@@ -111,12 +112,12 @@ impl Nickel {
     }
 
     /// Registers a handler to be used for a specific DELETE request.
-    /// 
+    ///
     /// # Example
     ///
     /// ```rust
     /// fn handler (request: Request, response: &mut Response) {
-    ///     response.send("This matches a DELETE request to /a/delete/request");  
+    ///     response.send("This matches a DELETE request to /a/delete/request");
     /// };
     /// server.delete("/a/delete/request", handler);
     /// ```
@@ -146,8 +147,8 @@ impl Nickel {
         self.middleware_stack.add(handler);
     }
 
-    /// Create a new middleware to serve files from within a given root directory. 
-    /// The file to serve will be determined by combining the requested Url with 
+    /// Create a new middleware to serve files from within a given root directory.
+    /// The file to serve will be determined by combining the requested Url with
     /// the provided root directory.
     ///
     ///
@@ -160,7 +161,7 @@ impl Nickel {
         StaticFilesHandler::new(root_path)
     }
 
-    /// Create a new middleware to parse JSON bodies. 
+    /// Create a new middleware to parse JSON bodies.
     ///
     ///
     /// # Example
@@ -171,21 +172,41 @@ impl Nickel {
     ///     firstname: String,
     ///     lastname:  String,
     /// }
-    /// 
+    ///
     /// let mut server = Nickel::new();
     /// server.utilize(Nickel::json_body_parser();
     ///
-    /// fn post_handler (request: &Request, response: &mut Response) { 
-    /// 
+    /// fn post_handler (request: &Request, response: &mut Response) {
+    ///
     ///     let person = request.json_as::<Person>().unwrap();
     ///     let text = format!("Hello {} {}", person.firstname, person.lastname);
-    ///     response.send(text.as_slice()); 
+    ///     response.send(text.as_slice());
     /// };
     ///
     /// server.post("/a/post/request", post_handler);
     /// ```
     pub fn json_body_parser() -> JsonBodyParser {
         JsonBodyParser
+    }
+
+    /// Create a new middleware to parse the query string.
+    ///
+    ///
+    /// # Example
+    /// ```rust
+    ///
+    /// let mut server = Nickel::new();
+    /// server.utilize(Nickel::query_string();
+    ///
+    /// fn get_handler (request: &Request, response: &mut Response) {
+    ///     let foo = request.query("foo", "this is the default value, if foo is not present!");
+    ///     response.send(foo.as_slice());
+    /// };
+    ///
+    /// server.get("/a/get/request", get_handler);
+    /// ```
+    pub fn query_string() -> QueryStringParser {
+        QueryStringParser
     }
 
     /// Bind and listen for connections on the given host and port

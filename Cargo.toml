@@ -17,6 +17,10 @@ git = "https://github.com/chris-morgan/rust-http.git"
 
 git = "https://github.com/chris-morgan/anymap.git"
 
+[dependencies.url]
+
+git = "https://github.com/servo/rust-url.git"
+
 [[example]]
 
 name = "example"

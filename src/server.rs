@@ -33,7 +33,7 @@ impl http::server::Server for Server {
         match &req.request_uri {
             &AbsolutePath(ref url) => {
                 match self.router.match_route(req.method.clone(), url.clone()) {
-                    Some(route_result) => { 
+                    Some(route_result) => {
                         nickel_res.origin.status = Ok;
                         nickel_req.params = route_result.params.clone();
                         (route_result.route.handler)(nickel_req, nickel_res);
