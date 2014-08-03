@@ -7,3 +7,4 @@ nickel-test
 doc
 .DS_Store
 /target/
+Cargo.lock
