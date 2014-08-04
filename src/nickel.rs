@@ -123,7 +123,7 @@ impl Nickel {
     /// ```
     /// Take a look at `get(...)` for a more detailed description.
     pub fn delete(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
-        self.router.add_route(method::Put, String::from_str(uri), handler);
+        self.router.add_route(method::Delete, String::from_str(uri), handler);
     }
 
     /// Registers a middleware handler which will be invoked among other middleware
