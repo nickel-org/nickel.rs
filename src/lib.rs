@@ -30,6 +30,7 @@ pub use middleware::{ Action, Continue, Halt, FromFn, Middleware };
 pub use static_files_handler::StaticFilesHandler;
 pub use json_body_parser::JsonBodyParser;
 pub use query_string::QueryStringParser;
+pub use nickel_error::{ NickelError, NickelErrorKind, Other };
 
 mod router;
 mod server;
@@ -42,3 +43,4 @@ mod json_body_parser;
 mod mimes;
 mod query_string;
 mod urlencoded;
+mod nickel_error;
