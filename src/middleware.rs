@@ -84,8 +84,12 @@ pub struct MiddlewareStack {
 }
 
 impl MiddlewareStack {
-    pub fn add<T: Middleware> (&mut self, handler: T) {
+    pub fn add_middleware<T: Middleware> (&mut self, handler: T) {
         self.handlers.push(box handler);
+    }
+
+    pub fn add_error_handler<T: ErrorHandler> (&mut self, handler: T) {
+        self.error_handlers.push(box handler);
     }
 
     pub fn invoke (&self, req: &mut Request, res: &mut Response) {
@@ -93,12 +97,18 @@ impl MiddlewareStack {
             match (*handler).invoke(req, res) {
                 Ok(Continue) => true,
                 Ok(Halt)     => false,
-                Err(ref err)     => {
+                Err(err)     => {
+                    let mut err = err;
                     self.error_handlers.iter().all(|error_handler| {
-                        match (*error_handler).invoke(err, req, res) {
+                        match (*error_handler).invoke(&err, req, res) {
                             Ok(Continue) => true,
                             Ok(Halt)     => false,
-                            Err(err)     => false //this should probably just pass the new err to the remaining err handlers?
+                            Err(new_err)     => { 
+                                // change the error so that other ErrorHandler down the stack receive
+                                // the new error.
+                                err = new_err;
+                                true
+                            } 
                         }
                     })
                 }

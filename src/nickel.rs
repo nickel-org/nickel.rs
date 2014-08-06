@@ -3,7 +3,7 @@ use std::io::net::ip::{Port, IpAddr};
 use http::method;
 
 use router::Router;
-use middleware::{ MiddlewareStack, Middleware };
+use middleware::{ MiddlewareStack, Middleware, ErrorHandler };
 use server::Server;
 use request::Request;
 use response::Response;
@@ -144,7 +144,25 @@ impl Nickel {
     /// }
     /// ```
     pub fn utilize<T: Middleware>(&mut self, handler: T){
-        self.middleware_stack.add(handler);
+        self.middleware_stack.add_middleware(handler);
+    }
+
+    /// Registers an error handler which will be invoked among other error handler
+    /// as soon as any regular handler returned an error
+    ///
+    /// A error handler is nearly identical to a regular middleware handler with the only
+    /// difference that it takes an additional error parameter or type `NickelError.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// fn error_handler (err: &NickelError, req: &Request, res: &mut Response) -> Result<Action, NickelError>{
+    ///     //handle error
+    ///     Ok(Continue)
+    /// }
+    /// ```
+    pub fn handle_error<T: ErrorHandler>(&mut self, handler: T){
+        self.middleware_stack.add_error_handler(handler);
     }
 
     /// Create a new middleware to serve files from within a given root directory.

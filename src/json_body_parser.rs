@@ -1,11 +1,12 @@
 use serialize::json;
 use serialize::Decodable;
 use serialize::json::{ Json, Decoder, DecoderError};
+use http::status::BadRequest;
 use request;
 use request::Request;
 use response::Response;
 use middleware::{Action, Continue, Middleware};
-use nickel_error::{ NickelError, Other };
+use nickel_error::{ NickelError, ErrorWithStatusCode };
 
 #[deriving(Clone)]
 pub struct JsonBodyParser;
@@ -20,14 +21,7 @@ impl Middleware for JsonBodyParser {
                     return Ok(Continue);
                 },
                 Err(_) => {
-                    // TODO: Should this really be an error then?
-                    // I actually rather think *no* because we would handle this error
-                    // directly in this middleware and then return Ok(Halt) no?
-                    // Isn't it that we should always handle errors that are native to the
-                    // middleware directly *inside* the middleware and only pass on errors
-                    // that are not native to the middleware in question. E.g a static file handler
-                    // middleware should handle 404s and return ok(Halt) but should pass on other errors?
-                    return Err(NickelError::new("Error parsing JSON", Other));
+                    return Err(NickelError::new("Error Parsing JSON", ErrorWithStatusCode(BadRequest)));
                 }
             }
         }

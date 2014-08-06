@@ -4,12 +4,12 @@ use std::io::{IoError, IoResult, FileNotFound};
 
 use http::server::request::AbsolutePath;
 use http::method::{Get, Head};
-use http::status::NotFound;
+use http::status::{ NotFound, InternalServerError };
 
 use request;
 use response;
 use middleware::{Action, Halt, Continue, Middleware};
-use nickel_error::{ NickelError, Other };
+use nickel_error::{ NickelError, ErrorWithStatusCode };
 
 // this should be much simpler after unboxed closures land in Rust.
 
@@ -26,10 +26,12 @@ impl Middleware for StaticFilesHandler {
                     Ok(()) => Ok(Halt),
                     Err(err) => match err.kind {
                         FileNotFound => {
-                            res.origin.status = NotFound;
-                            Ok(Continue)
+                            // TODO: move this into default error handler
+                            // res.origin.status = NotFound;
+                            // Ok(Continue)
+                            Err(NickelError::new("File Not Found", ErrorWithStatusCode(NotFound)))
                         },
-                        _ => Err(NickelError::new("unknown error", Other))
+                        _ => Err(NickelError::new("Unknown Error", ErrorWithStatusCode(InternalServerError)))
                     }
                 }
             },

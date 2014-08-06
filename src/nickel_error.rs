@@ -1,4 +1,5 @@
 use std::str::SendStr;
+use http::status::Status;
 
 #[deriving(Show)]
 pub struct NickelError {
@@ -15,11 +16,9 @@ impl NickelError {
     }
 }
 
-// Not quite sure yet how we should use this properly.
-// I think there would be a popular demand for custom error types
-// defined by apps using nickel. How would that work?
-
 #[deriving(Show)]
 pub enum NickelErrorKind {
+    ErrorWithStatusCode(Status),
+    UserDefinedError(int, String),
     Other
 }
