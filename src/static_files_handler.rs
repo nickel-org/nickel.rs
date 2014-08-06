@@ -9,6 +9,7 @@ use http::status::NotFound;
 use request;
 use response;
 use middleware::{Action, Halt, Continue, Middleware};
+use nickel_error::{ NickelError, Other };
 
 // this should be much simpler after unboxed closures land in Rust.
 
@@ -18,21 +19,21 @@ pub struct StaticFilesHandler {
 }
 
 impl Middleware for StaticFilesHandler {
-    fn invoke (&self, req: &mut request::Request, res: &mut response::Response) -> Action {
+    fn invoke (&self, req: &mut request::Request, res: &mut response::Response) -> Result<Action, NickelError> {
         match req.origin.method {
             Get | Head => {
                 match self.with_file(self.extract_path(req), res) {
-                    Ok(()) => Halt,
+                    Ok(()) => Ok(Halt),
                     Err(err) => match err.kind {
                         FileNotFound => {
                             res.origin.status = NotFound;
-                            Continue
+                            Ok(Continue)
                         },
-                        _ => Continue
+                        _ => Err(NickelError::new("unknown error", Other))
                     }
                 }
             },
-            _ => Continue
+            _ => Ok(Continue)
         }
     }
 }

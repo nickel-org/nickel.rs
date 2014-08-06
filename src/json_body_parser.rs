@@ -5,25 +5,33 @@ use request;
 use request::Request;
 use response::Response;
 use middleware::{Action, Continue, Middleware};
+use nickel_error::{ NickelError, Other };
 
 #[deriving(Clone)]
 pub struct JsonBodyParser;
 
 impl Middleware for JsonBodyParser {
-    fn invoke (&self, req: &mut Request, _res: &mut Response) -> Action {
+    fn invoke (&self, req: &mut Request, _res: &mut Response) -> Result<Action, NickelError> {
 
         if !req.origin.body.is_empty() {
             match json::from_str(req.origin.body.as_slice()) {
                 Ok(parsed) => {
                     req.map.insert(parsed);
-                    return Continue;
+                    return Ok(Continue);
                 },
                 Err(_) => {
-                    return Continue;
+                    // TODO: Should this really be an error then?
+                    // I actually rather think *no* because we would handle this error
+                    // directly in this middleware and then return Ok(Halt) no?
+                    // Isn't it that we should always handle errors that are native to the
+                    // middleware directly *inside* the middleware and only pass on errors
+                    // that are not native to the middleware in question. E.g a static file handler
+                    // middleware should handle 404s and return ok(Halt) but should pass on other errors?
+                    return Err(NickelError::new("Error parsing JSON", Other));
                 }
             }
         }
-        Continue
+        Ok(Continue)
     }
 }
 
