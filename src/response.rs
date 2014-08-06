@@ -36,9 +36,10 @@ impl<'a, 'b> Response<'a, 'b> {
 
         // we don't need to set this https://github.com/Ogeon/rustful/issues/3#issuecomment-44787613
         response_writer.headers.content_length = None;
-        response_writer.headers.content_type = Some(response_writer.headers.content_type
-                                                        .clone()
-                                                        .unwrap_or(get_media_type("txt").unwrap()));
+        response_writer.headers.content_type = response_writer.headers.content_type
+                                                                      .clone()
+                                                                      .or(get_media_type("txt"));
+
         response_writer.headers.server = Some(String::from_str("Nickel"));
     }
 
