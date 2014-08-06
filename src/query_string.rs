@@ -4,6 +4,7 @@ use middleware::{Action, Continue, Middleware};
 use request;
 use response;
 use urlencoded;
+use nickel_error::NickelError;
 
 type QueryStore = HashMap<String, Vec<String>>;
 
@@ -19,10 +20,10 @@ impl QueryStringParser {
 }
 
 impl Middleware for QueryStringParser {
-    fn invoke (&self, req: &mut request::Request, _res: &mut response::Response) -> Action {
+    fn invoke (&self, req: &mut request::Request, _res: &mut response::Response) -> Result<Action, NickelError> {
         let temp = req.origin.request_uri.to_string();
         req.map.insert(QueryStringParser::parse_url(temp));
-        Continue
+        Ok(Continue)
     }
 }
 

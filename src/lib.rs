@@ -21,15 +21,21 @@ extern crate serialize;
 extern crate regex;
 extern crate anymap;
 extern crate url;
-#[phase(plugin)]extern crate regex_macros;
+#[phase(plugin)]
+extern crate regex_macros;
 
 pub use nickel::Nickel;
 pub use request::Request;
 pub use response::Response;
-pub use middleware::{ Action, Continue, Halt, FromFn, Middleware };
+pub use middleware::{ Action, Continue, Halt, Middleware, ErrorHandler };
 pub use static_files_handler::StaticFilesHandler;
+pub use default_error_handler::DefaultErrorHandler;
 pub use json_body_parser::JsonBodyParser;
 pub use query_string::QueryStringParser;
+pub use nickel_error::{ NickelError, NickelErrorKind, ErrorWithStatusCode, UserDefinedError, Other };
+pub use into_middleware::IntoMiddleware;
+pub use into_error_handler::IntoErrorHandler;
+pub use mimes::get_media_type;
 
 mod router;
 mod server;
@@ -42,3 +48,7 @@ mod json_body_parser;
 mod mimes;
 mod query_string;
 mod urlencoded;
+mod nickel_error;
+mod default_error_handler;
+mod into_middleware;
+mod into_error_handler;

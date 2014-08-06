@@ -3,7 +3,7 @@ use std::io::net::ip::{Port, IpAddr};
 use http::method;
 
 use router::Router;
-use middleware::{ MiddlewareStack, Middleware };
+use middleware::{ MiddlewareStack, Middleware, ErrorHandler };
 use server::Server;
 use request::Request;
 use response::Response;
@@ -12,9 +12,10 @@ use response::Response;
 use static_files_handler::StaticFilesHandler;
 use json_body_parser::JsonBodyParser;
 use query_string::QueryStringParser;
+use default_error_handler::DefaultErrorHandler;
 
-///Nickel is the application object. It's the surface that
-///holds all public APIs.
+/// Nickel is the application object. It's the surface that
+/// holds all public APIs.
 
 #[deriving(Clone)]
 pub struct Nickel{
@@ -32,7 +33,13 @@ impl Nickel {
     /// ```
     pub fn new() -> Nickel {
         let router = Router::new();
-        let middleware_stack = MiddlewareStack::new();
+        let mut middleware_stack = MiddlewareStack::new();
+
+        // Hook up the default error handler by default. Users are
+        // free to cancel it out from their custom error handler if
+        // they don't like the default behaviour.
+        middleware_stack.add_error_handler(DefaultErrorHandler);
+
         Nickel {
             router: router,
             middleware_stack: middleware_stack,
@@ -138,13 +145,38 @@ impl Nickel {
     /// # Example
     ///
     /// ```rust
-    /// fn logger (req: &Request, res: &mut Response) -> Action{
+    /// fn logger (req: &Request, res: &mut Response) -> Result<Action, NickelError>{
     ///     println!("logging request: {}", req.origin.request_uri);
-    ///     Continue
+    ///     Ok(Continue)
     /// }
     /// ```
     pub fn utilize<T: Middleware>(&mut self, handler: T){
-        self.middleware_stack.add(handler);
+        self.middleware_stack.add_middleware(handler);
+    }
+
+    /// Registers an error handler which will be invoked among other error handler
+    /// as soon as any regular handler returned an error
+    ///
+    /// A error handler is nearly identical to a regular middleware handler with the only
+    /// difference that it takes an additional error parameter or type `NickelError.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// fn error_handler (err: &NickelError, req: &Request, res: &mut Response) -> Result<Action, NickelError>{
+    ///    match err.kind {
+    ///        ErrorWithStatusCode(NotFound) => {
+    ///            response.origin.headers.content_type = get_media_type("html");
+    ///            response.origin.status = NotFound;
+    ///            response.send("<h1>Call the police!<h1>");
+    ///            Ok(Halt)
+    ///        },
+    ///        _ => Ok(Continue)
+    ///    }
+    /// }
+    /// ```
+    pub fn handle_error<T: ErrorHandler>(&mut self, handler: T){
+        self.middleware_stack.add_error_handler(handler);
     }
 
     /// Create a new middleware to serve files from within a given root directory.

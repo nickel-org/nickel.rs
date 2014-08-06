@@ -1,7 +1,13 @@
 extern crate serialize;
 extern crate nickel;
+extern crate http;
 
-use nickel::{ Nickel, Action, Continue, Request, Response, FromFn };
+use http::status::NotFound;
+use nickel::{
+    Nickel, NickelError, ErrorWithStatusCode,
+    Action, Continue, Halt, Request, get_media_type,
+    Response, IntoMiddleware, IntoErrorHandler
+};
 use std::io::net::ip::Ipv4Addr;
 
 #[deriving(Decodable, Encodable)]
@@ -18,19 +24,34 @@ fn main() {
     // to achieve with the current version of rust.
 
     //this is an example middleware function that just logs each request
-    fn logger (request: &Request, _response: &mut Response) -> Action {
+    fn logger (request: &Request, _response: &mut Response) -> Result<Action, NickelError> {
         println!("logging request: {}", request.origin.request_uri);
 
         // a request is supposed to return a `bool` to indicate whether additional
         // middleware should continue executing or should be stopped.
-        Continue
+        Ok(Continue)
     }
 
     // middleware is optional and can be registered with `utilize`
-    server.utilize(FromFn::new(logger));
+    server.utilize(IntoMiddleware::from_fn(logger));
 
     // go to http://localhost:6767/thoughtram_logo_brain.png to see static file serving in action
     server.utilize(Nickel::static_files("examples/assets/"));
+
+    // this is how to overwrite the default error handler to handle 404 cases with a custom view
+    fn custom_404 (err: &NickelError, _req: &Request, response: &mut Response) -> Result<Action, NickelError> {
+        match err.kind {
+            ErrorWithStatusCode(NotFound) => {
+                response.origin.headers.content_type = get_media_type("html");
+                response.origin.status = NotFound;
+                response.send("<h1>Call the police!<h1>");
+                Ok(Halt)
+            },
+            _ => Ok(Continue)
+        }
+    }
+
+    server.handle_error(IntoErrorHandler::from_fn(custom_404));
 
     fn user_handler (request: &Request, response: &mut Response) {
         let text = format!("This is user: {}", request.params.get(&"userid".to_string()));
