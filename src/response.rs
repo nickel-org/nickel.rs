@@ -37,11 +37,17 @@ impl<'a, 'b> Response<'a, 'b> {
 
         // we don't need to set this https://github.com/Ogeon/rustful/issues/3#issuecomment-44787613
         response_writer.headers.content_length = None;
-        response_writer.headers.content_type = Some(MediaType {
-            type_: String::from_str("text"),
-            subtype: String::from_str("plain"),
-            parameters: vec!((String::from_str("charset"), String::from_str("UTF-8")))
-        });
+        let has_set_content_type: bool = match response.origin.headers.content_type {
+            None => false,
+            Some(_) => true,
+        };
+        if !has_set_content_type {
+            response_writer.headers.content_type = Some(MediaType {
+                type_: String::from_str("text"),
+                subtype: String::from_str("plain"),
+                parameters: vec!((String::from_str("charset"), String::from_str("UTF-8")))
+            });
+        }
         response_writer.headers.server = Some(String::from_str("Nickel"));
     }
 
