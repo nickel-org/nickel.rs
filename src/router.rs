@@ -244,6 +244,5 @@ fn can_match_var_routes () {
     };
     assert_eq!(result, true);
     let route_result = route_result.unwrap();
-    let route = route_result.route;
     assert_eq!(route_result.params.get(&"userid".to_string()), &"123,456".to_string());
 }
