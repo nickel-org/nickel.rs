@@ -5,7 +5,7 @@ extern crate http;
 use http::status::NotFound;
 use nickel::{
     Nickel, NickelError, ErrorWithStatusCode,
-    Action, Continue, Halt, Request, get_media_type,
+    Action, Continue, Halt, Request,
     Response, IntoMiddleware, IntoErrorHandler
 };
 use std::io::net::ip::Ipv4Addr;
@@ -42,7 +42,7 @@ fn main() {
     fn custom_404 (err: &NickelError, _req: &Request, response: &mut Response) -> Result<Action, NickelError> {
         match err.kind {
             ErrorWithStatusCode(NotFound) => {
-                response.origin.headers.content_type = get_media_type("html");
+                response.set_content_type("html");
                 response.origin.status = NotFound;
                 response.send("<h1>Call the police!<h1>");
                 Ok(Halt)

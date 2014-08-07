@@ -31,6 +31,17 @@ impl<'a, 'b> Response<'a, 'b> {
         let _ = self.origin.write(text.as_bytes());
     }
 
+    /// sets the content type by it's short form.
+    ///
+    /// # Example
+    /// ```rust
+    /// response.set_content_type("html");
+    /// ```
+    pub fn set_content_type(&mut self, text: &str) {
+        // TODO: make this a chaining API. (Fight the lifetime hell!)
+        self.origin.headers.content_type = get_media_type(text);
+    }
+
     fn set_headers(response_writer: &mut http::server::ResponseWriter) {
         response_writer.headers.date = Some(time::now_utc());
 
