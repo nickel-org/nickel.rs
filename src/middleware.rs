@@ -65,9 +65,7 @@ impl MiddlewareStack {
     }
 
     pub fn add_error_handler<T: ErrorHandler> (&mut self, handler: T) {
-        // insert(0) is probably a bad choice. TODO: figure out how to run through the
-        // vector in reverse order.
-        self.error_handlers.insert(0, box handler);
+        self.error_handlers.push(box handler);
     }
 
     pub fn invoke (&self, req: &mut Request, res: &mut Response) {
@@ -77,7 +75,7 @@ impl MiddlewareStack {
                 Ok(Halt)     => false,
                 Err(err)     => {
                     let mut err = err;
-                    self.error_handlers.iter().all(|error_handler| {
+                    self.error_handlers.iter().rev().all(|error_handler| {
                         match (*error_handler).invoke(&err, req, res) {
                             Ok(Continue) => true,
                             Ok(Halt)     => false,
