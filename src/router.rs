@@ -21,12 +21,12 @@ pub struct Route {
 
 impl Clone for Route {
     fn clone(&self) -> Route {
-        Route { 
-            path: self.path.clone(), 
+        Route {
+            path: self.path.clone(),
             method: self.method.clone(),
-            handler: self.handler, 
+            handler: self.handler,
             matcher: self.matcher.clone(),
-            variables: self.variables.clone() 
+            variables: self.variables.clone()
         }
     }
 }
@@ -44,12 +44,12 @@ pub struct RouteResult<'a> {
 struct PathUtils;
 
 // matches named variables (e.g. :userid)
-static REGEX_VAR_SEQ: Regex                 = regex!(r":([a-zA-Z0-9_-]*)");
-static VAR_SEQ:&'static str                 = "[a-zA-Z0-9_-]*";
-static VAR_SEQ_WITH_SLASH:&'static str      = "[/a-zA-Z0-9_-]*";
-static VAR_SEQ_WITH_CAPTURE:&'static str    = "([a-zA-Z0-9_-]*)";
+static REGEX_VAR_SEQ: Regex                 = regex!(r":([,a-zA-Z0-9_-]*)");
+static VAR_SEQ:&'static str                 = "[,a-zA-Z0-9_-]*";
+static VAR_SEQ_WITH_SLASH:&'static str      = "[,/a-zA-Z0-9_-]*";
+static VAR_SEQ_WITH_CAPTURE:&'static str    = "([,a-zA-Z0-9_-]*)";
 // matches request params (e.g. ?foo=true&bar=false)
-static REGEX_PARAM_SEQ:&'static str         = "[a-zA-Z0-9_=&?-]*";
+static REGEX_PARAM_SEQ:&'static str         = "[,a-zA-Z0-9_=&?-]*";
 static REGEX_START:&'static str             = "^";
 static REGEX_END:&'static str               = "$";
 
@@ -142,7 +142,7 @@ impl Router {
 #[test]
 fn creates_map_with_var_variable_infos () {
     let map = PathUtils::get_variable_info("foo/:uid/bar/:groupid");
-    
+
     assert_eq!(map.len(), 2);
     assert_eq!(map.get(&"uid".to_string()), &0);
     assert_eq!(map.get(&"groupid".to_string()), &1);
@@ -155,7 +155,7 @@ fn creates_regex_with_captures () {
 
     assert_eq!(caps.at(1), "4711");
     assert_eq!(caps.at(2), "5490");
-    
+
     let regex = PathUtils::create_regex("foo/*/:uid/bar/:groupid");
     let caps = regex.captures("foo/test/4711/bar/5490").unwrap();
 
@@ -180,7 +180,6 @@ fn creates_valid_regex_for_routes () {
     assert_eq!(regex1.is_match("foo/4711/bar"), false);
     assert_eq!(regex1.is_match("foo/4711/bar?foo=true&bar=false"), false);
 
-
     assert_eq!(regex2.is_match("foo/4711/bar"), true);
     assert_eq!(regex2.is_match("foo/4711/bar?foo=true&bar=false"), true);
     assert_eq!(regex2.is_match("foo/4711/4712/bar"), false);
@@ -190,6 +189,12 @@ fn creates_valid_regex_for_routes () {
     assert_eq!(regex3.is_match("foo/4711/bar?foo=true&bar=false"), true);
     assert_eq!(regex3.is_match("foo/4711/4712/bar"), true);
     assert_eq!(regex3.is_match("foo/4711/4712/bar?foo=true&bar=false"), true);
+
+    //ensure that this works with commas too
+    assert_eq!(regex1.is_match("foo/4711/bar/5490,1234"), true);
+    assert_eq!(regex1.is_match("foo/4711/bar/5490,1234?foo=true&bar=false"), true);
+    assert_eq!(regex1.is_match("foo/4711/bar"), false);
+    assert_eq!(regex1.is_match("foo/4711/bar?foo=1,2,3&bar=false"), false);
 }
 
 #[test]
@@ -197,12 +202,12 @@ fn can_match_var_routes () {
     let route_store = &mut Router::new();
 
     fn handler (_request: &Request, response: &mut Response) -> () {
-        let _ = response.origin.write("hello from foo".as_bytes()); 
+        let _ = response.origin.write("hello from foo".as_bytes());
     };
 
     route_store.add_route(method::Get, "/foo/:userid".to_string(), handler);
     route_store.add_route(method::Get, "/bar".to_string(), handler);
-    
+
     let route_result = route_store.match_route(method::Get, "/foo/4711".to_string()).unwrap();
     let route = route_result.route;
 
@@ -230,4 +235,15 @@ fn can_match_var_routes () {
     };
 
     assert_eq!(result, false);
+
+    //ensure that this will work with commas too
+    let route_result = route_store.match_route(method::Get, "/foo/123,456".to_string());
+    let result = match route_result {
+        Some(_) => true,
+        None => false
+    };
+    assert_eq!(result, true);
+    let route_result = route_result.unwrap();
+    let route = route_result.route;
+    assert_eq!(route_result.params.get(&"userid".to_string()), &"123,456".to_string());
 }
