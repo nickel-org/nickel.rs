@@ -25,3 +25,9 @@ git = "https://github.com/servo/rust-url.git"
 
 name = "example"
 path = "examples/example.rs"
+
+
+[[example]]
+
+name = "example_with_default_router"
+path = "examples/example_with_default_router.rs"
