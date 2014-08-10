@@ -50,7 +50,7 @@ extern crate http;
 use http::status::NotFound;
 use nickel::{
     Nickel, NickelError, ErrorWithStatusCode,
-    Action, Continue, Halt, Request, get_media_type,
+    Action, Continue, Halt, Request,
     Response, IntoMiddleware, IntoErrorHandler
 };
 use std::io::net::ip::Ipv4Addr;
@@ -80,23 +80,13 @@ fn main() {
     // middleware is optional and can be registered with `utilize`
     server.utilize(IntoMiddleware::from_fn(logger));
 
-    // go to http://localhost:6767/thoughtram_logo_brain.png to see static file serving in action
-    server.utilize(Nickel::static_files("examples/assets/"));
+    // this will cause json bodies automatically being parsed
+    server.utilize(Nickel::json_body_parser());
 
-    // this is how to overwrite the default error handler to handle 404 cases with a custom view
-    fn custom_404 (err: &NickelError, _req: &Request, response: &mut Response) -> Result<Action, NickelError> {
-        match err.kind {
-            ErrorWithStatusCode(NotFound) => {
-                response.origin.headers.content_type = get_media_type("html");
-                response.origin.status = NotFound;
-                response.send("<h1>Call the police!<h1>");
-                Ok(Halt)
-            },
-            _ => Ok(Continue)
-        }
-    }
+    // this will cause the query string to be parsed on each request
+    server.utilize(Nickel::query_string());
 
-    server.handle_error(IntoErrorHandler::from_fn(custom_404));
+    let mut router = Nickel::router();
 
     fn user_handler (request: &Request, response: &mut Response) {
         let text = format!("This is user: {}", request.params.get(&"userid".to_string()));
@@ -104,31 +94,28 @@ fn main() {
     }
 
     // go to http://localhost:6767/user/4711 to see this route in action
-    server.get("/user/:userid", user_handler);
+    router.get("/user/:userid", user_handler);
 
     fn bar_handler (_request: &Request, response: &mut Response) {
         response.send("This is the /bar handler");
     }
 
     // go to http://localhost:6767/bar to see this route in action
-    server.get("/bar", bar_handler);
+    router.get("/bar", bar_handler);
 
     fn simple_wildcard (_request: &Request, response: &mut Response) {
         response.send("This matches /some/crazy/route but not /some/super/crazy/route");
     }
 
     // go to http://localhost:6767/some/crazy/route to see this route in action
-    server.get("/some/*/route", simple_wildcard);
+    router.get("/some/*/route", simple_wildcard);
 
     fn double_wildcard (_request: &Request, response: &mut Response) {
         response.send("This matches /a/crazy/route and also /a/super/crazy/route");
     }
 
     // go to http://localhost:6767/a/nice/route or http://localhost:6767/a/super/nice/route to see this route in action
-    server.get("/a/**/route", double_wildcard);
-
-    // this will cause json bodies automatically being parsed
-    server.utilize(Nickel::json_body_parser());
+    router.get("/a/**/route", double_wildcard);
 
     // try it with curl
     // curl 'http://localhost:6767/a/post/request' -H 'Content-Type: application/json;charset=UTF-8'  --data-binary $'{ "firstname": "John","lastname": "Connor" }'
@@ -140,10 +127,7 @@ fn main() {
     }
 
     // go to http://localhost:6767/a/post/request to see this route in action
-    server.post("/a/post/request", post_handler);
-
-    // this will cause the query string to be parsed on each request
-    server.utilize(Nickel::query_string());
+    router.post("/a/post/request", post_handler);
 
     // try calling http://localhost:6767/query?foo=bar
     fn query_handler (request: &Request, response: &mut Response) {
@@ -151,7 +135,27 @@ fn main() {
         response.send(text.as_slice());
     }
 
-    server.get("/query", query_handler);
+    router.get("/query", query_handler);
+
+    server.utilize(router);
+
+    // go to http://localhost:6767/thoughtram_logo_brain.png to see static file serving in action
+    server.utilize(Nickel::static_files("examples/assets/"));
+
+    //this is how to overwrite the default error handler to handle 404 cases with a custom view
+    fn custom_404 (err: &NickelError, _req: &Request, response: &mut Response) -> Result<Action, NickelError> {
+        match err.kind {
+            ErrorWithStatusCode(NotFound) => {
+                response.set_content_type("html");
+                response.origin.status = NotFound;
+                response.send("<h1>Call the police!<h1>");
+                Ok(Halt)
+            },
+            _ => Ok(Continue)
+        }
+    }
+
+    server.handle_error(IntoErrorHandler::from_fn(custom_404));
 
     server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
 }
