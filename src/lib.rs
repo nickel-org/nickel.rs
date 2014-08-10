@@ -32,6 +32,7 @@ pub use static_files_handler::StaticFilesHandler;
 pub use default_error_handler::DefaultErrorHandler;
 pub use json_body_parser::JsonBodyParser;
 pub use query_string::QueryStringParser;
+pub use router::{ Router, Route, RouteResult };
 pub use nickel_error::{ NickelError, NickelErrorKind, ErrorWithStatusCode, UserDefinedError, Other };
 pub use into_middleware::IntoMiddleware;
 pub use into_error_handler::IntoErrorHandler;

@@ -1,12 +1,8 @@
 use std::io::net::ip::{Port, IpAddr};
 
-use http::method;
-
 use router::Router;
 use middleware::{ MiddlewareStack, Middleware, ErrorHandler };
 use server::Server;
-use request::Request;
-use response::Response;
 
 //pre defined middleware
 use static_files_handler::StaticFilesHandler;
@@ -19,7 +15,6 @@ use default_error_handler::DefaultErrorHandler;
 
 #[deriving(Clone)]
 pub struct Nickel{
-    router: Router,
     middleware_stack: MiddlewareStack,
     server: Option<Server>
 }
@@ -32,7 +27,6 @@ impl Nickel {
     /// let mut server = Nickel::new();
     /// ```
     pub fn new() -> Nickel {
-        let router = Router::new();
         let mut middleware_stack = MiddlewareStack::new();
 
         // Hook up the default error handler by default. Users are
@@ -41,96 +35,9 @@ impl Nickel {
         middleware_stack.add_error_handler(DefaultErrorHandler);
 
         Nickel {
-            router: router,
             middleware_stack: middleware_stack,
             server: None,
         }
-    }
-
-    /// Registers a handler to be used for a specific GET request.
-    /// Handlers are assigned to paths and paths are allowed to contain
-    /// variables and wildcards.
-    ///
-    /// # Example without variables and wildcards
-    ///
-    /// ```rust
-    /// fn handler (request: Request, response: &mut Response) {
-    ///     response.send("This matches /user");
-    /// };
-    /// server.get("/user", handler);
-    /// ```
-    /// # Example with variables
-    ///
-    /// ```rust
-    /// fn handler (request: Request, response: &mut Response) {
-    ///     let text = format!("This is user: {}", request.params.get(&"userid".to_string()));
-    ///     response.send(text.as_slice());
-    /// };
-    /// server.get("/user/:userid", handler);
-    /// ```
-    /// # Example with simple wildcard
-    ///
-    /// ```rust
-    /// fn handler (request: Request, response: &mut Response) {
-    ///     response.send("This matches /user/list/4711 but not /user/extended/list/4711");
-    /// };
-    /// server.get("/user/*/:userid", handler);
-    /// ```
-    /// # Example with double wildcard
-    ///
-    /// ```rust
-    /// fn handler (request: Request, response: &mut Response) {
-    ///     response.send("This matches /user/list/4711 and also /user/extended/list/4711");
-    /// };
-    /// server.get("/user/**/:userid", handler);
-    /// ```
-    pub fn get(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
-        self.router.add_route(method::Get, String::from_str(uri), handler);
-    }
-
-    /// Registers a handler to be used for a specific POST request.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// fn handler (request: Request, response: &mut Response) {
-    ///     response.send("This matches a POST request to /a/post/request");
-    /// };
-    /// server.post("/a/post/request", handler);
-    /// ```
-    /// Take a look at `get()` for a more detailed description.
-    pub fn post(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
-        self.router.add_route(method::Post, String::from_str(uri), handler);
-    }
-
-    /// Registers a handler to be used for a specific PUT request.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// fn handler (request: Request, response: &mut Response) {
-    ///     response.send("This matches a POST request to /a/put/request");
-    /// };
-    /// server.put("/a/put/request", handler);
-    /// ```
-    /// Take a look at `get(..)` for a more detailed description.
-    pub fn put(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
-        self.router.add_route(method::Put, String::from_str(uri), handler);
-    }
-
-    /// Registers a handler to be used for a specific DELETE request.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// fn handler (request: Request, response: &mut Response) {
-    ///     response.send("This matches a DELETE request to /a/delete/request");
-    /// };
-    /// server.delete("/a/delete/request", handler);
-    /// ```
-    /// Take a look at `get(...)` for a more detailed description.
-    pub fn delete(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
-        self.router.add_route(method::Delete, String::from_str(uri), handler);
     }
 
     /// Registers a middleware handler which will be invoked among other middleware
@@ -193,6 +100,21 @@ impl Nickel {
         StaticFilesHandler::new(root_path)
     }
 
+    /// Create a new middleware to serve as a router.
+    ///
+    ///
+    /// # Example
+    /// ```rust
+    /// let mut server = Nickel::new();
+    /// let mut router = Nickel::router();
+    /// 
+    /// router.get("/foo", foo_handler);
+    /// server.utilize(router);
+    /// ```
+    pub fn router() -> Router {
+        Router::new()
+    }
+
     /// Create a new middleware to parse JSON bodies.
     ///
     ///
@@ -249,7 +171,7 @@ impl Nickel {
     /// server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
     /// ```
     pub fn listen(mut self, ip: IpAddr, port: Port) {
-        self.server = Some(Server::new(self.router, self.middleware_stack, ip, port));
+        self.server = Some(Server::new(self.middleware_stack, ip, port));
         self.server.unwrap().serve();
     }
 }
