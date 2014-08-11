@@ -4,7 +4,7 @@ use router::Router;
 use middleware::{ MiddlewareStack, Middleware, ErrorHandler };
 use server::Server;
 
-use http::method::{ Get, Post, Put, Delete };
+use http::method::{ Method, Get, Post, Put, Delete };
 use request::Request;
 use response::Response;
 
@@ -108,8 +108,7 @@ impl Nickel {
     /// server.get("/user/**/:userid", handler);
     /// ```
     pub fn get(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
-        self.asure_router();
-        self.default_router.get_mut_ref().add_route(Get, String::from_str(uri), handler);
+        self.register_route_with_new_router(Get, uri, handler);
     }
 
     /// Registers a handler to be used for a specific POST request. 
@@ -126,8 +125,7 @@ impl Nickel {
     /// ```
     /// Take a look at `get()` for a more detailed description.
     pub fn post(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
-        self.asure_router();
-        self.default_router.get_mut_ref().add_route(Post, String::from_str(uri), handler);
+        self.register_route_with_new_router(Post, uri, handler);
     }
 
     /// Registers a handler to be used for a specific PUT request.
@@ -144,8 +142,7 @@ impl Nickel {
     /// ```
     /// Take a look at `get(..)` for a more detailed description.
     pub fn put(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
-        self.asure_router();
-        self.default_router.get_mut_ref().add_route(Put, String::from_str(uri), handler);
+        self.register_route_with_new_router(Put, uri, handler);
     }
 
     /// Registers a handler to be used for a specific DELETE request.
@@ -162,15 +159,13 @@ impl Nickel {
     /// ```
     /// Take a look at `get(...)` for a more detailed description.
     pub fn delete(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
-        self.asure_router();
-        self.default_router.get_mut_ref().add_route(Delete, String::from_str(uri), handler);
+        self.register_route_with_new_router(Delete, uri, handler);
     }
 
-
-    fn asure_router (&mut self) {
-        if self.default_router.is_none() {
-            self.default_router = Some(Router::new());
-        }
+    fn register_route_with_new_router(&mut self, method: Method, uri: &str, handler: fn(request: &Request, response: &mut Response)) {
+        let mut router = Router::new();
+        router.add_route(method, String::from_str(uri), handler);
+        self.utilize(router);
     }
 
     /// Registers an error handler which will be invoked among other error handler
@@ -283,17 +278,6 @@ impl Nickel {
     /// server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
     /// ```
     pub fn listen(mut self, ip: IpAddr, port: Port) {
-
-        // At this point it is safe to clone the router because no routes
-        // could be attached after `listen` anyway. That implies however
-        // that it is not possible to put middleware *after* the default router.
-        // One needs to manually create a router and assembly the middleware stack
-        // to do that.
-        if self.default_router.is_some() {
-            let default_router = self.default_router.get_ref().clone();
-            self.utilize(default_router);
-        }
-
         self.server = Some(Server::new(self.middleware_stack, ip, port));
         self.server.unwrap().serve();
     }
