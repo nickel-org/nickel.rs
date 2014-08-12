@@ -52,7 +52,7 @@ static VAR_SEQ:&'static str                 = "[,a-zA-Z0-9_-]*";
 static VAR_SEQ_WITH_SLASH:&'static str      = "[,/a-zA-Z0-9_-]*";
 static VAR_SEQ_WITH_CAPTURE:&'static str    = "([,a-zA-Z0-9_-]*)";
 // matches request params (e.g. ?foo=true&bar=false)
-static REGEX_PARAM_SEQ:&'static str         = "[,a-zA-Z0-9_=&?-]*";
+static REGEX_PARAM_SEQ:&'static str         = "(\\?[a-zA-Z0-9_=&-]*)?";
 static REGEX_START:&'static str             = "^";
 static REGEX_END:&'static str               = "$";
 
@@ -289,6 +289,7 @@ fn creates_valid_regex_for_routes () {
     assert_eq!(regex1.is_match("foo/4711/bar?foo=true&bar=false"), false);
 
     assert_eq!(regex2.is_match("foo/4711/bar"), true);
+    assert_eq!(regex2.is_match("foo/4711/barr"), false);
     assert_eq!(regex2.is_match("foo/4711/bar?foo=true&bar=false"), true);
     assert_eq!(regex2.is_match("foo/4711/4712/bar"), false);
     assert_eq!(regex2.is_match("foo/4711/4712/bar?foo=true&bar=false"), false);
