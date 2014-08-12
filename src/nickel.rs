@@ -29,7 +29,7 @@ impl Nickel {
     /// In order to use Nickels API one first has to create an instance.
     ///
     /// # Example
-    /// ```rust
+    /// ```{rust,ignore}
     /// let mut server = Nickel::new();
     /// ```
     pub fn new() -> Nickel {
@@ -58,7 +58,7 @@ impl Nickel {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```{rust,ignore}
     /// fn logger (req: &Request, res: &mut Response) -> Result<Action, NickelError>{
     ///     println!("logging request: {}", req.origin.request_uri);
     ///     Ok(Continue)
@@ -76,7 +76,7 @@ impl Nickel {
     ///
     /// # Example without variables and wildcards
     ///
-    /// ```rust
+    /// ```{rust,ignore}
     /// fn handler (request: Request, response: &mut Response) {
     ///     response.send("This matches /user");
     /// };
@@ -84,7 +84,7 @@ impl Nickel {
     /// ```
     /// # Example with variables
     ///
-    /// ```rust
+    /// ```{rust,ignore}
     /// fn handler (request: Request, response: &mut Response) {
     ///     let text = format!("This is user: {}", request.params.get(&"userid".to_string()));
     ///     response.send(text.as_slice());
@@ -93,7 +93,7 @@ impl Nickel {
     /// ```
     /// # Example with simple wildcard
     ///
-    /// ```rust
+    /// ```{rust,ignore}
     /// fn handler (request: Request, response: &mut Response) {
     ///     response.send("This matches /user/list/4711 but not /user/extended/list/4711");
     /// };
@@ -101,7 +101,7 @@ impl Nickel {
     /// ```
     /// # Example with double wildcard
     ///
-    /// ```rust
+    /// ```{rust,ignore}
     /// fn handler (request: Request, response: &mut Response) {
     ///     response.send("This matches /user/list/4711 and also /user/extended/list/4711");
     /// };
@@ -117,7 +117,7 @@ impl Nickel {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```{rust,ignore}
     /// fn handler (request: Request, response: &mut Response) {
     ///     response.send("This matches a POST request to /a/post/request");
     /// };
@@ -134,7 +134,7 @@ impl Nickel {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```{rust,ignore}
     /// fn handler (request: Request, response: &mut Response) {
     ///     response.send("This matches a POST request to /a/put/request");
     /// };
@@ -151,7 +151,7 @@ impl Nickel {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```{rust,ignore}
     /// fn handler (request: Request, response: &mut Response) {
     ///     response.send("This matches a DELETE request to /a/delete/request");
     /// };
@@ -176,7 +176,7 @@ impl Nickel {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```{rust,ignore}
     /// fn error_handler (err: &NickelError, req: &Request, res: &mut Response) -> Result<Action, NickelError>{
     ///    match err.kind {
     ///        ErrorWithStatusCode(NotFound) => {
@@ -199,7 +199,7 @@ impl Nickel {
     ///
     ///
     /// # Example
-    /// ```rust
+    /// ```{rust,ignore}
     /// let mut server = Nickel::new();
     /// server.utilize(Nickel::static_files("/path/to/serve/"));
     /// ```
@@ -211,7 +211,7 @@ impl Nickel {
     ///
     ///
     /// # Example
-    /// ```rust
+    /// ```{rust,ignore}
     /// let mut server = Nickel::new();
     /// let mut router = Nickel::router();
     /// 
@@ -226,7 +226,7 @@ impl Nickel {
     ///
     ///
     /// # Example
-    /// ```rust
+    /// ```{rust,ignore}
     ///
     /// #[deriving(Decodable, Encodable)]
     /// struct Person {
@@ -235,7 +235,7 @@ impl Nickel {
     /// }
     ///
     /// let mut server = Nickel::new();
-    /// server.utilize(Nickel::json_body_parser();
+    /// server.utilize(Nickel::json_body_parser());
     ///
     /// fn post_handler (request: &Request, response: &mut Response) {
     ///
@@ -254,10 +254,10 @@ impl Nickel {
     ///
     ///
     /// # Example
-    /// ```rust
+    /// ```{rust,ignore}
     ///
     /// let mut server = Nickel::new();
-    /// server.utilize(Nickel::query_string();
+    /// server.utilize(Nickel::query_string());
     ///
     /// fn get_handler (request: &Request, response: &mut Response) {
     ///     let foo = request.query("foo", "this is the default value, if foo is not present!");
@@ -273,7 +273,7 @@ impl Nickel {
     /// Bind and listen for connections on the given host and port
     ///
     /// # Example
-    /// ```rust
+    /// ```{rust,ignore}
     /// let mut server = Nickel::new();
     /// server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
     /// ```

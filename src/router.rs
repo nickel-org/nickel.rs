@@ -112,7 +112,7 @@ impl Router {
     ///
     /// # Example without variables and wildcards
     ///
-    /// ```rust
+    /// ```{rust,ignore}
     /// fn handler (request: Request, response: &mut Response) {
     ///     response.send("This matches /user");
     /// };
@@ -120,7 +120,7 @@ impl Router {
     /// ```
     /// # Example with variables
     ///
-    /// ```rust
+    /// ```{rust,ignore}
     /// fn handler (request: Request, response: &mut Response) {
     ///     let text = format!("This is user: {}", request.params.get(&"userid".to_string()));
     ///     response.send(text.as_slice());
@@ -129,7 +129,7 @@ impl Router {
     /// ```
     /// # Example with simple wildcard
     ///
-    /// ```rust
+    /// ```{rust,ignore}
     /// fn handler (request: Request, response: &mut Response) {
     ///     response.send("This matches /user/list/4711 but not /user/extended/list/4711");
     /// };
@@ -137,7 +137,7 @@ impl Router {
     /// ```
     /// # Example with double wildcard
     ///
-    /// ```rust
+    /// ```{rust,ignore}
     /// fn handler (request: Request, response: &mut Response) {
     ///     response.send("This matches /user/list/4711 and also /user/extended/list/4711");
     /// };
@@ -151,7 +151,7 @@ impl Router {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```{rust,ignore}
     /// fn handler (request: Request, response: &mut Response) {
     ///     response.send("This matches a POST request to /a/post/request");
     /// };
@@ -166,7 +166,7 @@ impl Router {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```{rust,ignore}
     /// fn handler (request: Request, response: &mut Response) {
     ///     response.send("This matches a POST request to /a/put/request");
     /// };
@@ -181,7 +181,7 @@ impl Router {
     ///
     /// # Example
     ///
-    /// ```rust
+    /// ```{rust,ignore}
     /// fn handler (request: Request, response: &mut Response) {
     ///     response.send("This matches a DELETE request to /a/delete/request");
     /// };

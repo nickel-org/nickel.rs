@@ -21,7 +21,7 @@ impl<'a, 'b> Response<'a, 'b> {
     /// Writes a response
     ///
     /// # Example
-    /// ```rust
+    /// ```{rust,ignore}
     /// response.send("hello world");
     /// ```
     pub fn send (&mut self, text: &str) {
@@ -34,7 +34,7 @@ impl<'a, 'b> Response<'a, 'b> {
     /// sets the content type by it's short form.
     ///
     /// # Example
-    /// ```rust
+    /// ```{rust,ignore}
     /// response.set_content_type("html");
     /// ```
     pub fn set_content_type(&mut self, text: &str) {

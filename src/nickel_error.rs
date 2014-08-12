@@ -14,7 +14,7 @@ impl NickelError {
     /// Creates a new `NickelError` instance
     ///
     /// # Example
-    /// ```rust
+    /// ```{rust,ignore}
     /// NickelError::new("Error Parsing JSON", ErrorWithStatusCode(BadRequest));
     /// ```
     pub fn new<T: IntoMaybeOwned<'static>>(message: T, kind: NickelErrorKind) -> NickelError {
