@@ -1,5 +1,6 @@
 use std::io::{IoResult, File};
 use std::io::util::copy;
+use std::path::BytesContainer;
 use http;
 use time;
 use mimes::get_media_type;
@@ -24,11 +25,11 @@ impl<'a, 'b> Response<'a, 'b> {
     /// ```{rust,ignore}
     /// response.send("hello world");
     /// ```
-    pub fn send (&mut self, text: &str) {
+    pub fn send<T: BytesContainer> (&mut self, text: T) {
         // TODO: This needs to be more sophisticated to return the correct headers
         // not just "some headers" :)
         Response::set_headers(self.origin);
-        let _ = self.origin.write(text.as_bytes());
+        let _ = self.origin.write(text.container_as_bytes());
     }
 
     /// sets the content type by it's short form.
