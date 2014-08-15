@@ -1,10 +1,13 @@
 use std::io::net::ip::{Port, IpAddr};
 
 use router::Router;
-use middleware::{ MiddlewareStack, Middleware, ErrorHandler };
+use middleware::{ MiddlewareStack, Middleware, ErrorHandler, Action };
+use into_middleware::IntoMiddleware;
+use nickel_error::{ NickelError, ErrorWithStatusCode };
 use server::Server;
 
 use http::method::{ Method, Get, Post, Put, Delete };
+use http::status::NotFound;
 use request::Request;
 use response::Response;
 
@@ -111,8 +114,8 @@ impl Nickel {
         self.register_route_with_new_router(Get, uri, handler);
     }
 
-    /// Registers a handler to be used for a specific POST request. 
-    /// A handler added through this API will be attached to the default router. 
+    /// Registers a handler to be used for a specific POST request.
+    /// A handler added through this API will be attached to the default router.
     /// Consider creating the router middleware manually for advanced functionality.
     ///
     /// # Example
@@ -129,7 +132,7 @@ impl Nickel {
     }
 
     /// Registers a handler to be used for a specific PUT request.
-    /// A handler added through this API will be attached to the default router. 
+    /// A handler added through this API will be attached to the default router.
     /// Consider creating the router middleware manually for advanced functionality.
     ///
     /// # Example
@@ -146,7 +149,7 @@ impl Nickel {
     }
 
     /// Registers a handler to be used for a specific DELETE request.
-    /// A handler added through this API will be attached to the default router. 
+    /// A handler added through this API will be attached to the default router.
     /// Consider creating the router middleware manually for advanced functionality.
     ///
     /// # Example
@@ -214,7 +217,7 @@ impl Nickel {
     /// ```{rust,ignore}
     /// let mut server = Nickel::new();
     /// let mut router = Nickel::router();
-    /// 
+    ///
     /// router.get("/foo", foo_handler);
     /// server.utilize(router);
     /// ```
@@ -278,6 +281,11 @@ impl Nickel {
     /// server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
     /// ```
     pub fn listen(mut self, ip: IpAddr, port: Port) {
+        fn not_found_handler(_request: &Request, response: &mut Response) -> Result<Action, NickelError> {
+            Err(NickelError::new("File Not Found", ErrorWithStatusCode(NotFound)))
+        }
+
+        self.middleware_stack.add_middleware(IntoMiddleware::from_fn(not_found_handler));
         self.server = Some(Server::new(self.middleware_stack, ip, port));
         self.server.unwrap().serve();
     }
