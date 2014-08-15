@@ -4,7 +4,7 @@ use std::io::{IoError, IoResult, FileNotFound};
 
 use http::server::request::AbsolutePath;
 use http::method::{Get, Head};
-use http::status::{ NotFound, InternalServerError };
+use http::status::{ InternalServerError };
 
 use request;
 use response;
@@ -25,7 +25,9 @@ impl Middleware for StaticFilesHandler {
                 match self.with_file(self.extract_path(req), res) {
                     Ok(()) => Ok(Halt),
                     Err(err) => match err.kind {
-                        FileNotFound => Err(NickelError::new("File Not Found", ErrorWithStatusCode(NotFound))),
+                        // We shouldn't assume the StaticFileHandler to be the last middleware in the stack.
+                        // Therefore it's important to continue in case of FileNotFound errors.
+                        FileNotFound => Ok(Continue),
                         _ => Err(NickelError::new("Unknown Error", ErrorWithStatusCode(InternalServerError)))
                     }
                 }
