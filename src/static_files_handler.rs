@@ -24,10 +24,8 @@ impl Middleware for StaticFilesHandler {
             Get | Head => {
                 match self.with_file(self.extract_path(req), res) {
                     Ok(()) => Ok(Halt),
-                    Err(err) => match err.kind {
-                        FileNotFound => Err(NickelError::new("File Not Found", ErrorWithStatusCode(NotFound))),
-                        _ => Err(NickelError::new("Unknown Error", ErrorWithStatusCode(InternalServerError)))
-                    }
+                    // Continue on error so the request is passed down the middlewarestack
+                    Err(err) => Ok(Continue)
                 }
             },
             _ => Ok(Continue)
