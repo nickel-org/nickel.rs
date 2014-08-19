@@ -1,7 +1,7 @@
 use std::io::net::ip::{SocketAddr, IpAddr, Port};
 
-use http;
-use http::server::{Config, Server, Request, ResponseWriter};
+use http::server::{Config, Request, ResponseWriter};
+use http::server::Server as HttpServer;
 
 use middleware::MiddlewareStack;
 use request;
@@ -14,7 +14,7 @@ pub struct Server {
     port: Port
 }
 
-impl http::server::Server for Server {
+impl HttpServer for Server {
     fn get_config(&self) -> Config {
         Config { bind_address: SocketAddr { ip: self.ip, port: self.port } }
     }
