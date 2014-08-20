@@ -4,7 +4,7 @@ name = "nickel"
 version = "0.1.0"
 authors = [ "christoph@thoughtram.io" ]
 
-[[lib]]
+[lib]
 
 name = "nickel"
 path = "src/lib.rs"
