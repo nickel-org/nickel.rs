@@ -15,7 +15,7 @@ git = "https://github.com/chris-morgan/rust-http.git"
 
 [dependencies.anymap]
 
-git = "https://github.com/chris-morgan/anymap.git"
+git = "https://github.com/nickel-org/anymap"
 
 [dependencies.url]
 
