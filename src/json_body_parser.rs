@@ -29,8 +29,12 @@ impl Middleware for JsonBodyParser {
     }
 }
 
-impl<'a> request::Request<'a> {
-    pub fn json_as<T: Decodable<Decoder,DecoderError>>(& self) -> Option<T>{
+pub trait JsonBody {
+    fn json_as<T: Decodable<Decoder,DecoderError>>(& self) -> Option<T>;
+}
+
+impl<'a> JsonBody for request::Request<'a> {
+    fn json_as<T: Decodable<Decoder,DecoderError>>(& self) -> Option<T>{
 
         // FIXME:
         // I think it would be smarter to not return Option<T> but rather
