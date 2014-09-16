@@ -2,24 +2,19 @@ extern crate serialize;
 extern crate nickel;
 extern crate http;
 
-use http::status::{ NotFound };
-use nickel::{ Nickel, Request, Response, ErrorWithStatusCode, Action, NickelError, IntoMiddleware };
+use nickel::{ Nickel, Handler};
 use std::io::net::ip::Ipv4Addr;
 
 fn main() {
 
     let mut server = Nickel::new();
 
-    fn bar_handler (_request: &Request, response: &mut Response) {
-        response.send("This is the /bar handler");
-    }
+    let bar_handler = Handler::new("This is the /bar handler", None);
 
     // go to http://localhost:6767/bar to see this route in action
     server.get("/bar", bar_handler);
 
-    fn foo_handler (_request: &Request, response: &mut Response) {
-        response.send("This is the /foo handler");
-    }
+    let foo_handler = Handler::new("This is the /foo handler", None);
 
     // go to http://localhost:6767/foo to see this route in action
     server.get("/foo", foo_handler);
