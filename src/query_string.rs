@@ -27,8 +27,12 @@ impl Middleware for QueryStringParser {
     }
 }
 
-impl<'a> request::Request<'a> {
-    pub fn query(&self, key: &str, default: &str) -> Vec<String> {
+pub trait QueryString {
+    fn query(&self, key: &str, default: &str) -> Vec<String>;
+}
+
+impl<'a> QueryString for request::Request<'a> {
+    fn query(&self, key: &str, default: &str) -> Vec<String> {
         self.map.find::<QueryStore>()
             .and_then(| store | {
                 match store.find_copy(&key.to_string()) {

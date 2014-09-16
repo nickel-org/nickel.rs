@@ -15,19 +15,28 @@ git = "https://github.com/chris-morgan/rust-http.git"
 
 [dependencies.anymap]
 
-git = "https://github.com/nickel-org/anymap"
+git = "https://github.com/chris-morgan/anymap.git"
 
 [dependencies.url]
 
 git = "https://github.com/servo/rust-url.git"
 
-[[example]]
+[dependencies.rust-mustache]
 
-name = "example"
-path = "examples/example.rs"
+git = "https://github.com/SimonPersson/rust-mustache"
 
 
 [[example]]
 
 name = "example_with_default_router"
 path = "examples/example_with_default_router.rs"
+
+[[example]]
+
+name = "example"
+path = "examples/example.rs"
+
+[[example]]
+
+name = "example_template_file"
+path = "examples/example_template_file.rs"

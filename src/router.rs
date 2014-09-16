@@ -10,6 +10,7 @@ use request::Request;
 use response::Response;
 use middleware::{ Middleware, Action, Halt, Continue };
 use nickel_error::NickelError;
+use handler::Handler;
 
 /// A Route is the basic data structure that stores both the path
 /// and the handler that gets executed for the route.
@@ -17,7 +18,7 @@ use nickel_error::NickelError;
 pub struct Route {
     pub path: String,
     pub method: Method,
-    pub handler: fn(request: &Request, response: &mut Response),
+    pub handler: Handler,
     pub variables: HashMap<String, uint>,
     matcher: Regex
 }
@@ -27,7 +28,7 @@ impl Clone for Route {
         Route {
             path: self.path.clone(),
             method: self.method.clone(),
-            handler: self.handler,
+            handler: self.handler.clone(),
             matcher: self.matcher.clone(),
             variables: self.variables.clone()
         }
@@ -94,9 +95,16 @@ impl PathUtils {
 /// concrete URLs. The router is also a regular middleware and needs to be
 /// added to the middleware stack with `server.utilize(router)`.
 
-#[deriving(Clone)]
-pub struct Router{
+pub struct Router {
     routes: Vec<Route>,
+}
+
+impl Clone for Router
+{
+    fn clone(&self) -> Router
+    {
+        Router{ routes: self.routes.clone() }
+    }
 }
 
 impl Router {
@@ -143,7 +151,7 @@ impl Router {
     /// };
     /// router.get("/user/**/:userid", handler);
     /// ```
-    pub fn get(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
+    pub fn get(&mut self, uri: &str, handler: Handler){
         self.add_route(Get, String::from_str(uri), handler);
     }
 
@@ -158,7 +166,7 @@ impl Router {
     /// router.post("/a/post/request", handler);
     /// ```
     /// Take a look at `get()` for a more detailed description.
-    pub fn post(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
+    pub fn post(&mut self, uri: &str, handler: Handler){
         self.add_route(Post, String::from_str(uri), handler);
     }
 
@@ -173,7 +181,7 @@ impl Router {
     /// router.put("/a/put/request", handler);
     /// ```
     /// Take a look at `get(..)` for a more detailed description.
-    pub fn put(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
+    pub fn put(&mut self, uri: &str, handler: Handler){
         self.add_route(Put, String::from_str(uri), handler);
     }
 
@@ -188,11 +196,11 @@ impl Router {
     /// router.delete("/a/delete/request", handler);
     /// ```
     /// Take a look at `get(...)` for a more detailed description.
-    pub fn delete(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
+    pub fn delete(&mut self, uri: &str, handler: Handler){
         self.add_route(Delete, String::from_str(uri), handler);
     }
 
-    pub fn add_route (&mut self, method: Method, path: String, handler: fn(request: &Request, response: &mut Response)) -> () {
+    pub fn add_route(&mut self, method: Method, path: String, handler: Handler) -> () {
         let matcher = PathUtils::create_regex(path.as_slice());
         let variable_infos = PathUtils::get_variable_info(path.as_slice());
         let route = Route {
@@ -236,7 +244,7 @@ impl Middleware for Router {
                     Some(route_result) => {
                         res.origin.status = ::http::status::Ok;
                         req.params = route_result.params.clone();
-                        (route_result.route.handler)(req, res);
+                        route_result.route.handler.handle(req, res);
                         Ok(Halt)
                     },
                     None => Ok(Continue)
@@ -310,12 +318,8 @@ fn creates_valid_regex_for_routes () {
 fn can_match_var_routes () {
     let route_store = &mut Router::new();
 
-    fn handler (_request: &Request, response: &mut Response) -> () {
-        let _ = response.origin.write("hello from foo".as_bytes());
-    };
-
-    route_store.add_route(method::Get, "/foo/:userid".to_string(), handler);
-    route_store.add_route(method::Get, "/bar".to_string(), handler);
+    route_store.add_route(method::Get, "/foo/:userid".to_string(),  Handler::new("Hello from /foo", None));
+    route_store.add_route(method::Get, "/bar".to_string(), Handler::new("Hello from /bar", None));
 
     let route_result = route_store.match_route(method::Get, "/foo/4711".to_string()).unwrap();
     let route = route_result.route;
