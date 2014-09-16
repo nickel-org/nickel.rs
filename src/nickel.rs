@@ -5,6 +5,7 @@ use middleware::{ MiddlewareStack, Middleware, ErrorHandler, Action };
 use into_middleware::IntoMiddleware;
 use nickel_error::{ NickelError, ErrorWithStatusCode };
 use server::Server;
+use handler::Handler;
 
 use http::method::{ Method, Get, Post, Put, Delete };
 use http::status::NotFound;
@@ -21,12 +22,24 @@ use default_error_handler::DefaultErrorHandler;
 /// Nickel is the application object. It's the surface that
 /// holds all public APIs.
 
-#[deriving(Clone)]
 pub struct Nickel{
     middleware_stack: MiddlewareStack,
     server: Option<Server>,
     default_router: Option<Router>
 }
+
+impl Clone for Nickel
+{
+    fn clone(&self) -> Nickel
+    {
+        Nickel{
+            middleware_stack: self.middleware_stack.clone(),
+            server: self.server.clone(),
+            default_router: self.default_router.clone()
+        }
+    }
+}
+
 impl Nickel {
 
     /// In order to use Nickels API one first has to create an instance.
@@ -110,7 +123,7 @@ impl Nickel {
     /// };
     /// server.get("/user/**/:userid", handler);
     /// ```
-    pub fn get(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
+    pub fn get(&mut self, uri: &str, handler: Handler){
         self.register_route_with_new_router(Get, uri, handler);
     }
 
@@ -127,7 +140,7 @@ impl Nickel {
     /// server.post("/a/post/request", handler);
     /// ```
     /// Take a look at `get()` for a more detailed description.
-    pub fn post(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
+    pub fn post(&mut self, uri: &str, handler: Handler){
         self.register_route_with_new_router(Post, uri, handler);
     }
 
@@ -144,7 +157,7 @@ impl Nickel {
     /// server.put("/a/put/request", handler);
     /// ```
     /// Take a look at `get(..)` for a more detailed description.
-    pub fn put(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
+    pub fn put(&mut self, uri: &str, handler: Handler){
         self.register_route_with_new_router(Put, uri, handler);
     }
 
@@ -161,11 +174,11 @@ impl Nickel {
     /// server.delete("/a/delete/request", handler);
     /// ```
     /// Take a look at `get(...)` for a more detailed description.
-    pub fn delete(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
+    pub fn delete(&mut self, uri: &str, handler: Handler){
         self.register_route_with_new_router(Delete, uri, handler);
     }
 
-    fn register_route_with_new_router(&mut self, method: Method, uri: &str, handler: fn(request: &Request, response: &mut Response)) {
+    fn register_route_with_new_router(&mut self, method: Method, uri: &str, handler: Handler) {
         let mut router = Router::new();
         router.add_route(method, String::from_str(uri), handler);
         self.utilize(router);

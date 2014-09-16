@@ -2,11 +2,13 @@ extern crate serialize;
 extern crate nickel;
 extern crate http;
 
+use std::collections::HashMap;
 use http::status::NotFound;
 use nickel::{
     Nickel, NickelError, ErrorWithStatusCode,
     Action, Continue, Halt, Request,
-    Response, IntoMiddleware, IntoErrorHandler
+    Response, IntoMiddleware, IntoErrorHandler,
+    Handler, JsonBody, QueryString
 };
 use std::io::net::ip::Ipv4Addr;
 
@@ -43,54 +45,44 @@ fn main() {
 
     let mut router = Nickel::router();
 
-    fn user_handler (request: &Request, response: &mut Response) {
-        let text = format!("This is user: {}", request.params.get(&"userid".to_string()));
-        response.send(text.as_slice());
+    fn user_handler(request: &Request, map: &mut HashMap<String, String>) {
+        map.insert("user_id".to_string(), request.params["userid".to_string()].clone());
     }
 
     // go to http://localhost:6767/user/4711 to see this route in action
-    router.get("/user/:userid", user_handler);
-
-    fn bar_handler (_request: &Request, response: &mut Response) {
-        response.send("This is the /bar handler");
-    }
+    router.get("/user/:userid", Handler::new("This is user: {{ user_id }}", Some(user_handler)));
 
     // go to http://localhost:6767/bar to see this route in action
-    router.get("/bar", bar_handler);
-
-    fn simple_wildcard (_request: &Request, response: &mut Response) {
-        response.send("This matches /some/crazy/route but not /some/super/crazy/route");
-    }
+    router.get("/bar", Handler::new("This is the /bar handler.", None));
 
     // go to http://localhost:6767/some/crazy/route to see this route in action
-    router.get("/some/*/route", simple_wildcard);
-
-    fn double_wildcard (_request: &Request, response: &mut Response) {
-        response.send("This matches /a/crazy/route and also /a/super/crazy/route");
-    }
+    router.get("/some/*/route", Handler::new("This matches /some/crazy/route but not /some/super/crazy/route", None));
 
     // go to http://localhost:6767/a/nice/route or http://localhost:6767/a/super/nice/route to see this route in action
-    router.get("/a/**/route", double_wildcard);
+    router.get("/a/**/route", Handler::new("This matches /a/crazy/route and also /a/super/crazy/route", None));
 
     // try it with curl
     // curl 'http://localhost:6767/a/post/request' -H 'Content-Type: application/json;charset=UTF-8'  --data-binary $'{ "firstname": "John","lastname": "Connor" }'
-    fn post_handler (request: &Request, response: &mut Response) {
-
+    fn post_handler (request: &Request, map: &mut HashMap<String, String>) {
         let person = request.json_as::<Person>().unwrap();
-        let text = format!("Hello {} {}", person.firstname, person.lastname);
-        response.send(text.as_slice());
+        map.insert("first_name".to_string(), person.firstname);
+        map.insert("last_name".to_string(), person.lastname);
     }
 
     // go to http://localhost:6767/a/post/request to see this route in action
-    router.post("/a/post/request", post_handler);
+    router.post("/a/post/request", Handler::new("Hello {{ first_name }} {{ last_name }}", Some(post_handler)));
 
     // try calling http://localhost:6767/query?foo=bar
-    fn query_handler (request: &Request, response: &mut Response) {
-        let text = format!("Your foo values in the query string are: {}", request.query("foo", "This is only a default value!"));
-        response.send(text.as_slice());
+    fn query_handler (request: &Request, map: &mut HashMap<String, String>) {
+        map.insert("foo".to_string(), request.query("foo", "This is only a default value!")
+                                .iter()
+                                .map(|s| s.as_slice())
+                                .collect::<Vec<&str>>()
+                                .connect(", ")
+                  );
     }
 
-    router.get("/query", query_handler);
+    router.get("/query", Handler::new("Your foo values in the query string are: {{ foo }}", Some(query_handler)));
 
     server.utilize(router);
 
