@@ -6,7 +6,8 @@ use http::status::NotFound;
 use nickel::{
     Nickel, NickelError, ErrorWithStatusCode,
     Action, Continue, Halt, Request,
-    Response, IntoMiddleware, IntoErrorHandler
+    Response, IntoMiddleware, IntoErrorHandler,
+    QueryString, JsonBody
 };
 use std::io::net::ip::Ipv4Addr;
 
