@@ -87,17 +87,10 @@ impl<'a, 'b> Response<'a, 'b> {
         let mut templates = self.templates.write();
         let template = templates.find_or_insert_with(path, |_|
                      {
-                         mustache::compile_str(match str::from_utf8(
-                            match File::open(&Path::new(path)).read_to_end()
-                            {
-                                Ok(s) => s,
-                                Err(e) => fail!("Couldn't open the template file: {}", e)
-                            }.as_slice()
-                        )
-                        {
-                            Some(s) => s,
-                            None => fail!("Coulnt't read template file as utf8"),
-                        }
+                         mustache::compile_str(str::from_utf8(
+                            File::open(&Path::new(path))
+                                 .read_to_end().ok().expect(format!("Couldn't open the template file: {}", path).as_slice()).as_slice()
+                        ).expect("Coulnt't read template file as utf8")
                     )
                 }
             );
