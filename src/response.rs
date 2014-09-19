@@ -74,6 +74,15 @@ impl<'a, 'b> Response<'a, 'b> {
         copy(&mut file, self.origin)
     }
 
+    /// renders a mustache template.
+    /// # Example
+    /// ```
+    /// fn handler (_request: &Request, response: &mut Response) {
+    ///     let mut data = HashMap::<&'static str, &'static str>::new();
+    ///     data.insert("name", "Simon");
+    ///     response.render("examples/assets/template.htm", &data);
+    /// }
+    /// ```
     pub fn render(&mut self, path: &'static str, data: &HashMap<&'static str, &'static str>)
     {
         let mut templates = self.templates.write();
