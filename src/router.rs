@@ -50,9 +50,9 @@ struct PathUtils;
 static REGEX_VAR_SEQ: Regex                 = regex!(r":([,a-zA-Z0-9_-]*)");
 static VAR_SEQ:&'static str                 = "[,a-zA-Z0-9_-]*";
 static VAR_SEQ_WITH_SLASH:&'static str      = "[,/a-zA-Z0-9_-]*";
-static VAR_SEQ_WITH_CAPTURE:&'static str    = "([,a-zA-Z0-9_-]*)";
+static VAR_SEQ_WITH_CAPTURE:&'static str    = "([,a-zA-Z0-9%_-]*)";
 // matches request params (e.g. ?foo=true&bar=false)
-static REGEX_PARAM_SEQ:&'static str         = "(\\?[a-zA-Z0-9_=&-]*)?";
+static REGEX_PARAM_SEQ:&'static str         = "(\\?[a-zA-Z0-9%_=&-]*)?";
 static REGEX_START:&'static str             = "^";
 static REGEX_END:&'static str               = "$";
 
@@ -287,6 +287,8 @@ fn creates_valid_regex_for_routes () {
     assert_eq!(regex1.is_match("foo/4711/bar/5490?foo=true&bar=false"), true);
     assert_eq!(regex1.is_match("foo/4711/bar"), false);
     assert_eq!(regex1.is_match("foo/4711/bar?foo=true&bar=false"), false);
+    assert_eq!(regex1.is_match("foo/4711/bar/test%20spacing"), true);
+    assert_eq!(regex1.is_match("foo/4711/bar/5281?foo=test%20spacing&bar=false"), true);
 
     assert_eq!(regex2.is_match("foo/4711/bar"), true);
     assert_eq!(regex2.is_match("foo/4711/barr"), false);
@@ -354,4 +356,14 @@ fn can_match_var_routes () {
     assert_eq!(result, true);
     let route_result = route_result.unwrap();
     assert_eq!(route_result.params.get(&"userid".to_string()), &"123,456".to_string());
+
+    //ensure that this will work with spacing too
+    let route_result = route_store.match_route(method::Get, "/foo/John%20Doe".to_string());
+    let result = match route_result {
+        Some(_) => true,
+        None => false
+    };
+    assert_eq!(result, true);
+    let route_result = route_result.unwrap();
+    assert_eq!(route_result.params.get(&"userid".to_string()), &"John%20Doe".to_string());
 }
