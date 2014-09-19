@@ -1,3 +1,8 @@
+extern crate mustache;
+
+use std::str;
+use std::sync::{Arc, RWLock};
+use std::collections::HashMap;
 use std::io::{IoResult, File};
 use std::io::util::copy;
 use std::path::BytesContainer;
@@ -9,13 +14,18 @@ use mimes::get_media_type;
 pub struct Response<'a, 'b: 'a> {
     ///the original `http::server::ResponseWriter`
     pub origin: &'a mut http::server::ResponseWriter<'b>,
+    templates: Arc<RWLock<HashMap<&'static str, mustache::Template>>>
 }
 
 impl<'a, 'b> Response<'a, 'b> {
 
-    pub fn from_internal<'c, 'd>(response: &'c mut http::server::ResponseWriter<'d>) -> Response<'c, 'd> {
+    pub fn from_internal<'c, 'd>(response: &'c mut http::server::ResponseWriter<'d>,
+                                 templates: Arc<RWLock<HashMap<&'static str, mustache::Template>>>
+                                ) -> Response<'c, 'd> 
+    {
         Response {
-            origin: response
+            origin: response,
+            templates: templates
         }
     }
 
@@ -62,6 +72,28 @@ impl<'a, 'b> Response<'a, 'b> {
         self.origin.headers.content_type = path.extension_str().and_then(get_media_type);
         self.origin.headers.server = Some(String::from_str("Nickel"));
         copy(&mut file, self.origin)
+    }
+
+    pub fn render(&mut self, path: &'static str, data: &HashMap<&'static str, &'static str>)
+    {
+        let mut templates = self.templates.write();
+        let template = templates.find_or_insert_with(path, |_|
+                     {
+                         mustache::compile_str(match str::from_utf8(
+                            match File::open(&Path::new(path)).read_to_end()
+                            {
+                                Ok(s) => s,
+                                Err(e) => fail!("Couldn't open the template file: {}", e)
+                            }.as_slice()
+                        )
+                        {
+                            Some(s) => s,
+                            None => fail!("Coulnt't read template file as utf8"),
+                        }
+                    )                        
+                }
+            );
+        let _ = template.render(self.origin, data);
     }
 }
 
