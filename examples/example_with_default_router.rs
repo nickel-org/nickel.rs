@@ -2,8 +2,7 @@ extern crate serialize;
 extern crate nickel;
 extern crate http;
 
-use http::status::{ NotFound };
-use nickel::{ Nickel, Request, Response, ErrorWithStatusCode, Action, NickelError, IntoMiddleware };
+use nickel::{ Nickel, Request, Response };
 use std::io::net::ip::Ipv4Addr;
 
 fn main() {
