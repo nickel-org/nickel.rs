@@ -21,6 +21,10 @@ git = "https://github.com/chris-morgan/anymap.git"
 
 git = "https://github.com/servo/rust-url.git"
 
+[dependencies.rust-mustache]
+
+git = "https://github.com/erickt/rust-mustache.git"
+
 [[example]]
 
 name = "example"
@@ -31,3 +35,8 @@ path = "examples/example.rs"
 
 name = "example_with_default_router"
 path = "examples/example_with_default_router.rs"
+
+[[example]]
+
+name = "example_template"
+path = "examples/example_template.rs"
