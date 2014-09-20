@@ -207,7 +207,7 @@ impl Router {
 
     pub fn match_route(&self, method: Method, path: String) -> Option<RouteResult> {
         self.routes.iter().find(|item| item.method == method && item.matcher.is_match(path.as_slice()))
-            .and_then(|route| {
+            .map(|route| {
                 let map = match route.matcher.captures(path.as_slice()) {
                     Some(captures) => {
                         route.variables.iter().map(|(name, pos)| {
@@ -216,10 +216,10 @@ impl Router {
                     },
                     None => HashMap::new(),
                 };
-                Some(RouteResult {
+                RouteResult {
                     route: route,
                     params: map
-                })
+                }
             })
     }
 }
