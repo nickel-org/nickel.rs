@@ -43,22 +43,21 @@ pub struct RouteResult<'a> {
     pub params: HashMap<String, String>
 }
 
-/// The PathUtils collects some small helper methods that operate on the path
-struct PathUtils;
+/// The path_utils collects some small helper methods that operate on the path
+mod path_utils {
+    use regex::Regex;
+    use std::collections::hashmap::HashMap;
 
-// matches named variables (e.g. :userid)
-static REGEX_VAR_SEQ: Regex                 = regex!(r":([,a-zA-Z0-9_-]*)");
-static VAR_SEQ:&'static str                 = "[,a-zA-Z0-9_-]*";
-static VAR_SEQ_WITH_SLASH:&'static str      = "[,/a-zA-Z0-9_-]*";
-static VAR_SEQ_WITH_CAPTURE:&'static str    = "([,a-zA-Z0-9%_-]*)";
-// matches request params (e.g. ?foo=true&bar=false)
-static REGEX_PARAM_SEQ:&'static str         = "(\\?[a-zA-Z0-9%_=&-]*)?";
-static REGEX_START:&'static str             = "^";
-static REGEX_END:&'static str               = "$";
-
-
-impl PathUtils {
-    fn create_regex (route_path: &str) -> Regex {
+    // matches named variables (e.g. :userid)
+    static REGEX_VAR_SEQ: Regex                 = regex!(r":([,a-zA-Z0-9_-]*)");
+    static VAR_SEQ:&'static str                 = "[,a-zA-Z0-9_-]*";
+    static VAR_SEQ_WITH_SLASH:&'static str      = "[,/a-zA-Z0-9_-]*";
+    static VAR_SEQ_WITH_CAPTURE:&'static str    = "([,a-zA-Z0-9%_-]*)";
+    // matches request params (e.g. ?foo=true&bar=false)
+    static REGEX_PARAM_SEQ:&'static str         = "(\\?[a-zA-Z0-9%_=&-]*)?";
+    static REGEX_START:&'static str             = "^";
+    static REGEX_END:&'static str               = "$";
+    pub fn create_regex (route_path: &str) -> Regex {
 
         let updated_path = route_path.to_string()
                                      // first mark all double wildcards for replacement. We can't directly replace them
@@ -84,7 +83,7 @@ impl PathUtils {
         }
     }
 
-    fn get_variable_info (route_path: &str) -> HashMap<String, uint> {
+    pub fn get_variable_info (route_path: &str) -> HashMap<String, uint> {
         REGEX_VAR_SEQ.captures_iter(route_path)
              .enumerate()
              .map(|(i, matched)| (matched.at(1).to_string(), i))
@@ -194,9 +193,9 @@ impl Router {
         self.add_route(Delete, String::from_str(uri), handler);
     }
 
-    pub fn add_route (&mut self, method: Method, path: String, handler: fn(request: &Request, response: &mut Response)) -> () {
-        let matcher = PathUtils::create_regex(path.as_slice());
-        let variable_infos = PathUtils::get_variable_info(path.as_slice());
+    pub fn add_route(&mut self, method: Method, path: String, handler: fn(request: &Request, response: &mut Response)) -> () {
+        let matcher = path_utils::create_regex(path.as_slice());
+        let variable_infos = path_utils::get_variable_info(path.as_slice());
         let route = Route {
             path: path,
             method: method,
@@ -247,7 +246,7 @@ impl Middleware for Router {
 
 #[test]
 fn creates_map_with_var_variable_infos () {
-    let map = PathUtils::get_variable_info("foo/:uid/bar/:groupid");
+    let map = path_utils::get_variable_info("foo/:uid/bar/:groupid");
 
     assert_eq!(map.len(), 2);
     assert_eq!(map.get(&"uid".to_string()), &0);
@@ -256,19 +255,19 @@ fn creates_map_with_var_variable_infos () {
 
 #[test]
 fn creates_regex_with_captures () {
-    let regex = PathUtils::create_regex("foo/:uid/bar/:groupid");
+    let regex = path_utils::create_regex("foo/:uid/bar/:groupid");
     let caps = regex.captures("foo/4711/bar/5490").unwrap();
 
     assert_eq!(caps.at(1), "4711");
     assert_eq!(caps.at(2), "5490");
 
-    let regex = PathUtils::create_regex("foo/*/:uid/bar/:groupid");
+    let regex = path_utils::create_regex("foo/*/:uid/bar/:groupid");
     let caps = regex.captures("foo/test/4711/bar/5490").unwrap();
 
     assert_eq!(caps.at(1), "4711");
     assert_eq!(caps.at(2), "5490");
 
-    let regex = PathUtils::create_regex("foo/**/:uid/bar/:groupid");
+    let regex = path_utils::create_regex("foo/**/:uid/bar/:groupid");
     let caps = regex.captures("foo/test/another/4711/bar/5490").unwrap();
 
     assert_eq!(caps.at(1), "4711");
@@ -277,9 +276,9 @@ fn creates_regex_with_captures () {
 
 #[test]
 fn creates_valid_regex_for_routes () {
-    let regex1 = PathUtils::create_regex("foo/:uid/bar/:groupid");
-    let regex2 = PathUtils::create_regex("foo/*/bar");
-    let regex3 = PathUtils::create_regex("foo/**/bar");
+    let regex1 = path_utils::create_regex("foo/:uid/bar/:groupid");
+    let regex2 = path_utils::create_regex("foo/*/bar");
+    let regex3 = path_utils::create_regex("foo/**/bar");
 
     assert_eq!(regex1.is_match("foo/4711/bar/5490"), true);
     assert_eq!(regex1.is_match("foo/4711/bar/5490?foo=true&bar=false"), true);
