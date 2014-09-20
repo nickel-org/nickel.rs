@@ -328,42 +328,23 @@ fn can_match_var_routes () {
     assert_eq!(route.variables.len(), 1);
     assert_eq!(route.variables.get(&"userid".to_string()), &0);
 
-
     let route_result = route_store.match_route(method::Get, "/bar/4711".to_string());
-
-    let result = match route_result {
-        Some(_res) => true,
-        None => false
-    };
-
-    assert_eq!(result, false);
+    assert!(route_result.is_none());
 
     let route_result = route_store.match_route(method::Get, "/foo".to_string());
-
-    let result = match route_result{
-        Some(_res) => true,
-        None => false
-    };
-
-    assert_eq!(result, false);
+    assert!(route_result.is_none());
 
     //ensure that this will work with commas too
     let route_result = route_store.match_route(method::Get, "/foo/123,456".to_string());
-    let result = match route_result {
-        Some(_) => true,
-        None => false
-    };
-    assert_eq!(result, true);
+    assert!(route_result.is_some());
+
     let route_result = route_result.unwrap();
     assert_eq!(route_result.params.get(&"userid".to_string()), &"123,456".to_string());
 
     //ensure that this will work with spacing too
     let route_result = route_store.match_route(method::Get, "/foo/John%20Doe".to_string());
-    let result = match route_result {
-        Some(_) => true,
-        None => false
-    };
-    assert_eq!(result, true);
+    assert!(route_result.is_some());
+
     let route_result = route_result.unwrap();
     assert_eq!(route_result.params.get(&"userid".to_string()), &"John%20Doe".to_string());
 }
