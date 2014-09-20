@@ -71,10 +71,12 @@ impl PathUtils {
                                      .replace("___DOUBLE_WILDCARD___", VAR_SEQ_WITH_SLASH);
 
         // then replace the variable symbols (:variable) with the appropriate regex
-        let result = REGEX_START.to_string()
-                                .append(REGEX_VAR_SEQ.replace_all(updated_path.as_slice(), VAR_SEQ_WITH_CAPTURE).as_slice())
-                                .append(REGEX_PARAM_SEQ)
-                                .append(REGEX_END);
+        let result = [REGEX_START,
+                      REGEX_VAR_SEQ.replace_all(updated_path.as_slice(),
+                                                VAR_SEQ_WITH_CAPTURE)
+                                   .as_slice(),
+                      REGEX_PARAM_SEQ,
+                      REGEX_END].concat();
 
         match Regex::new(result.as_slice()) {
             Ok(re) => re,
