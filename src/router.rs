@@ -207,8 +207,8 @@ impl Router {
         self.routes.push(route);
     }
 
-    pub fn match_route(&self, method: Method, path: &str) -> Option<RouteResult> {
-        self.routes.iter().find(|item| item.method == method && item.matcher.is_match(path))
+    pub fn match_route(&self, method: &Method, path: &str) -> Option<RouteResult> {
+        self.routes.iter().find(|item| item.method == *method && item.matcher.is_match(path))
             .map(|route| {
                 let map = match route.matcher.captures(path) {
                     Some(captures) => {
@@ -230,7 +230,7 @@ impl Middleware for Router {
     fn invoke (&self, req: &mut Request, res: &mut Response) -> Result<Action, NickelError> {
         match req.origin.request_uri {
             AbsolutePath(ref url) => {
-                match self.match_route(req.origin.method.clone(), url.as_slice()) {
+                match self.match_route(&req.origin.method, url.as_slice()) {
                     Some(route_result) => {
                         res.origin.status = ::http::status::Ok;
                         req.params = route_result.params.clone();
@@ -317,7 +317,7 @@ fn can_match_var_routes () {
     route_store.add_route(method::Get, "/foo/:userid".to_string(), handler);
     route_store.add_route(method::Get, "/bar".to_string(), handler);
 
-    let route_result = route_store.match_route(method::Get, "/foo/4711").unwrap();
+    let route_result = route_store.match_route(&method::Get, "/foo/4711").unwrap();
     let route = route_result.route;
 
     assert_eq!(route_result.params.get(&"userid".to_string()), &"4711".to_string());
@@ -326,21 +326,21 @@ fn can_match_var_routes () {
     assert_eq!(route.variables.len(), 1);
     assert_eq!(route.variables.get(&"userid".to_string()), &0);
 
-    let route_result = route_store.match_route(method::Get, "/bar/4711");
+    let route_result = route_store.match_route(&method::Get, "/bar/4711");
     assert!(route_result.is_none());
 
-    let route_result = route_store.match_route(method::Get, "/foo");
+    let route_result = route_store.match_route(&method::Get, "/foo");
     assert!(route_result.is_none());
 
     //ensure that this will work with commas too
-    let route_result = route_store.match_route(method::Get, "/foo/123,456");
+    let route_result = route_store.match_route(&method::Get, "/foo/123,456");
     assert!(route_result.is_some());
 
     let route_result = route_result.unwrap();
     assert_eq!(route_result.params.get(&"userid".to_string()), &"123,456".to_string());
 
     //ensure that this will work with spacing too
-    let route_result = route_store.match_route(method::Get, "/foo/John%20Doe");
+    let route_result = route_store.match_route(&method::Get, "/foo/John%20Doe");
     assert!(route_result.is_some());
 
     let route_result = route_result.unwrap();
