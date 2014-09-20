@@ -43,22 +43,21 @@ pub struct RouteResult<'a> {
     pub params: HashMap<String, String>
 }
 
-/// The PathUtils collects some small helper methods that operate on the path
-struct PathUtils;
+/// The path_utils collects some small helper methods that operate on the path
+mod path_utils {
+    use regex::Regex;
+    use std::collections::hashmap::HashMap;
 
-// matches named variables (e.g. :userid)
-static REGEX_VAR_SEQ: Regex                 = regex!(r":([,a-zA-Z0-9_-]*)");
-static VAR_SEQ:&'static str                 = "[,a-zA-Z0-9_-]*";
-static VAR_SEQ_WITH_SLASH:&'static str      = "[,/a-zA-Z0-9_-]*";
-static VAR_SEQ_WITH_CAPTURE:&'static str    = "([,a-zA-Z0-9_-]*)";
-// matches request params (e.g. ?foo=true&bar=false)
-static REGEX_PARAM_SEQ:&'static str         = "(\\?[a-zA-Z0-9_=&-]*)?";
-static REGEX_START:&'static str             = "^";
-static REGEX_END:&'static str               = "$";
-
-
-impl PathUtils {
-    fn create_regex (route_path: &str) -> Regex {
+    // matches named variables (e.g. :userid)
+    static REGEX_VAR_SEQ: Regex                 = regex!(r":([,a-zA-Z0-9_-]*)");
+    static VAR_SEQ:&'static str                 = "[,a-zA-Z0-9_-]*";
+    static VAR_SEQ_WITH_SLASH:&'static str      = "[,/a-zA-Z0-9_-]*";
+    static VAR_SEQ_WITH_CAPTURE:&'static str    = "([,a-zA-Z0-9%_-]*)";
+    // matches request params (e.g. ?foo=true&bar=false)
+    static REGEX_PARAM_SEQ:&'static str         = "(\\?[a-zA-Z0-9%_=&-]*)?";
+    static REGEX_START:&'static str             = "^";
+    static REGEX_END:&'static str               = "$";
+    pub fn create_regex (route_path: &str) -> Regex {
 
         let updated_path = route_path.to_string()
                                      // first mark all double wildcards for replacement. We can't directly replace them
@@ -71,10 +70,12 @@ impl PathUtils {
                                      .replace("___DOUBLE_WILDCARD___", VAR_SEQ_WITH_SLASH);
 
         // then replace the variable symbols (:variable) with the appropriate regex
-        let result = REGEX_START.to_string()
-                                .append(REGEX_VAR_SEQ.replace_all(updated_path.as_slice(), VAR_SEQ_WITH_CAPTURE).as_slice())
-                                .append(REGEX_PARAM_SEQ)
-                                .append(REGEX_END);
+        let result = [REGEX_START,
+                      REGEX_VAR_SEQ.replace_all(updated_path.as_slice(),
+                                                VAR_SEQ_WITH_CAPTURE)
+                                   .as_slice(),
+                      REGEX_PARAM_SEQ,
+                      REGEX_END].concat();
 
         match Regex::new(result.as_slice()) {
             Ok(re) => re,
@@ -82,7 +83,7 @@ impl PathUtils {
         }
     }
 
-    fn get_variable_info (route_path: &str) -> HashMap<String, uint> {
+    pub fn get_variable_info (route_path: &str) -> HashMap<String, uint> {
         REGEX_VAR_SEQ.captures_iter(route_path)
              .enumerate()
              .map(|(i, matched)| (matched.at(1).to_string(), i))
@@ -192,9 +193,9 @@ impl Router {
         self.add_route(Delete, String::from_str(uri), handler);
     }
 
-    pub fn add_route (&mut self, method: Method, path: String, handler: fn(request: &Request, response: &mut Response)) -> () {
-        let matcher = PathUtils::create_regex(path.as_slice());
-        let variable_infos = PathUtils::get_variable_info(path.as_slice());
+    pub fn add_route(&mut self, method: Method, path: String, handler: fn(request: &Request, response: &mut Response)) -> () {
+        let matcher = path_utils::create_regex(path.as_slice());
+        let variable_infos = path_utils::get_variable_info(path.as_slice());
         let route = Route {
             path: path,
             method: method,
@@ -205,24 +206,20 @@ impl Router {
         self.routes.push(route);
     }
 
-    pub fn match_route(&self, method: Method, path: String) -> Option<RouteResult> {
-        self.routes.iter().find(|item| item.method == method && item.matcher.is_match(path.as_slice()))
-            .and_then(|route| {
-                match route.matcher.captures(path.as_slice()) {
+    pub fn match_route(&self, method: &Method, path: &str) -> Option<RouteResult> {
+        self.routes.iter().find(|item| item.method == *method && item.matcher.is_match(path))
+            .map(|route| {
+                let map = match route.matcher.captures(path) {
                     Some(captures) => {
-                        let mut map = HashMap::new();
-                        for (name, pos) in route.variables.iter() {
-                            map.insert(name.to_string(), captures.at(pos + 1).to_string());
-                        }
-                        Some(RouteResult {
-                            route: route,
-                            params: map
-                        })
+                        route.variables.iter().map(|(name, pos)| {
+                            (name.to_string(), captures.at(pos + 1).to_string())
+                        }).collect()
                     },
-                    None => Some(RouteResult{
-                        route: route,
-                        params: HashMap::new()
-                    })
+                    None => HashMap::new(),
+                };
+                RouteResult {
+                    route: route,
+                    params: map
                 }
             })
     }
@@ -230,9 +227,9 @@ impl Router {
 
 impl Middleware for Router {
     fn invoke (&self, req: &mut Request, res: &mut Response) -> Result<Action, NickelError> {
-        match &req.origin.request_uri {
-            &AbsolutePath(ref url) => {
-                match self.match_route(req.origin.method.clone(), url.clone()) {
+        match req.origin.request_uri {
+            AbsolutePath(ref url) => {
+                match self.match_route(&req.origin.method, url.as_slice()) {
                     Some(route_result) => {
                         res.origin.status = ::http::status::Ok;
                         req.params = route_result.params.clone();
@@ -249,7 +246,7 @@ impl Middleware for Router {
 
 #[test]
 fn creates_map_with_var_variable_infos () {
-    let map = PathUtils::get_variable_info("foo/:uid/bar/:groupid");
+    let map = path_utils::get_variable_info("foo/:uid/bar/:groupid");
 
     assert_eq!(map.len(), 2);
     assert_eq!(map.get(&"uid".to_string()), &0);
@@ -258,19 +255,19 @@ fn creates_map_with_var_variable_infos () {
 
 #[test]
 fn creates_regex_with_captures () {
-    let regex = PathUtils::create_regex("foo/:uid/bar/:groupid");
+    let regex = path_utils::create_regex("foo/:uid/bar/:groupid");
     let caps = regex.captures("foo/4711/bar/5490").unwrap();
 
     assert_eq!(caps.at(1), "4711");
     assert_eq!(caps.at(2), "5490");
 
-    let regex = PathUtils::create_regex("foo/*/:uid/bar/:groupid");
+    let regex = path_utils::create_regex("foo/*/:uid/bar/:groupid");
     let caps = regex.captures("foo/test/4711/bar/5490").unwrap();
 
     assert_eq!(caps.at(1), "4711");
     assert_eq!(caps.at(2), "5490");
 
-    let regex = PathUtils::create_regex("foo/**/:uid/bar/:groupid");
+    let regex = path_utils::create_regex("foo/**/:uid/bar/:groupid");
     let caps = regex.captures("foo/test/another/4711/bar/5490").unwrap();
 
     assert_eq!(caps.at(1), "4711");
@@ -279,14 +276,16 @@ fn creates_regex_with_captures () {
 
 #[test]
 fn creates_valid_regex_for_routes () {
-    let regex1 = PathUtils::create_regex("foo/:uid/bar/:groupid");
-    let regex2 = PathUtils::create_regex("foo/*/bar");
-    let regex3 = PathUtils::create_regex("foo/**/bar");
+    let regex1 = path_utils::create_regex("foo/:uid/bar/:groupid");
+    let regex2 = path_utils::create_regex("foo/*/bar");
+    let regex3 = path_utils::create_regex("foo/**/bar");
 
     assert_eq!(regex1.is_match("foo/4711/bar/5490"), true);
     assert_eq!(regex1.is_match("foo/4711/bar/5490?foo=true&bar=false"), true);
     assert_eq!(regex1.is_match("foo/4711/bar"), false);
     assert_eq!(regex1.is_match("foo/4711/bar?foo=true&bar=false"), false);
+    assert_eq!(regex1.is_match("foo/4711/bar/test%20spacing"), true);
+    assert_eq!(regex1.is_match("foo/4711/bar/5281?foo=test%20spacing&bar=false"), true);
 
     assert_eq!(regex2.is_match("foo/4711/bar"), true);
     assert_eq!(regex2.is_match("foo/4711/barr"), false);
@@ -317,7 +316,7 @@ fn can_match_var_routes () {
     route_store.add_route(method::Get, "/foo/:userid".to_string(), handler);
     route_store.add_route(method::Get, "/bar".to_string(), handler);
 
-    let route_result = route_store.match_route(method::Get, "/foo/4711".to_string()).unwrap();
+    let route_result = route_store.match_route(&method::Get, "/foo/4711").unwrap();
     let route = route_result.route;
 
     assert_eq!(route_result.params.get(&"userid".to_string()), &"4711".to_string());
@@ -326,32 +325,23 @@ fn can_match_var_routes () {
     assert_eq!(route.variables.len(), 1);
     assert_eq!(route.variables.get(&"userid".to_string()), &0);
 
+    let route_result = route_store.match_route(&method::Get, "/bar/4711");
+    assert!(route_result.is_none());
 
-    let route_result = route_store.match_route(method::Get, "/bar/4711".to_string());
-
-    let result = match route_result {
-        Some(_res) => true,
-        None => false
-    };
-
-    assert_eq!(result, false);
-
-    let route_result = route_store.match_route(method::Get, "/foo".to_string());
-
-    let result = match route_result{
-        Some(_res) => true,
-        None => false
-    };
-
-    assert_eq!(result, false);
+    let route_result = route_store.match_route(&method::Get, "/foo");
+    assert!(route_result.is_none());
 
     //ensure that this will work with commas too
-    let route_result = route_store.match_route(method::Get, "/foo/123,456".to_string());
-    let result = match route_result {
-        Some(_) => true,
-        None => false
-    };
-    assert_eq!(result, true);
+    let route_result = route_store.match_route(&method::Get, "/foo/123,456");
+    assert!(route_result.is_some());
+
     let route_result = route_result.unwrap();
     assert_eq!(route_result.params.get(&"userid".to_string()), &"123,456".to_string());
+
+    //ensure that this will work with spacing too
+    let route_result = route_store.match_route(&method::Get, "/foo/John%20Doe");
+    assert!(route_result.is_some());
+
+    let route_result = route_result.unwrap();
+    assert_eq!(route_result.params.get(&"userid".to_string()), &"John%20Doe".to_string());
 }
