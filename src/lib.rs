@@ -21,6 +21,7 @@ extern crate serialize;
 extern crate regex;
 extern crate anymap;
 extern crate url;
+extern crate mustache;
 #[phase(plugin)]
 extern crate regex_macros;
 

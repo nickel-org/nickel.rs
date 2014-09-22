@@ -1,6 +1,3 @@
-extern crate mustache;
-
-use std::str;
 use std::sync::{Arc, RWLock};
 use std::collections::HashMap;
 use std::io::{IoResult, File};
@@ -8,22 +5,23 @@ use std::io::util::copy;
 use std::path::BytesContainer;
 use serialize::Encodable;
 use http;
+use http::server::ResponseWriter;
 use time;
 use mimes::get_media_type;
+use mustache;
+use mustache::{Template, Encoder, Error};
 
 ///A container for the response
 pub struct Response<'a, 'b: 'a> {
     ///the original `http::server::ResponseWriter`
-    pub origin: &'a mut http::server::ResponseWriter<'b>,
-    templates: Arc<RWLock<HashMap<&'static str, mustache::Template>>>
+    pub origin: &'a mut ResponseWriter<'b>,
+    templates: Arc<RWLock<HashMap<&'static str, Template>>>
 }
 
 impl<'a, 'b> Response<'a, 'b> {
-
-    pub fn from_internal<'c, 'd>(response: &'c mut http::server::ResponseWriter<'d>,
-                                 templates: Arc<RWLock<HashMap<&'static str, mustache::Template>>>
-                                ) -> Response<'c, 'd> 
-    {
+    pub fn from_internal<'c, 'd>(response: &'c mut ResponseWriter<'d>,
+                                 templates: Arc<RWLock<HashMap<&'static str, Template>>>)
+                                -> Response<'c, 'd> {
         Response {
             origin: response,
             templates: templates
@@ -55,15 +53,16 @@ impl<'a, 'b> Response<'a, 'b> {
     }
 
     fn set_headers(response_writer: &mut http::server::ResponseWriter) {
-        response_writer.headers.date = Some(time::now_utc());
+        let ref mut headers = response_writer.headers;
+        headers.date = Some(time::now_utc());
 
         // we don't need to set this https://github.com/Ogeon/rustful/issues/3#issuecomment-44787613
-        response_writer.headers.content_length = None;
-        response_writer.headers.content_type = response_writer.headers.content_type
-                                                                      .clone()
-                                                                      .or(get_media_type("txt"));
+        headers.content_length = None;
+        if headers.content_type.is_none() {
+            headers.content_type = get_media_type("txt");
+        }
 
-        response_writer.headers.server = Some(String::from_str("Nickel"));
+        headers.server = Some(String::from_str("Nickel"));
     }
 
     pub fn send_file(&mut self, path: &Path) -> IoResult<()> {
@@ -83,20 +82,26 @@ impl<'a, 'b> Response<'a, 'b> {
     /// data.insert("name", "user");
     /// response.render("examples/assets/template.tpl", &data);
     /// ```
-    pub fn render<'a, T: Encodable<mustache::Encoder<'a>, mustache::Error>>
-        (&mut self, path: &'static str, data: &T)
-    {
-        let mut templates = self.templates.write();
-        let template = templates.find_or_insert_with(path, |_|
-                     {
-                         mustache::compile_str(str::from_utf8(
-                            File::open(&Path::new(path))
-                                 .read_to_end().ok().expect(format!("Couldn't open the template file: {}", path).as_slice()).as_slice()
-                        ).expect("Coulnt't read template file as utf8")
-                    )
-                }
-            );
-        let _ = template.render(self.origin, data);
+    pub fn render<'a, T: Encodable<Encoder<'a>, Error>>
+        (&mut self, path: &'static str, data: &T) {
+        // Fast path doesn't need writer lock
+        let _ = match self.templates.read().find(&path) {
+            Some(template) => template.render(self.origin, data),
+            None => {
+                // Search again incase there was a race to compile the template
+                let mut templates = self.templates.write();
+                let template = templates.find_or_insert_with(path, |_| {
+                    let mut file = File::open(&Path::new(path));
+                    let raw_template = file.read_to_string()
+                                            .ok()
+                                            .expect(format!("Couldn't open the template file: {}",
+                                                            path).as_slice());
+                    mustache::compile_str(raw_template.as_slice())
+                });
+
+                template.render(self.origin, data)
+            }
+        };
     }
 }
 
