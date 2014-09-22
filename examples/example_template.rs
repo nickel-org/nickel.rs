@@ -11,7 +11,7 @@ fn main() {
     let mut server = Nickel::new();
 
     fn root_handler (_request: &Request, response: &mut Response) {
-        let mut data = HashMap::<&'static str, &'static str>::new();
+        let mut data = HashMap::<&str, &str>::new();
         data.insert("name", "user");
         response.render("examples/assets/template.tpl", &data);
     }
