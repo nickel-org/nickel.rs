@@ -1,5 +1,4 @@
 use std::path::BytesContainer;
-use std::str::from_utf8;
 use std::io::{IoError, IoResult, FileNotFound};
 
 use http::server::request::AbsolutePath;
@@ -19,7 +18,8 @@ pub struct StaticFilesHandler {
 }
 
 impl Middleware for StaticFilesHandler {
-    fn invoke (&self, req: &mut request::Request, res: &mut response::Response) -> Result<Action, NickelError> {
+    fn invoke (&self, req: &mut request::Request, res: &mut response::Response)
+               -> Result<Action, NickelError> {
         match req.origin.method {
             Get | Head => {
                 match self.with_file(self.extract_path(req), res) {
@@ -28,7 +28,8 @@ impl Middleware for StaticFilesHandler {
                         // We shouldn't assume the StaticFileHandler to be the last middleware in the stack.
                         // Therefore it's important to continue in case of FileNotFound errors.
                         FileNotFound => Ok(Continue),
-                        _ => Err(NickelError::new("Unknown Error", ErrorWithStatusCode(InternalServerError)))
+                        _ => Err(NickelError::new(format!("Unknown Error ({})", err),
+                                                  ErrorWithStatusCode(InternalServerError)))
                     }
                 }
             },
@@ -39,31 +40,29 @@ impl Middleware for StaticFilesHandler {
 
 impl StaticFilesHandler {
     pub fn new (root_path: &str) -> StaticFilesHandler {
-        let checked_path = Path::new(root_path);
         StaticFilesHandler {
-            root_path: checked_path
+            root_path: Path::new(root_path)
         }
     }
 
-    fn extract_path(&self, req: &mut request::Request) -> Option<String> {
+    fn extract_path<'a>(&self, req: &'a mut request::Request) -> Option<&'a str> {
         match req.origin.request_uri {
             AbsolutePath(ref path) => {
-                println!("{} {}{}",req.origin.method, from_utf8(self.root_path.container_as_bytes()).unwrap(), path);
-                let mut relative_path = path.clone();
-                if relative_path.eq(&"/".to_string()) {
-                    relative_path = "index.html".to_string();
-                } else {
-                    relative_path.shift_char();
+                println!("{} {}{}", req.origin.method, self.root_path.display(), path);
+
+                match path.as_slice() {
+                    "/" => Some("index.html"),
+                    path => Some(path.slice_from(1)),
                 }
-                Some(relative_path)
             }
             _ => None
         }
     }
 
-    fn with_file(&self, relative_path: Option<String>, res: &mut response::Response) -> IoResult<()> {
+    fn with_file<T: BytesContainer>(&self, relative_path: Option<T>, res: &mut response::Response)
+                                    -> IoResult<()> {
         match relative_path {
-            Some(path) => res.send_file(&self.root_path.join(Path::new(path))),
+            Some(path) => res.send_file(&self.root_path.join(path)),
             None => Err(IoError::last_error())
         }
     }
