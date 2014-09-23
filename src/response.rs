@@ -6,6 +6,7 @@ use std::collections::HashMap;
 use std::io::{IoResult, File};
 use std::io::util::copy;
 use std::path::BytesContainer;
+use serialize::Encodable;
 use http;
 use time;
 use mimes::get_media_type;
@@ -82,7 +83,8 @@ impl<'a, 'b> Response<'a, 'b> {
     /// data.insert("name", "user");
     /// response.render("examples/assets/template.tpl", &data);
     /// ```
-    pub fn render(&mut self, path: &'static str, data: &HashMap<&'static str, &'static str>)
+    pub fn render<'a, T: Encodable<mustache::Encoder<'a>, mustache::Error>>
+        (&mut self, path: &'static str, data: &T)
     {
         let mut templates = self.templates.write();
         let template = templates.find_or_insert_with(path, |_|
