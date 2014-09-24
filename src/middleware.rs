@@ -11,13 +11,13 @@ pub enum Action {
 // the usage of + Send is weird here because what we really want is + Static
 // but that's not possible as of today. We have to use + Send for now.
 pub trait Middleware: Clone + Send {
-    fn invoke (&self, _req: &mut Request, _res: &mut Response) -> Result<Action, NickelError> {
+    fn invoke<'a, 'b>(&'a self, _req: &mut Request<'b, 'a>, _res: &mut Response) -> Result<Action, NickelError> {
         Ok(Continue)
     }
 
     // we need this because otherwise clone() would be ambiguous
-    fn clone_box(&self) -> Box<Middleware + Send> { 
-        box self.clone() as Box<Middleware + Send> 
+    fn clone_box(&self) -> Box<Middleware + Send> {
+        box self.clone() as Box<Middleware + Send>
     }
 }
 
@@ -28,7 +28,7 @@ impl Clone for Box<Middleware + Send> {
 }
 
 pub trait ErrorHandler: Clone + Send {
-    fn invoke (&self, _err: &NickelError, _req: &mut Request, _res: &mut Response) -> Result<Action, NickelError> {
+    fn invoke(&self, _err: &NickelError, _req: &mut Request, _res: &mut Response) -> Result<Action, NickelError> {
         Ok(Continue)
     }
 
@@ -68,7 +68,7 @@ impl MiddlewareStack {
         self.error_handlers.push(box handler);
     }
 
-    pub fn invoke (&self, req: &mut Request, res: &mut Response) {
+    pub fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: &mut Response) {
         self.handlers.iter().all(|handler| {
             match (*handler).invoke(req, res) {
                 Ok(Continue) => true,

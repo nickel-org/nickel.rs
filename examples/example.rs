@@ -45,7 +45,7 @@ fn main() {
     let mut router = Nickel::router();
 
     fn user_handler (request: &Request, response: &mut Response) {
-        let text = format!("This is user: {}", request.params.get(&"userid".to_string()));
+        let text = format!("This is user: {}", request.param("userid"));
         response.send(text.as_slice());
     }
 

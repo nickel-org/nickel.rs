@@ -33,16 +33,16 @@ pub trait JsonBody {
     fn json_as<T: Decodable<Decoder,DecoderError>>(& self) -> Option<T>;
 }
 
-impl<'a> JsonBody for request::Request<'a> {
+impl<'a, 'b> JsonBody for request::Request<'a, 'b> {
     fn json_as<T: Decodable<Decoder,DecoderError>>(& self) -> Option<T>{
 
         // FIXME:
         // I think it would be smarter to not return Option<T> but rather
-        // DecodeResult<T> to not swallow valuable debugging information. 
+        // DecodeResult<T> to not swallow valuable debugging information.
         // I couldn't figure out how to properly do that
 
         self.map.find::<Json>()
-                .and_then(| parsed | { 
+                .and_then(| parsed | {
                     match ::serialize::json::decode::<T>(parsed.to_string().as_slice()) {
                         Ok(e) => Some(e),
                         _ => None

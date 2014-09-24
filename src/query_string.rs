@@ -31,7 +31,7 @@ pub trait QueryString {
     fn query(&self, key: &str, default: &str) -> Vec<String>;
 }
 
-impl<'a> QueryString for request::Request<'a> {
+impl<'a, 'b> QueryString for request::Request<'a, 'b> {
     fn query(&self, key: &str, default: &str) -> Vec<String> {
         self.map.find::<QueryStore>()
             .and_then(| store | {

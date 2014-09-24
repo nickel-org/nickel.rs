@@ -40,7 +40,14 @@ impl Clone for Route {
 /// evaluated string
 pub struct RouteResult<'a> {
     pub route: &'a Route,
-    pub params: HashMap<String, String>
+    params: Vec<String>
+}
+
+impl<'a> RouteResult<'a> {
+    pub fn param(&self, key: &str) -> &str {
+        let idx = self.route.variables.find_equiv(&key).unwrap();
+        self.params[*idx].as_slice()
+    }
 }
 
 /// The path_utils collects some small helper methods that operate on the path
@@ -77,10 +84,7 @@ mod path_utils {
                       REGEX_PARAM_SEQ,
                       REGEX_END].concat();
 
-        match Regex::new(result.as_slice()) {
-            Ok(re) => re,
-            Err(err) => fail!("{}", err)
-        }
+        Regex::new(result.as_slice()).ok().unwrap()
     }
 
     pub fn get_variable_info (route_path: &str) -> HashMap<String, uint> {
@@ -100,7 +104,7 @@ pub struct Router{
     routes: Vec<Route>,
 }
 
-impl Router {
+impl<'a> Router {
     pub fn new () -> Router {
         Router {
             routes: Vec::new()
@@ -206,34 +210,35 @@ impl Router {
         self.routes.push(route);
     }
 
-    pub fn match_route(&self, method: &Method, path: &str) -> Option<RouteResult> {
+    pub fn match_route(&'a self, method: &Method, path: &str) -> Option<RouteResult<'a>> {
         self.routes.iter().find(|item| item.method == *method && item.matcher.is_match(path))
             .map(|route| {
-                let map = match route.matcher.captures(path) {
+                let vec = match route.matcher.captures(path) {
                     Some(captures) => {
-                        route.variables.iter().map(|(name, pos)| {
-                            (name.to_string(), captures.at(pos + 1).to_string())
-                        }).collect()
+                        range(0, route.variables.len()).map(|pos|
+                            captures.at(pos + 1).to_string()
+                        ).collect()
                     },
-                    None => HashMap::new(),
+                    None => vec![],
                 };
                 RouteResult {
                     route: route,
-                    params: map
+                    params: vec
                 }
             })
     }
 }
 
 impl Middleware for Router {
-    fn invoke (&self, req: &mut Request, res: &mut Response) -> Result<Action, NickelError> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: &mut Response) -> Result<Action, NickelError> {
         match req.origin.request_uri {
             AbsolutePath(ref url) => {
                 match self.match_route(&req.origin.method, url.as_slice()) {
                     Some(route_result) => {
                         res.origin.status = ::http::status::Ok;
-                        req.params = route_result.params.clone();
-                        (route_result.route.handler)(req, res);
+                        let handler = &route_result.route.handler;
+                        req.route_result = Some(route_result);
+                        (*handler)(req, res);
                         Ok(Halt)
                     },
                     None => Ok(Continue)
@@ -319,7 +324,7 @@ fn can_match_var_routes () {
     let route_result = route_store.match_route(&method::Get, "/foo/4711").unwrap();
     let route = route_result.route;
 
-    assert_eq!(route_result.params.get(&"userid".to_string()), &"4711".to_string());
+    assert_eq!(route_result.param("userid"), "4711");
 
     //assert the route has identified the variable
     assert_eq!(route.variables.len(), 1);
@@ -336,12 +341,12 @@ fn can_match_var_routes () {
     assert!(route_result.is_some());
 
     let route_result = route_result.unwrap();
-    assert_eq!(route_result.params.get(&"userid".to_string()), &"123,456".to_string());
+    assert_eq!(route_result.param("userid"), "123,456");
 
     //ensure that this will work with spacing too
     let route_result = route_store.match_route(&method::Get, "/foo/John%20Doe");
     assert!(route_result.is_some());
 
     let route_result = route_result.unwrap();
-    assert_eq!(route_result.params.get(&"userid".to_string()), &"John%20Doe".to_string());
+    assert_eq!(route_result.param("userid"), "John%20Doe");
 }
