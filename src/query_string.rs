@@ -67,34 +67,20 @@ impl<'a, 'b> QueryString for request::Request<'a, 'b> {
 #[test]
 fn splits_and_parses_an_url() {
     use url::Url;
+    let t = |url|{
+        let store = QueryStringParser::parse(&url);
+        assert_eq!(store["foo".to_string()], vec!["bar".to_string()]);
+        assert_eq!(store["message".to_string()],
+                        vec!["hello".to_string(), "world".to_string()]);
+    };
 
     let raw = "http://www.foo.bar/query/test?foo=bar&message=hello&message=world";
-    let url = AbsoluteUri(Url::parse(raw).unwrap());
-    let store = QueryStringParser::parse(&url);
+    t(AbsoluteUri(Url::parse(raw).unwrap()));
 
-    assert!(store["foo".to_string()].len() == 1);
-    assert!(store["foo".to_string()].contains(&"bar".to_string()));
-    assert!(store["message".to_string()].len() == 2);
-    assert!(store["message".to_string()].contains(&"hello".to_string()));
-    assert!(store["message".to_string()].contains(&"world".to_string()));
+    t(AbsolutePath("/query/test?foo=bar&message=hello&message=world".to_string()));
 
-    let raw = "/query/test?foo=bar&message=hello&message=world";
-    let url = AbsolutePath(raw.to_string());
-    let store = QueryStringParser::parse(&url);
+    assert_eq!(QueryStringParser::parse(&Star), HashMap::new());
 
-    assert!(store["foo".to_string()].len() == 1);
-    assert!(store["foo".to_string()].contains(&"bar".to_string()));
-    assert!(store["message".to_string()].len() == 2);
-    assert!(store["message".to_string()].contains(&"hello".to_string()));
-    assert!(store["message".to_string()].contains(&"world".to_string()));
-
-    let url = Star;
-    let store = QueryStringParser::parse(&url);
-
-    assert!(store == HashMap::new());
-
-    let url = Authority("host.com".to_string());
-    let store = QueryStringParser::parse(&url);
-
-    assert!(store == HashMap::new());
+    let store = QueryStringParser::parse(&Authority("host.com".to_string()));
+    assert_eq!(store, HashMap::new());
 }
