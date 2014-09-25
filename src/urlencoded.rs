@@ -8,21 +8,18 @@ pub fn parse (encoded_string : &str) -> HashMap<String, Vec<String>> {
 
 #[test]
 fn parses_encoded_string_with_duplicate_keys() {
-    let map = parse(
-      "foo=bar&message=hello&message=world"
-    );
-    assert!(map.get(&"foo".to_string()).len() == 1);
-    assert!(map.get(&"foo".to_string()).contains(&"bar".to_string()));
-    assert!(map.get(&"message".to_string()).len() == 2);
-    assert!(map.get(&"message".to_string()).contains(&"hello".to_string()));
-    assert!(map.get(&"message".to_string()).contains(&"world".to_string()));
+    let map = parse("foo=bar&message=hello&message=world");
+    assert_eq!(map["foo".to_string()],
+                vec!["bar".to_string()]);
+    // Ensure the ordering is correct
+    assert_eq!(map["message".to_string()],
+                vec!["hello".to_string(), "world".to_string()]);
 }
 
 #[test]
 fn parses_urlencoded_characters() {
-    let map = parse(
-        "message=hello%20world"
-    );
-    assert!(map.get(&"message".to_string()).len() == 1);
-    assert!(map.get(&"message".to_string()).contains(&"hello world".to_string()));
+    let map = parse("message=hello%20world");
+
+    assert_eq!(map["message".to_string()],
+                vec!["hello world".to_string()]);
 }
