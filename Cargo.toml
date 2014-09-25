@@ -25,6 +25,10 @@ git = "https://github.com/servo/rust-url.git"
 
 git = "https://github.com/pythonesque/rust-mustache.git"
 
+[dependencies.groupable]
+
+git = "https://github.com/Ryman/groupable-rs"
+
 [[example]]
 
 name = "example"

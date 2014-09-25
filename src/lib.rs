@@ -22,6 +22,7 @@ extern crate regex;
 extern crate anymap;
 extern crate url;
 extern crate mustache;
+extern crate groupable;
 #[phase(plugin)]
 extern crate regex_macros;
 

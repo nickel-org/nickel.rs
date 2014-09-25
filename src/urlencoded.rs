@@ -1,21 +1,9 @@
 use std::collections::hashmap::HashMap;
 use url::form_urlencoded;
+use groupable::Groupable;
 
 pub fn parse (encoded_string : &str) -> HashMap<String, Vec<String>> {
-    create_hash_map(form_urlencoded::parse_str(encoded_string))
-}
-
-fn create_hash_map(parsed : Vec<(String, String)>) -> HashMap<String, Vec<String>> {
-    let mut map : HashMap<String, Vec<String>> = HashMap::new();
-
-    for (key, value) in parsed.into_iter() {
-        map.find_with_or_insert_with(key, value,
-            |_, existing, value| { existing.push(value); },
-            |_, value| vec![value]
-        );
-    }
-
-    map
+    form_urlencoded::parse_str(encoded_string).into_iter().group()
 }
 
 #[test]
