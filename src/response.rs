@@ -49,7 +49,6 @@ impl<'a, 'b> Response<'a, 'b> {
     /// response.content_type("html");
     /// ```
     pub fn content_type(&mut self, text: &str) -> &mut Response<'a,'b> {
-        // TODO: make this a chaining API. (Fight the lifetime hell!)
         self.origin.headers.content_type = get_media_type(text);
         self
     }
