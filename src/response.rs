@@ -54,6 +54,17 @@ impl<'a, 'b> Response<'a, 'b> {
         self
     }
 
+    /// Sets the status code and returns the response for chaining
+    ///
+    /// # Example
+    /// ```{rust,ignore}
+    /// response.status_code(http::status::NotFound);
+    /// ```
+    pub fn status_code(&mut self, status: http::status::Status) -> &mut Response<'a,'b> {
+        self.origin.status = status;
+        self
+    }
+
     fn set_headers(response_writer: &mut http::server::ResponseWriter) {
         let ref mut headers = response_writer.headers;
         headers.date = Some(time::now_utc());

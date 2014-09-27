@@ -102,9 +102,8 @@ fn main() {
     fn custom_404 (err: &NickelError, _req: &Request, response: &mut Response) -> Result<Action, NickelError> {
         match err.kind {
             ErrorWithStatusCode(NotFound) => {
-                
-                response.origin.status = NotFound;
                 response.content_type("html")
+                        .status_code(NotFound)
                         .send("<h1>Call the police!<h1>");
                 Ok(Halt)
             },
