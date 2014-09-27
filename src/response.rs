@@ -28,19 +28,6 @@ impl<'a, 'b> Response<'a, 'b> {
         }
     }
 
-    /// Writes a response
-    ///
-    /// # Example
-    /// ```{rust,ignore}
-    /// response.send("hello world");
-    /// ```
-    pub fn send<T: BytesContainer> (&mut self, text: T) {
-        // TODO: This needs to be more sophisticated to return the correct headers
-        // not just "some headers" :)
-        Response::set_headers(self.origin);
-        let _ = self.origin.write(text.container_as_bytes());
-    }
-
     /// Sets the content type by it's short form. 
     /// Returns the response for chaining.
     ///
@@ -62,6 +49,19 @@ impl<'a, 'b> Response<'a, 'b> {
     pub fn status_code(&mut self, status: http::status::Status) -> &mut Response<'a,'b> {
         self.origin.status = status;
         self
+    }
+
+    /// Writes a response
+    ///
+    /// # Example
+    /// ```{rust,ignore}
+    /// response.send("hello world");
+    /// ```
+    pub fn send<T: BytesContainer> (&mut self, text: T) {
+        // TODO: This needs to be more sophisticated to return the correct headers
+        // not just "some headers" :)
+        Response::set_headers(self.origin);
+        let _ = self.origin.write(text.container_as_bytes());
     }
 
     fn set_headers(response_writer: &mut http::server::ResponseWriter) {
