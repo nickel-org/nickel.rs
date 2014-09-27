@@ -47,9 +47,10 @@ impl<'a, 'b> Response<'a, 'b> {
     /// ```{rust,ignore}
     /// response.set_content_type("html");
     /// ```
-    pub fn set_content_type(&mut self, text: &str) {
+    pub fn content_type(&mut self, text: &str) -> &mut Response<'a,'b> {
         // TODO: make this a chaining API. (Fight the lifetime hell!)
         self.origin.headers.content_type = get_media_type(text);
+        self
     }
 
     fn set_headers(response_writer: &mut http::server::ResponseWriter) {
