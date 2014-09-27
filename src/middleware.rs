@@ -10,37 +10,15 @@ pub enum Action {
 
 // the usage of + Send is weird here because what we really want is + Static
 // but that's not possible as of today. We have to use + Send for now.
-pub trait Middleware: Clone + Send {
+pub trait Middleware: Send + Sync {
     fn invoke<'a, 'b>(&'a self, _req: &mut Request<'b, 'a>, _res: &mut Response) -> Result<Action, NickelError> {
         Ok(Continue)
     }
-
-    // we need this because otherwise clone() would be ambiguous
-    fn clone_box(&self) -> Box<Middleware + Send> {
-        box self.clone() as Box<Middleware + Send>
-    }
 }
 
-impl Clone for Box<Middleware + Send> {
-    fn clone(&self) -> Box<Middleware + Send> {
-        self.clone_box()
-    }
-}
-
-pub trait ErrorHandler: Clone + Send {
+pub trait ErrorHandler: Send + Sync {
     fn invoke(&self, _err: &NickelError, _req: &mut Request, _res: &mut Response) -> Result<Action, NickelError> {
         Ok(Continue)
-    }
-
-    // we need this because otherwise clone() would be ambiguous
-    fn clone_box(&self) -> Box<ErrorHandler + Send> {
-        box self.clone() as Box<ErrorHandler + Send>
-    }
-}
-
-impl Clone for Box<ErrorHandler + Send> {
-    fn clone(&self) -> Box<ErrorHandler + Send> {
-        self.clone_box()
     }
 }
 
@@ -53,10 +31,9 @@ impl Clone for Box<ErrorHandler + Send> {
 //     }
 // }
 
-#[deriving(Clone)]
 pub struct MiddlewareStack {
-    handlers: Vec<Box<Middleware + Send>>,
-    error_handlers: Vec<Box<ErrorHandler + Send>>
+    handlers: Vec<Box<Middleware + Send + Sync>>,
+    error_handlers: Vec<Box<ErrorHandler + Send + Sync>>
 }
 
 impl MiddlewareStack {

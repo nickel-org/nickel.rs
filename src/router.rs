@@ -22,18 +22,6 @@ pub struct Route {
     matcher: Regex
 }
 
-impl Clone for Route {
-    fn clone(&self) -> Route {
-        Route {
-            path: self.path.clone(),
-            method: self.method.clone(),
-            handler: self.handler,
-            matcher: self.matcher.clone(),
-            variables: self.variables.clone()
-        }
-    }
-}
-
 /// A RouteResult is what the router returns when `match_route` is called.
 /// It contains the matched `route` and also a `params` property holding
 /// a HashMap with the keys being the variable names and the value being the
@@ -99,7 +87,6 @@ mod path_utils {
 /// concrete URLs. The router is also a regular middleware and needs to be
 /// added to the middleware stack with `server.utilize(router)`.
 
-#[deriving(Clone)]
 pub struct Router{
     routes: Vec<Route>,
 }

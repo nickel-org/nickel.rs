@@ -11,7 +11,6 @@ use middleware::MiddlewareStack;
 use request;
 use response;
 
-#[deriving(Clone)]
 pub struct Server {
     middleware_stack: MiddlewareStack,
     ip: IpAddr,
@@ -19,7 +18,7 @@ pub struct Server {
     templates: Arc<RWLock<HashMap<&'static str, mustache::Template>>>
 }
 
-impl HttpServer for Server {
+impl HttpServer for Arc<Server> {
     fn get_config(&self) -> Config {
         Config { bind_address: SocketAddr { ip: self.ip, port: self.port } }
     }
@@ -44,7 +43,8 @@ impl Server {
     }
 
     // why do we need this? Is the http::Server.serve_forever method protected in C# terms?
-    pub fn serve (self) {
-        self.serve_forever();
+    pub fn serve(self) {
+        let arc = Arc::new(self);
+        arc.serve_forever();
     }
 }

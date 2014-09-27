@@ -21,12 +21,12 @@ use default_error_handler::DefaultErrorHandler;
 /// Nickel is the application object. It's the surface that
 /// holds all public APIs.
 
-#[deriving(Clone)]
 pub struct Nickel{
     middleware_stack: MiddlewareStack,
     server: Option<Server>,
     default_router: Option<Router>
 }
+
 impl Nickel {
 
     /// In order to use Nickels API one first has to create an instance.
