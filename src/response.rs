@@ -41,11 +41,12 @@ impl<'a, 'b> Response<'a, 'b> {
         let _ = self.origin.write(text.container_as_bytes());
     }
 
-    /// sets the content type by it's short form.
+    /// Sets the content type by it's short form. 
+    /// Returns the response for chaining.
     ///
     /// # Example
     /// ```{rust,ignore}
-    /// response.set_content_type("html");
+    /// response.content_type("html");
     /// ```
     pub fn content_type(&mut self, text: &str) -> &mut Response<'a,'b> {
         // TODO: make this a chaining API. (Fight the lifetime hell!)
