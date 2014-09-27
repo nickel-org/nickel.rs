@@ -77,6 +77,12 @@ impl<'a, 'b> Response<'a, 'b> {
         headers.server = Some(String::from_str("Nickel"));
     }
 
+    /// Writes a file to the output.
+    ///
+    /// # Example
+    /// ```{rust,ignore}
+    /// response.send_file(some_path);
+    /// ```
     pub fn send_file(&mut self, path: &Path) -> IoResult<()> {
         let mut file = try!(File::open(path));
         self.origin.headers.content_length = None;
