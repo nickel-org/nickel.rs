@@ -24,7 +24,6 @@ use default_error_handler::DefaultErrorHandler;
 pub struct Nickel{
     middleware_stack: MiddlewareStack,
     server: Option<Server>,
-    default_router: Option<Router>
 }
 
 impl Nickel {
@@ -45,8 +44,7 @@ impl Nickel {
 
         Nickel {
             middleware_stack: middleware_stack,
-            server: None,
-            default_router: None
+            server: None
         }
     }
 
