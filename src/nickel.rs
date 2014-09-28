@@ -227,25 +227,35 @@ impl Nickel {
     ///
     ///
     /// # Example
-    /// ```{rust,ignore}
+    /// ```{rust}
+    /// # #![feature(phase)]
+    /// # #[phase(plugin)] extern crate nickel_macros;
+    /// # extern crate nickel;
+    /// # extern crate serialize;
+    /// # use nickel::{Nickel, Request, Response};
+    /// use nickel::JsonBody;
     ///
+    /// # fn main() {
     /// #[deriving(Decodable, Encodable)]
     /// struct Person {
-    ///     firstname: String,
-    ///     lastname:  String,
+    ///     first_name: String,
+    ///     last_name:  String,
     /// }
     ///
-    /// let mut server = Nickel::new();
-    /// server.utilize(Nickel::json_body_parser());
-    ///
-    /// fn post_handler (request: &Request, response: &mut Response) {
-    ///
-    ///     let person = request.json_as::<Person>().unwrap();
-    ///     let text = format!("Hello {} {}", person.firstname, person.lastname);
-    ///     response.send(text.as_slice());
+    /// let router = router! {
+    ///     post "/a/post/request" => |request, response| {
+    ///         let person = request.json_as::<Person>().unwrap();
+    ///         let text = format!("Hello {} {}", person.first_name, person.last_name);
+    ///         response.send(text);
+    ///     }
     /// };
     ///
-    /// server.post("/a/post/request", post_handler);
+    /// let mut server = Nickel::new();
+    /// // It is currently a requirement that the json_body_parser middleware
+    /// // is added before any routes that require it.
+    /// server.utilize(Nickel::json_body_parser());
+    /// server.utilize(router);
+    /// # }
     /// ```
     pub fn json_body_parser() -> JsonBodyParser {
         JsonBodyParser
