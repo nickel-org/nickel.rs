@@ -29,6 +29,10 @@ git = "https://github.com/pythonesque/rust-mustache.git"
 
 git = "https://github.com/Ryman/groupable-rs"
 
+[dependencies.nickel_macros]
+
+path = "nickel_macros"
+
 [[example]]
 
 name = "example"
