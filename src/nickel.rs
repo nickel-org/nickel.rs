@@ -255,17 +255,26 @@ impl Nickel {
     ///
     ///
     /// # Example
-    /// ```{rust,ignore}
-    ///
-    /// let mut server = Nickel::new();
-    /// server.utilize(Nickel::query_string());
-    ///
-    /// fn get_handler (request: &Request, response: &mut Response) {
-    ///     let foo = request.query("foo", "this is the default value, if foo is not present!");
-    ///     response.send(foo.as_slice());
+    /// ```{rust}
+    /// # #![feature(phase)]
+    /// # #[phase(plugin)] extern crate nickel_macros;
+    /// # extern crate nickel;
+    /// # use nickel::{Nickel, Request, Response};
+    /// use nickel::QueryString;
+    /// # fn main() {
+    /// let router = router! {
+    ///     get "/a/get/request" => |request, response| {
+    ///         let foo = request.query("foo", "this is the default value, if foo is not present!");
+    ///         response.send(foo[0].as_slice());
+    ///     }
     /// };
     ///
-    /// server.get("/a/get/request", get_handler);
+    /// let mut server = Nickel::new();
+    /// // It is currently a requirement that the query_string middleware
+    /// // is added before any routes that require it.
+    /// server.utilize(Nickel::query_string());
+    /// server.utilize(router);
+    /// # }
     /// ```
     pub fn query_string() -> QueryStringParser {
         QueryStringParser
