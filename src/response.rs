@@ -103,31 +103,29 @@ impl<'a, 'b> Response<'a, 'b> {
     pub fn render<'a, T: Encodable<Encoder<'a>, Error>>
         (&mut self, path: &'static str, data: &T) {
             // Fast path doesn't need writer lock
-            let found_template = match self.templates.read().find(&path)
+            let _ = match self.templates.read().find(&path)
             {
                 Some(t) =>
                 {
                     let _ = t.render(self.origin, data);
-                    true
+                    return
                 },
-                None => false
+                None => {}
             };
-            if !found_template
-            {
-                // We didn't find the template, get writers lock
-                let mut templates = self.templates.write();
-                // Search again incase there was a race to compile the template
-                let template = templates.find_or_insert_with(path, |_| {
-                    let mut file = File::open(&Path::new(path));
-                    let raw_template = file.read_to_string()
-                        .ok()
-                        .expect(format!("Couldn't open the template file: {}",
-                                        path).as_slice());
-                    mustache::compile_str(raw_template.as_slice())
-                });
 
-                let _ = template.render(self.origin, data);
-            }
+            // We didn't find the template, get writers lock
+            let mut templates = self.templates.write();
+            // Search again incase there was a race to compile the template
+            let template = templates.find_or_insert_with(path, |_| {
+                let mut file = File::open(&Path::new(path));
+                let raw_template = file.read_to_string()
+                    .ok()
+                    .expect(format!("Couldn't open the template file: {}",
+                                    path).as_slice());
+                mustache::compile_str(raw_template.as_slice())
+            });
+
+            let _ = template.render(self.origin, data);
     }
 }
 
