@@ -48,3 +48,8 @@ path = "examples/example_with_default_router.rs"
 
 name = "example_template"
 path = "examples/example_template.rs"
+
+[[example]]
+
+name = "macro_example"
+path = "examples/macro_example.rs"
