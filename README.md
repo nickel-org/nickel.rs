@@ -15,7 +15,7 @@ Some of the features are:
 
 
 ### Status
-![Build Status](https://travis-ci.org/nickel-org/nickel.rs.png.svg?branch=master)](https://travis-ci.org/nickel-org/nickel.rs.png)
+[![Build Status](https://travis-ci.org/nickel-org/nickel.rs.png.svg?branch=master)](https://travis-ci.org/nickel-org/nickel.rs.png)
 
 ##[Jump to the nickel.rs website](http://nickel.rs)
 
