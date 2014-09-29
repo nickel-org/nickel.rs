@@ -150,15 +150,18 @@ impl Nickel {
     /// A handler added through this API will be attached to the default router.
     /// Consider creating the router middleware manually for advanced functionality.
     ///
+    /// Take a look at `get(...)` for a more detailed description.
     /// # Example
     ///
-    /// ```{rust,ignore}
-    /// fn handler (request: Request, response: &mut Response) {
+    /// ```{rust}
+    /// use nickel::{Nickel, Request, Response};
+    /// fn handler(request: &Request, response: &mut Response) {
     ///     response.send("This matches a DELETE request to /a/delete/request");
     /// };
+    ///
+    /// let mut server = Nickel::new();
     /// server.delete("/a/delete/request", handler);
     /// ```
-    /// Take a look at `get(...)` for a more detailed description.
     pub fn delete(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
         self.register_route_with_new_router(Delete, uri, handler);
     }
