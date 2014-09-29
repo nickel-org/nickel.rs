@@ -7,7 +7,7 @@ use nickel::{
     Nickel, NickelError, ErrorWithStatusCode,
     Action, Continue, Halt, Request,
     Response, IntoMiddleware, IntoErrorHandler,
-    QueryString, JsonBody
+    QueryString, JsonBody, StaticFilesHandler
 };
 use std::io::net::ip::Ipv4Addr;
 
@@ -96,7 +96,7 @@ fn main() {
     server.utilize(router);
 
     // go to http://localhost:6767/thoughtram_logo_brain.png to see static file serving in action
-    server.utilize(Nickel::static_files("examples/assets/"));
+    server.utilize(StaticFilesHandler::new("examples/assets/"));
 
     //this is how to overwrite the default error handler to handle 404 cases with a custom view
     fn custom_404 (err: &NickelError, _req: &Request, response: &mut Response) -> Result<Action, NickelError> {

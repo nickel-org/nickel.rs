@@ -13,7 +13,6 @@ use response::Response;
 
 
 //pre defined middleware
-use static_files_handler::StaticFilesHandler;
 use json_body_parser::JsonBodyParser;
 use query_string::QueryStringParser;
 use default_error_handler::DefaultErrorHandler;
@@ -192,20 +191,6 @@ impl Nickel {
     /// ```
     pub fn handle_error<T: ErrorHandler>(&mut self, handler: T){
         self.middleware_stack.add_error_handler(handler);
-    }
-
-    /// Create a new middleware to serve files from within a given root directory.
-    /// The file to serve will be determined by combining the requested Url with
-    /// the provided root directory.
-    ///
-    ///
-    /// # Example
-    /// ```{rust,ignore}
-    /// let mut server = Nickel::new();
-    /// server.utilize(Nickel::static_files("/path/to/serve/"));
-    /// ```
-    pub fn static_files(root_path: &str) -> StaticFilesHandler {
-        StaticFilesHandler::new(root_path)
     }
 
     /// Create a new middleware to serve as a router.

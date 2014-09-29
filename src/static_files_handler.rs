@@ -39,6 +39,18 @@ impl Middleware for StaticFilesHandler {
 }
 
 impl StaticFilesHandler {
+    /// Create a new middleware to serve files from within a given root directory.
+    /// The file to serve will be determined by combining the requested Url with
+    /// the provided root directory.
+    ///
+    ///
+    /// # Example
+    /// ```{rust}
+    /// use nickel::{Nickel, StaticFilesHandler};
+    /// let mut server = Nickel::new();
+    ///
+    /// server.utilize(StaticFilesHandler::new("/path/to/serve/"));
+    /// ```
     pub fn new (root_path: &str) -> StaticFilesHandler {
         StaticFilesHandler {
             root_path: Path::new(root_path)
