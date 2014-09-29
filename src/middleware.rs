@@ -51,27 +51,23 @@ impl MiddlewareStack {
     }
 
     pub fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: &mut Response) {
-        self.handlers.iter().all(|handler| {
-            match (*handler).invoke(req, res) {
-                Ok(Continue) => true,
-                Ok(Halt)     => false,
-                Err(err)     => {
-                    let mut err = err;
-                    self.error_handlers.iter().rev().all(|error_handler| {
-                        match (*error_handler).invoke(&err, req, res) {
-                            Ok(Continue) => true,
-                            Ok(Halt)     => false,
-                            Err(new_err)     => {
-                                // change the error so that other ErrorHandler down the stack receive
-                                // the new error.
-                                err = new_err;
-                                true
-                            }
+        for handler in self.handlers.iter() {
+            match handler.invoke(req, res) {
+                Ok(Halt) => return,
+                Ok(Continue) => {},
+                Err(mut err) => {
+                    for error_handler in self.error_handlers.iter().rev() {
+                        match error_handler.invoke(&err, req, res) {
+                            Ok(Continue) => {},
+                            Ok(Halt) => return,
+                            // change the error so that other ErrorHandler
+                            // down the stack receive the new error.
+                            Err(new_err) => err = new_err,
                         }
-                    })
+                    }
                 }
             }
-        });
+        }
     }
 
     pub fn new () -> MiddlewareStack {
