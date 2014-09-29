@@ -27,6 +27,7 @@ impl NickelError {
 
 #[deriving(Show)]
 pub enum NickelErrorKind {
+    // FIXME: Should probably re-export http::status::Status
     ErrorWithStatusCode(Status),
     UserDefinedError(int, String),
     Other

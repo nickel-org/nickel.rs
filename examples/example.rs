@@ -6,7 +6,7 @@ use http::status::NotFound;
 use nickel::{
     Nickel, NickelError, ErrorWithStatusCode,
     Action, Continue, Halt, Request,
-    Response, IntoMiddleware, IntoErrorHandler,
+    Response, IntoMiddleware,
     QueryString, JsonBody, StaticFilesHandler
 };
 use std::io::net::ip::Ipv4Addr;
@@ -111,7 +111,7 @@ fn main() {
         }
     }
 
-    server.handle_error(IntoErrorHandler::from_fn(custom_404));
+    server.handle_error(custom_404);
 
     server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
 }

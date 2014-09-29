@@ -1,8 +1,9 @@
 use std::io::net::ip::{Port, IpAddr};
 
 use router::Router;
-use middleware::{ MiddlewareStack, Middleware, ErrorHandler, Action };
+use middleware::{ MiddlewareStack, Middleware, Action };
 use into_middleware::IntoMiddleware;
+use into_error_handler::IntoErrorHandler;
 use nickel_error::{ NickelError, ErrorWithStatusCode };
 use server::Server;
 
@@ -176,8 +177,16 @@ impl Nickel {
     ///
     /// # Example
     ///
-    /// ```{rust,ignore}
-    /// fn error_handler (err: &NickelError, req: &Request, res: &mut Response) -> Result<Action, NickelError>{
+    /// ```{rust}
+    /// # extern crate http;
+    /// # extern crate nickel;
+    /// # fn main() {
+    /// use nickel::{Nickel, Request, Response, Action, Continue, Halt};
+    /// use nickel::{NickelError, ErrorWithStatusCode, get_media_type};
+    /// use http::status::NotFound;
+    ///
+    /// fn error_handler(err: &NickelError, req: &Request, response: &mut Response)
+    ///                  -> Result<Action, NickelError>{
     ///    match err.kind {
     ///        ErrorWithStatusCode(NotFound) => {
     ///            response.origin.headers.content_type = get_media_type("html");
@@ -188,8 +197,16 @@ impl Nickel {
     ///        _ => Ok(Continue)
     ///    }
     /// }
+    ///
+    /// let mut server = Nickel::new();
+    /// server.handle_error(error_handler)
+    /// # }
     /// ```
-    pub fn handle_error<T: ErrorHandler>(&mut self, handler: T){
+    pub fn handle_error(&mut self, handler: fn(err: &NickelError,
+                                               req: &Request,
+                                               res: &mut Response)
+                                            -> Result<Action, NickelError>){
+        let handler = IntoErrorHandler::from_fn(handler);
         self.middleware_stack.add_error_handler(handler);
     }
 
