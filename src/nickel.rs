@@ -53,17 +53,23 @@ impl Nickel {
     /// same order it was registered.
     ///
     /// A middleware handler is nearly identical to a regular route handler with the only
-    /// difference that it expects a return value of boolean. That is to indicate whether
-    /// other middleware handler (if any) further down the stack should continue or if the
-    /// middleware invocation should be stopped after the current handler.
+    /// difference that it expects a result of either Action or NickelError.
+    /// That is to indicate whether other middleware handlers (if any) further
+    /// down the stack should continue or if the middleware invocation should
+    /// be stopped after the current handler.
     ///
     /// # Example
     ///
-    /// ```{rust,ignore}
-    /// fn logger (req: &Request, res: &mut Response) -> Result<Action, NickelError>{
+    /// ```{rust}
+    /// use nickel::IntoMiddleware; // This is *hopefully* temporary
+    /// use nickel::{Nickel, Request, Response, Action, Continue, NickelError};
+    /// fn logger(req: &Request, res: &mut Response) -> Result<Action, NickelError>{
     ///     println!("logging request: {}", req.origin.request_uri);
     ///     Ok(Continue)
     /// }
+    ///
+    /// let mut server = Nickel::new();
+    /// server.utilize(IntoMiddleware::from_fn(logger));
     /// ```
     pub fn utilize<T: Middleware>(&mut self, handler: T){
         self.middleware_stack.add_middleware(handler);
