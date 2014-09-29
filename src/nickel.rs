@@ -71,42 +71,42 @@ impl Nickel {
 
     /// Registers a handler to be used for a specific GET request.
     /// Handlers are assigned to paths and paths are allowed to contain
-    /// variables and wildcards. A handler added through this API will
+    /// variables and wildcards.
+    ///
+    /// A handler added through this API will
     /// be attached to the default router. Consider creating the router
     /// middleware manually for advanced functionality.
     ///
-    /// # Example without variables and wildcards
+    /// # Example
     ///
-    /// ```{rust,ignore}
-    /// fn handler (request: Request, response: &mut Response) {
+    /// ```{rust}
+    /// use nickel::{Nickel, Request, Response};
+    /// let mut server = Nickel::new();
+    ///
+    /// //  without variables or wildcards
+    /// fn bare_handler(request: &Request, response: &mut Response) {
     ///     response.send("This matches /user");
     /// };
-    /// server.get("/user", handler);
-    /// ```
-    /// # Example with variables
+    /// server.get("/user", bare_handler);
     ///
-    /// ```{rust,ignore}
-    /// fn handler (request: Request, response: &mut Response) {
-    ///     let text = format!("This is user: {}", request.params.get(&"userid".to_string()));
+    /// // with variables
+    /// fn var_handler(request: &Request, response: &mut Response) {
+    ///     let text = format!("This is user: {}", request.param("userid"));
     ///     response.send(text.as_slice());
     /// };
-    /// server.get("/user/:userid", handler);
-    /// ```
-    /// # Example with simple wildcard
+    /// server.get("/user/:userid", var_handler);
     ///
-    /// ```{rust,ignore}
-    /// fn handler (request: Request, response: &mut Response) {
+    /// // with simple wildcard
+    /// fn wild_handler(request: &Request, response: &mut Response) {
     ///     response.send("This matches /user/list/4711 but not /user/extended/list/4711");
     /// };
-    /// server.get("/user/*/:userid", handler);
-    /// ```
-    /// # Example with double wildcard
+    /// server.get("/user/*/:userid", wild_handler);
     ///
-    /// ```{rust,ignore}
-    /// fn handler (request: Request, response: &mut Response) {
+    /// // with double wildcard
+    /// fn very_wild_handler(request: &Request, response: &mut Response) {
     ///     response.send("This matches /user/list/4711 and also /user/extended/list/4711");
     /// };
-    /// server.get("/user/**/:userid", handler);
+    /// server.get("/user/**/:userid", very_wild_handler);
     /// ```
     pub fn get(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
         self.register_route_with_new_router(Get, uri, handler);
