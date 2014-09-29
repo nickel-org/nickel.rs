@@ -169,7 +169,7 @@ impl Nickel {
 
     fn register_route_with_new_router(&mut self, method: Method, uri: &str, handler: fn(request: &Request, response: &mut Response)) {
         let mut router = Router::new();
-        router.add_route(method, String::from_str(uri), handler);
+        router.add_route(method, uri, handler);
         self.utilize(router);
     }
 

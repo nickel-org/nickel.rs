@@ -87,7 +87,6 @@ mod path_utils {
 /// The Router's job is it to hold routes and to resolve them later against
 /// concrete URLs. The router is also a regular middleware and needs to be
 /// added to the middleware stack with `server.utilize(router)`.
-
 pub struct Router{
     routes: Vec<Route>,
 }
@@ -137,7 +136,7 @@ impl<'a> Router {
     /// router.get("/user/**/:userid", handler);
     /// ```
     pub fn get(&mut self, uri: &str, handler: RequestHandler){
-        self.add_route(Get, String::from_str(uri), handler);
+        self.add_route(Get, uri, handler);
     }
 
     /// Registers a handler to be used for a specific POST request.
@@ -152,7 +151,7 @@ impl<'a> Router {
     /// ```
     /// Take a look at `get()` for a more detailed description.
     pub fn post(&mut self, uri: &str, handler: RequestHandler){
-        self.add_route(Post, String::from_str(uri), handler);
+        self.add_route(Post, uri, handler);
     }
 
     /// Registers a handler to be used for a specific PUT request.
@@ -167,7 +166,7 @@ impl<'a> Router {
     /// ```
     /// Take a look at `get(..)` for a more detailed description.
     pub fn put(&mut self, uri: &str, handler: RequestHandler){
-        self.add_route(Put, String::from_str(uri), handler);
+        self.add_route(Put, uri, handler);
     }
 
     /// Registers a handler to be used for a specific DELETE request.
@@ -182,14 +181,14 @@ impl<'a> Router {
     /// ```
     /// Take a look at `get(...)` for a more detailed description.
     pub fn delete(&mut self, uri: &str, handler: RequestHandler){
-        self.add_route(Delete, String::from_str(uri), handler);
+        self.add_route(Delete, uri, handler);
     }
 
-    pub fn add_route(&mut self, method: Method, path: String, handler: RequestHandler) -> () {
-        let matcher = path_utils::create_regex(path.as_slice());
-        let variable_infos = path_utils::get_variable_info(path.as_slice());
+    pub fn add_route(&mut self, method: Method, path: &str, handler: RequestHandler) {
+        let matcher = path_utils::create_regex(path);
+        let variable_infos = path_utils::get_variable_info(path);
         let route = Route {
-            path: path,
+            path: path.to_string(),
             method: method,
             matcher: matcher,
             handler: handler,
@@ -307,8 +306,8 @@ fn can_match_var_routes () {
         let _ = response.origin.write("hello from foo".as_bytes());
     };
 
-    route_store.add_route(method::Get, "/foo/:userid".to_string(), handler);
-    route_store.add_route(method::Get, "/bar".to_string(), handler);
+    route_store.add_route(method::Get, "/foo/:userid", handler);
+    route_store.add_route(method::Get, "/bar", handler);
 
     let route_result = route_store.match_route(&method::Get, "/foo/4711").unwrap();
     let route = route_result.route;
