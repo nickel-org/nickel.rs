@@ -22,14 +22,11 @@ pub trait ErrorHandler: Send + Sync {
     }
 }
 
-// this is temporally not possible anymore
-// Read https://github.com/iron/iron/issues/76 for more details
-
-// impl Middleware for fn (req: &Request, res: &mut Response) -> Result<Action, NickelError> {
-//     fn invoke(&self, req: &mut Request, res: &mut Response) -> Result<Action, NickelError> {
-//         (*self)(req, res)
-//     }
-// }
+impl Middleware for fn(&Request, &mut Response) -> Result<Action, NickelError> {
+    fn invoke(&self, req: &mut Request, res: &mut Response) -> Result<Action, NickelError> {
+        (*self)(req, res)
+    }
+}
 
 pub struct MiddlewareStack {
     handlers: Vec<Box<Middleware + Send + Sync>>,

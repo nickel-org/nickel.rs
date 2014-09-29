@@ -2,7 +2,6 @@ use std::io::net::ip::{Port, IpAddr};
 
 use router::{Router, RequestHandler};
 use middleware::{ MiddlewareStack, Middleware, Action };
-use into_middleware::IntoMiddleware;
 use into_error_handler::IntoErrorHandler;
 use nickel_error::{ NickelError, ErrorWithStatusCode };
 use server::Server;
@@ -53,7 +52,6 @@ impl Nickel {
     /// # Example
     ///
     /// ```{rust}
-    /// use nickel::IntoMiddleware; // This is *hopefully* temporary
     /// use nickel::{Nickel, Request, Response, Action, Continue, NickelError};
     /// fn logger(req: &Request, res: &mut Response) -> Result<Action, NickelError>{
     ///     println!("logging request: {}", req.origin.request_uri);
@@ -61,7 +59,7 @@ impl Nickel {
     /// }
     ///
     /// let mut server = Nickel::new();
-    /// server.utilize(IntoMiddleware::from_fn(logger));
+    /// server.utilize(logger);
     /// ```
     pub fn utilize<T: Middleware>(&mut self, handler: T){
         self.middleware_stack.add_middleware(handler);
@@ -317,7 +315,7 @@ impl Nickel {
             Err(NickelError::new("File Not Found", ErrorWithStatusCode(NotFound)))
         }
 
-        self.middleware_stack.add_middleware(IntoMiddleware::from_fn(not_found_handler));
+        self.middleware_stack.add_middleware(not_found_handler);
         self.server = Some(Server::new(self.middleware_stack, ip, port));
         self.server.unwrap().serve();
     }

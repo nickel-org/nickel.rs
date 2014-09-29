@@ -6,8 +6,7 @@ use http::status::NotFound;
 use nickel::{
     Nickel, NickelError, ErrorWithStatusCode,
     Action, Continue, Halt, Request,
-    Response, IntoMiddleware,
-    QueryString, JsonBody, StaticFilesHandler
+    Response, QueryString, JsonBody, StaticFilesHandler
 };
 use std::io::net::ip::Ipv4Addr;
 
@@ -34,7 +33,7 @@ fn main() {
     }
 
     // middleware is optional and can be registered with `utilize`
-    server.utilize(IntoMiddleware::from_fn(logger));
+    server.utilize(logger);
 
     // this will cause json bodies automatically being parsed
     server.utilize(Nickel::json_body_parser());
