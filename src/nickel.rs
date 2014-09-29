@@ -212,9 +212,15 @@ impl Nickel {
     ///
     ///
     /// # Example
-    /// ```{rust,ignore}
+    /// ```{rust}
+    /// use nickel::{Nickel, Request, Response};
+    ///
     /// let mut server = Nickel::new();
     /// let mut router = Nickel::router();
+    ///
+    /// fn foo_handler(request: &Request, response: &mut Response) {
+    ///     response.send("Hi from /foo");
+    /// };
     ///
     /// router.get("/foo", foo_handler);
     /// server.utilize(router);
