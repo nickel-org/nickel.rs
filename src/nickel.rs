@@ -1,8 +1,7 @@
 use std::io::net::ip::{Port, IpAddr};
 
 use router::{Router, RequestHandler};
-use middleware::{ MiddlewareStack, Middleware, Action };
-use into_error_handler::IntoErrorHandler;
+use middleware::{MiddlewareStack, Middleware, Action, ErrorHandler};
 use nickel_error::{ NickelError, ErrorWithStatusCode };
 use server::Server;
 
@@ -207,11 +206,7 @@ impl Nickel {
     /// server.handle_error(error_handler)
     /// # }
     /// ```
-    pub fn handle_error(&mut self, handler: fn(err: &NickelError,
-                                               req: &Request,
-                                               res: &mut Response)
-                                            -> Result<Action, NickelError>){
-        let handler = IntoErrorHandler::from_fn(handler);
+    pub fn handle_error<T: ErrorHandler>(&mut self, handler: T){
         self.middleware_stack.add_error_handler(handler);
     }
 

@@ -28,6 +28,12 @@ impl Middleware for fn(&Request, &mut Response) -> Result<Action, NickelError> {
     }
 }
 
+impl ErrorHandler for fn(&NickelError, &Request, &mut Response) -> Result<Action, NickelError> {
+    fn invoke(&self, err: &NickelError, req: &mut Request, res: &mut Response) -> Result<Action, NickelError> {
+        (*self)(err, req, res)
+    }
+}
+
 pub struct MiddlewareStack {
     handlers: Vec<Box<Middleware + Send + Sync>>,
     error_handlers: Vec<Box<ErrorHandler + Send + Sync>>
