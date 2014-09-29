@@ -27,13 +27,7 @@ pub struct Nickel{
 }
 
 impl Nickel {
-
-    /// In order to use Nickels API one first has to create an instance.
-    ///
-    /// # Example
-    /// ```{rust,ignore}
-    /// let mut server = Nickel::new();
-    /// ```
+    /// Creates an instance of Nickel with default error handling.
     pub fn new() -> Nickel {
         let mut middleware_stack = MiddlewareStack::new();
 
