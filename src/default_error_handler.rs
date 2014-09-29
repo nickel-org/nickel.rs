@@ -1,14 +1,14 @@
 use http::status::{ NotFound, BadRequest, InternalServerError };
 use request::Request;
 use response::Response;
-use middleware::{ Action, Halt, ErrorHandler};
+use middleware::{Halt, ErrorHandler, MiddlewareResult};
 use nickel_error::{ NickelError, ErrorWithStatusCode };
 
 #[deriving(Clone)]
 pub struct DefaultErrorHandler;
 
 impl ErrorHandler for DefaultErrorHandler {
-    fn invoke (&self, err: &NickelError, _req: &mut Request, res: &mut Response) -> Result<Action, NickelError> {
+    fn invoke(&self, err: &NickelError, _req: &mut Request, res: &mut Response) -> MiddlewareResult {
         match err.kind {
             ErrorWithStatusCode(NotFound) => {
                 res.origin.status = NotFound;

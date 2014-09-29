@@ -1,10 +1,9 @@
 use std::collections::hashmap::HashMap;
 use request::Request;
-use middleware::{Action, Continue, Middleware};
+use middleware::{Continue, Middleware, MiddlewareResult};
 use request;
 use response;
 use urlencoded;
-use nickel_error::NickelError;
 use http::server::request::{RequestUri, Star, AbsoluteUri, AbsolutePath, Authority};
 use url::UrlParser;
 
@@ -40,7 +39,8 @@ impl QueryStringParser {
 }
 
 impl Middleware for QueryStringParser {
-    fn invoke (&self, req: &mut request::Request, _res: &mut response::Response) -> Result<Action, NickelError> {
+    fn invoke(&self, req: &mut request::Request, _: &mut response::Response)
+                -> MiddlewareResult {
         let parsed = QueryStringParser::parse(&req.origin.request_uri);
         req.map.insert(parsed);
         Ok(Continue)

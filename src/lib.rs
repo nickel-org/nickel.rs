@@ -29,7 +29,7 @@ extern crate regex_macros;
 pub use nickel::Nickel;
 pub use request::Request;
 pub use response::Response;
-pub use middleware::{ Action, Continue, Halt, Middleware, ErrorHandler };
+pub use middleware::{Action, Continue, Halt, Middleware, ErrorHandler, MiddlewareResult};
 pub use static_files_handler::StaticFilesHandler;
 pub use default_error_handler::DefaultErrorHandler;
 pub use json_body_parser::{JsonBodyParser, JsonBody};

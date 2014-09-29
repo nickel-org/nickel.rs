@@ -5,15 +5,14 @@ use http::status::BadRequest;
 use request;
 use request::Request;
 use response::Response;
-use middleware::{Action, Continue, Middleware};
+use middleware::{Continue, Middleware, MiddlewareResult};
 use nickel_error::{ NickelError, ErrorWithStatusCode };
 
 #[deriving(Clone)]
 pub struct JsonBodyParser;
 
 impl Middleware for JsonBodyParser {
-    fn invoke (&self, req: &mut Request, _res: &mut Response) -> Result<Action, NickelError> {
-
+    fn invoke(&self, req: &mut Request, _res: &mut Response) -> MiddlewareResult {
         if !req.origin.body.is_empty() {
             match json::from_str(req.origin.body.as_slice()) {
                 Ok(parsed) => {
@@ -34,7 +33,7 @@ pub trait JsonBody {
 }
 
 impl<'a, 'b> JsonBody for request::Request<'a, 'b> {
-    fn json_as<T: Decodable<Decoder,DecoderError>>(& self) -> Option<T>{
+    fn json_as<T: Decodable<Decoder, DecoderError>>(& self) -> Option<T> {
 
         // FIXME:
         // I think it would be smarter to not return Option<T> but rather

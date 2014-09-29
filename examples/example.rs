@@ -4,9 +4,8 @@ extern crate http;
 
 use http::status::NotFound;
 use nickel::{
-    Nickel, NickelError, ErrorWithStatusCode,
-    Action, Continue, Halt, Request,
-    Response, QueryString, JsonBody, StaticFilesHandler
+    Nickel, NickelError, ErrorWithStatusCode, Continue, Halt, Request, Response,
+    QueryString, JsonBody, StaticFilesHandler, MiddlewareResult
 };
 use std::io::net::ip::Ipv4Addr;
 
@@ -24,7 +23,7 @@ fn main() {
     // to achieve with the current version of rust.
 
     //this is an example middleware function that just logs each request
-    fn logger (request: &Request, _response: &mut Response) -> Result<Action, NickelError> {
+    fn logger (request: &Request, _response: &mut Response) -> MiddlewareResult {
         println!("logging request: {}", request.origin.request_uri);
 
         // a request is supposed to return a `bool` to indicate whether additional
@@ -98,7 +97,7 @@ fn main() {
     server.utilize(StaticFilesHandler::new("examples/assets/"));
 
     //this is how to overwrite the default error handler to handle 404 cases with a custom view
-    fn custom_404 (err: &NickelError, _req: &Request, response: &mut Response) -> Result<Action, NickelError> {
+    fn custom_404 (err: &NickelError, _req: &Request, response: &mut Response) -> MiddlewareResult {
         match err.kind {
             ErrorWithStatusCode(NotFound) => {
                 response.content_type("html")

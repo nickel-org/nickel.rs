@@ -1,7 +1,7 @@
 use std::io::net::ip::{Port, IpAddr};
 
 use router::{Router, RequestHandler};
-use middleware::{MiddlewareStack, Middleware, Action, ErrorHandler};
+use middleware::{MiddlewareStack, Middleware, ErrorHandler, MiddlewareResult};
 use nickel_error::{ NickelError, ErrorWithStatusCode };
 use server::Server;
 
@@ -51,8 +51,8 @@ impl Nickel {
     /// # Example
     ///
     /// ```{rust}
-    /// use nickel::{Nickel, Request, Response, Action, Continue, NickelError};
-    /// fn logger(req: &Request, res: &mut Response) -> Result<Action, NickelError>{
+    /// use nickel::{Nickel, Request, Response, Continue, MiddlewareResult};
+    /// fn logger(req: &Request, res: &mut Response) -> MiddlewareResult {
     ///     println!("logging request: {}", req.origin.request_uri);
     ///     Ok(Continue)
     /// }
@@ -185,12 +185,12 @@ impl Nickel {
     /// # extern crate http;
     /// # extern crate nickel;
     /// # fn main() {
-    /// use nickel::{Nickel, Request, Response, Action, Continue, Halt};
+    /// use nickel::{Nickel, Request, Response, Continue, Halt, MiddlewareResult};
     /// use nickel::{NickelError, ErrorWithStatusCode, get_media_type};
     /// use http::status::NotFound;
     ///
     /// fn error_handler(err: &NickelError, req: &Request, response: &mut Response)
-    ///                  -> Result<Action, NickelError>{
+    ///                  -> MiddlewareResult {
     ///    match err.kind {
     ///        ErrorWithStatusCode(NotFound) => {
     ///            response.origin.headers.content_type = get_media_type("html");
@@ -306,7 +306,7 @@ impl Nickel {
     /// server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
     /// ```
     pub fn listen(mut self, ip: IpAddr, port: Port) {
-        fn not_found_handler(_request: &Request, _response: &mut Response) -> Result<Action, NickelError> {
+        fn not_found_handler(_: &Request, _: &mut Response) -> MiddlewareResult {
             Err(NickelError::new("File Not Found", ErrorWithStatusCode(NotFound)))
         }
 

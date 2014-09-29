@@ -8,8 +8,7 @@ use regex::Regex;
 use std::collections::hashmap::HashMap;
 use request::Request;
 use response::Response;
-use middleware::{ Middleware, Action, Halt, Continue };
-use nickel_error::NickelError;
+use middleware::{Middleware, Halt, Continue, MiddlewareResult};
 
 pub type RequestHandler = fn(request: &Request, response: &mut Response);
 
@@ -219,7 +218,8 @@ impl<'a> Router {
 }
 
 impl Middleware for Router {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: &mut Response) -> Result<Action, NickelError> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: &mut Response)
+                        -> MiddlewareResult {
         match req.origin.request_uri {
             AbsolutePath(ref url) => {
                 match self.match_route(&req.origin.method, url.as_slice()) {

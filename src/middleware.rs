@@ -2,6 +2,8 @@ use request::Request;
 use response::Response;
 use nickel_error::NickelError;
 
+pub type MiddlewareResult = Result<Action, NickelError>;
+
 #[deriving(PartialEq)]
 pub enum Action {
   Continue,
@@ -11,25 +13,25 @@ pub enum Action {
 // the usage of + Send is weird here because what we really want is + Static
 // but that's not possible as of today. We have to use + Send for now.
 pub trait Middleware: Send + Sync {
-    fn invoke<'a, 'b>(&'a self, _req: &mut Request<'b, 'a>, _res: &mut Response) -> Result<Action, NickelError> {
+    fn invoke<'a, 'b>(&'a self, _req: &mut Request<'b, 'a>, _res: &mut Response) -> MiddlewareResult {
         Ok(Continue)
     }
 }
 
 pub trait ErrorHandler: Send + Sync {
-    fn invoke(&self, _err: &NickelError, _req: &mut Request, _res: &mut Response) -> Result<Action, NickelError> {
+    fn invoke(&self, _err: &NickelError, _req: &mut Request, _res: &mut Response) -> MiddlewareResult {
         Ok(Continue)
     }
 }
 
-impl Middleware for fn(&Request, &mut Response) -> Result<Action, NickelError> {
-    fn invoke(&self, req: &mut Request, res: &mut Response) -> Result<Action, NickelError> {
+impl Middleware for fn(&Request, &mut Response) -> MiddlewareResult {
+    fn invoke(&self, req: &mut Request, res: &mut Response) -> MiddlewareResult {
         (*self)(req, res)
     }
 }
 
-impl ErrorHandler for fn(&NickelError, &Request, &mut Response) -> Result<Action, NickelError> {
-    fn invoke(&self, err: &NickelError, req: &mut Request, res: &mut Response) -> Result<Action, NickelError> {
+impl ErrorHandler for fn(&NickelError, &Request, &mut Response) -> MiddlewareResult {
+    fn invoke(&self, err: &NickelError, req: &mut Request, res: &mut Response) -> MiddlewareResult {
         (*self)(err, req, res)
     }
 }

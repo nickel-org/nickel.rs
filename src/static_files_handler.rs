@@ -7,7 +7,7 @@ use http::status::{ InternalServerError };
 
 use request;
 use response;
-use middleware::{Action, Halt, Continue, Middleware};
+use middleware::{Halt, Continue, Middleware, MiddlewareResult};
 use nickel_error::{ NickelError, ErrorWithStatusCode };
 
 // this should be much simpler after unboxed closures land in Rust.
@@ -19,7 +19,7 @@ pub struct StaticFilesHandler {
 
 impl Middleware for StaticFilesHandler {
     fn invoke (&self, req: &mut request::Request, res: &mut response::Response)
-               -> Result<Action, NickelError> {
+               -> MiddlewareResult {
         match req.origin.method {
             Get | Head => {
                 match self.with_file(self.extract_path(req), res) {
