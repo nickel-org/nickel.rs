@@ -11,6 +11,8 @@ use response::Response;
 use middleware::{ Middleware, Action, Halt, Continue };
 use nickel_error::NickelError;
 
+pub type RequestHandler = fn(request: &Request, response: &mut Response);
+
 /// A Route is the basic data structure that stores both the path
 /// and the handler that gets executed for the route.
 /// The path can contain variable pattern such as `user/:userid/invoices`
@@ -135,7 +137,7 @@ impl<'a> Router {
     /// };
     /// router.get("/user/**/:userid", handler);
     /// ```
-    pub fn get(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
+    pub fn get(&mut self, uri: &str, handler: RequestHandler){
         self.add_route(Get, String::from_str(uri), handler);
     }
 
@@ -150,7 +152,7 @@ impl<'a> Router {
     /// router.post("/a/post/request", handler);
     /// ```
     /// Take a look at `get()` for a more detailed description.
-    pub fn post(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
+    pub fn post(&mut self, uri: &str, handler: RequestHandler){
         self.add_route(Post, String::from_str(uri), handler);
     }
 
@@ -165,7 +167,7 @@ impl<'a> Router {
     /// router.put("/a/put/request", handler);
     /// ```
     /// Take a look at `get(..)` for a more detailed description.
-    pub fn put(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
+    pub fn put(&mut self, uri: &str, handler: RequestHandler){
         self.add_route(Put, String::from_str(uri), handler);
     }
 
@@ -180,11 +182,11 @@ impl<'a> Router {
     /// router.delete("/a/delete/request", handler);
     /// ```
     /// Take a look at `get(...)` for a more detailed description.
-    pub fn delete(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
+    pub fn delete(&mut self, uri: &str, handler: RequestHandler){
         self.add_route(Delete, String::from_str(uri), handler);
     }
 
-    pub fn add_route(&mut self, method: Method, path: String, handler: fn(request: &Request, response: &mut Response)) -> () {
+    pub fn add_route(&mut self, method: Method, path: String, handler: RequestHandler) -> () {
         let matcher = path_utils::create_regex(path.as_slice());
         let variable_infos = path_utils::get_variable_info(path.as_slice());
         let route = Route {

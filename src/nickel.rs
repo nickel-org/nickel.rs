@@ -1,6 +1,6 @@
 use std::io::net::ip::{Port, IpAddr};
 
-use router::Router;
+use router::{Router, RequestHandler};
 use middleware::{ MiddlewareStack, Middleware, Action };
 use into_middleware::IntoMiddleware;
 use into_error_handler::IntoErrorHandler;
@@ -12,7 +12,6 @@ use http::status::NotFound;
 use request::Request;
 use response::Response;
 
-
 //pre defined middleware
 use json_body_parser::JsonBodyParser;
 use query_string::QueryStringParser;
@@ -20,7 +19,6 @@ use default_error_handler::DefaultErrorHandler;
 
 /// Nickel is the application object. It's the surface that
 /// holds all public APIs.
-
 pub struct Nickel{
     middleware_stack: MiddlewareStack,
     server: Option<Server>,
@@ -108,7 +106,7 @@ impl Nickel {
     /// };
     /// server.get("/user/**/:userid", very_wild_handler);
     /// ```
-    pub fn get(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
+    pub fn get(&mut self, uri: &str, handler: RequestHandler){
         self.register_route_with_new_router(Get, uri, handler);
     }
 
@@ -128,7 +126,7 @@ impl Nickel {
     /// let mut server = Nickel::new();
     /// server.post("/a/post/request", handler);
     /// ```
-    pub fn post(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
+    pub fn post(&mut self, uri: &str, handler: RequestHandler){
         self.register_route_with_new_router(Post, uri, handler);
     }
 
@@ -148,7 +146,7 @@ impl Nickel {
     /// let mut server = Nickel::new();
     /// server.put("/a/put/request", handler);
     /// ```
-    pub fn put(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
+    pub fn put(&mut self, uri: &str, handler: RequestHandler){
         self.register_route_with_new_router(Put, uri, handler);
     }
 
@@ -168,7 +166,7 @@ impl Nickel {
     /// let mut server = Nickel::new();
     /// server.delete("/a/delete/request", handler);
     /// ```
-    pub fn delete(&mut self, uri: &str, handler: fn(request: &Request, response: &mut Response)){
+    pub fn delete(&mut self, uri: &str, handler: RequestHandler){
         self.register_route_with_new_router(Delete, uri, handler);
     }
 
