@@ -10,6 +10,113 @@ use request::Request;
 use response::Response;
 use middleware::{Middleware, Halt, Continue, MiddlewareResult};
 
+pub trait HttpRouter {
+    fn add_route(&mut self, Method, &str, RequestHandler);
+
+    /// Registers a handler to be used for a specific GET request.
+    /// Handlers are assigned to paths and paths are allowed to contain
+    /// variables and wildcards.
+    ///
+    /// A handler added through this API will
+    /// be attached to the default router. Consider creating the router
+    /// middleware manually for advanced functionality.
+    ///
+    /// # Example
+    ///
+    /// ```{rust}
+    /// use nickel::{Nickel, Request, Response};
+    /// let mut server = Nickel::new();
+    ///
+    /// //  without variables or wildcards
+    /// fn bare_handler(request: &Request, response: &mut Response) {
+    ///     response.send("This matches /user");
+    /// };
+    /// server.get("/user", bare_handler);
+    ///
+    /// // with variables
+    /// fn var_handler(request: &Request, response: &mut Response) {
+    ///     let text = format!("This is user: {}", request.param("userid"));
+    ///     response.send(text.as_slice());
+    /// };
+    /// server.get("/user/:userid", var_handler);
+    ///
+    /// // with simple wildcard
+    /// fn wild_handler(request: &Request, response: &mut Response) {
+    ///     response.send("This matches /user/list/4711 but not /user/extended/list/4711");
+    /// };
+    /// server.get("/user/*/:userid", wild_handler);
+    ///
+    /// // with double wildcard
+    /// fn very_wild_handler(request: &Request, response: &mut Response) {
+    ///     response.send("This matches /user/list/4711 and also /user/extended/list/4711");
+    /// };
+    /// server.get("/user/**/:userid", very_wild_handler);
+    /// ```
+    fn get(&mut self, uri: &str, handler: RequestHandler) {
+        self.add_route(Get, uri, handler);
+    }
+
+    /// Registers a handler to be used for a specific POST request.
+    /// A handler added through this API will be attached to the default router.
+    /// Consider creating the router middleware manually for advanced functionality.
+    ///
+    /// Take a look at `get(...)` for a more detailed description.
+    /// # Example
+    ///
+    /// ```{rust}
+    /// use nickel::{Nickel, Request, Response};
+    /// fn handler(request: &Request, response: &mut Response) {
+    ///     response.send("This matches a POST request to /a/post/request");
+    /// };
+    ///
+    /// let mut server = Nickel::new();
+    /// server.post("/a/post/request", handler);
+    /// ```
+    fn post(&mut self, uri: &str, handler: RequestHandler) {
+        self.add_route(Post, uri, handler);
+    }
+
+    /// Registers a handler to be used for a specific PUT request.
+    /// A handler added through this API will be attached to the default router.
+    /// Consider creating the router middleware manually for advanced functionality.
+    ///
+    /// Take a look at `get(...)` for a more detailed description.
+    /// # Example
+    ///
+    /// ```{rust}
+    /// use nickel::{Nickel, Request, Response};
+    /// fn handler(request: &Request, response: &mut Response) {
+    ///     response.send("This matches a POST request to /a/put/request");
+    /// };
+    ///
+    /// let mut server = Nickel::new();
+    /// server.put("/a/put/request", handler);
+    /// ```
+    fn put(&mut self, uri: &str, handler: RequestHandler) {
+        self.add_route(Put, uri, handler);
+    }
+
+    /// Registers a handler to be used for a specific DELETE request.
+    /// A handler added through this API will be attached to the default router.
+    /// Consider creating the router middleware manually for advanced functionality.
+    ///
+    /// Take a look at `get(...)` for a more detailed description.
+    /// # Example
+    ///
+    /// ```{rust}
+    /// use nickel::{Nickel, Request, Response};
+    /// fn handler(request: &Request, response: &mut Response) {
+    ///     response.send("This matches a DELETE request to /a/delete/request");
+    /// };
+    ///
+    /// let mut server = Nickel::new();
+    /// server.delete("/a/delete/request", handler);
+    /// ```
+    fn delete(&mut self, uri: &str, handler: RequestHandler) {
+        self.add_route(Delete, uri, handler);
+    }
+}
+
 pub type RequestHandler = fn(request: &Request, response: &mut Response);
 
 /// A Route is the basic data structure that stores both the path
@@ -98,105 +205,6 @@ impl<'a> Router {
         }
     }
 
-    /// Registers a handler to be used for a specific GET request.
-    /// Handlers are assigned to paths and paths are allowed to contain
-    /// variables and wildcards.
-    ///
-    /// # Example without variables and wildcards
-    ///
-    /// ```{rust,ignore}
-    /// fn handler (request: Request, response: &mut Response) {
-    ///     response.send("This matches /user");
-    /// };
-    /// router.get("/user", handler);
-    /// ```
-    /// # Example with variables
-    ///
-    /// ```{rust,ignore}
-    /// fn handler (request: Request, response: &mut Response) {
-    ///     let text = format!("This is user: {}", request.params.get(&"userid".to_string()));
-    ///     response.send(text.as_slice());
-    /// };
-    /// router.get("/user/:userid", handler);
-    /// ```
-    /// # Example with simple wildcard
-    ///
-    /// ```{rust,ignore}
-    /// fn handler (request: Request, response: &mut Response) {
-    ///     response.send("This matches /user/list/4711 but not /user/extended/list/4711");
-    /// };
-    /// router.get("/user/*/:userid", handler);
-    /// ```
-    /// # Example with double wildcard
-    ///
-    /// ```{rust,ignore}
-    /// fn handler (request: Request, response: &mut Response) {
-    ///     response.send("This matches /user/list/4711 and also /user/extended/list/4711");
-    /// };
-    /// router.get("/user/**/:userid", handler);
-    /// ```
-    pub fn get(&mut self, uri: &str, handler: RequestHandler){
-        self.add_route(Get, uri, handler);
-    }
-
-    /// Registers a handler to be used for a specific POST request.
-    ///
-    /// # Example
-    ///
-    /// ```{rust,ignore}
-    /// fn handler (request: Request, response: &mut Response) {
-    ///     response.send("This matches a POST request to /a/post/request");
-    /// };
-    /// router.post("/a/post/request", handler);
-    /// ```
-    /// Take a look at `get()` for a more detailed description.
-    pub fn post(&mut self, uri: &str, handler: RequestHandler){
-        self.add_route(Post, uri, handler);
-    }
-
-    /// Registers a handler to be used for a specific PUT request.
-    ///
-    /// # Example
-    ///
-    /// ```{rust,ignore}
-    /// fn handler (request: Request, response: &mut Response) {
-    ///     response.send("This matches a POST request to /a/put/request");
-    /// };
-    /// router.put("/a/put/request", handler);
-    /// ```
-    /// Take a look at `get(..)` for a more detailed description.
-    pub fn put(&mut self, uri: &str, handler: RequestHandler){
-        self.add_route(Put, uri, handler);
-    }
-
-    /// Registers a handler to be used for a specific DELETE request.
-    ///
-    /// # Example
-    ///
-    /// ```{rust,ignore}
-    /// fn handler (request: Request, response: &mut Response) {
-    ///     response.send("This matches a DELETE request to /a/delete/request");
-    /// };
-    /// router.delete("/a/delete/request", handler);
-    /// ```
-    /// Take a look at `get(...)` for a more detailed description.
-    pub fn delete(&mut self, uri: &str, handler: RequestHandler){
-        self.add_route(Delete, uri, handler);
-    }
-
-    pub fn add_route(&mut self, method: Method, path: &str, handler: RequestHandler) {
-        let matcher = path_utils::create_regex(path);
-        let variable_infos = path_utils::get_variable_info(path);
-        let route = Route {
-            path: path.to_string(),
-            method: method,
-            matcher: matcher,
-            handler: handler,
-            variables: variable_infos
-        };
-        self.routes.push(route);
-    }
-
     pub fn match_route(&'a self, method: &Method, path: &str) -> Option<RouteResult<'a>> {
         self.routes.iter().find(|item| item.method == *method && item.matcher.is_match(path))
             .map(|route| {
@@ -213,6 +221,21 @@ impl<'a> Router {
                     params: vec
                 }
             })
+    }
+}
+
+impl HttpRouter for Router {
+    fn add_route(&mut self, method: Method, path: &str, handler: RequestHandler) {
+        let matcher = path_utils::create_regex(path);
+        let variable_infos = path_utils::get_variable_info(path);
+        let route = Route {
+            path: path.to_string(),
+            method: method,
+            matcher: matcher,
+            handler: handler,
+            variables: variable_infos
+        };
+        self.routes.push(route);
     }
 }
 

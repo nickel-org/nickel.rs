@@ -34,7 +34,7 @@ pub use static_files_handler::StaticFilesHandler;
 pub use default_error_handler::DefaultErrorHandler;
 pub use json_body_parser::{JsonBodyParser, JsonBody};
 pub use query_string::{QueryStringParser, QueryString};
-pub use router::{Router, Route, RouteResult, RequestHandler};
+pub use router::{Router, Route, RouteResult, RequestHandler, HttpRouter};
 pub use nickel_error::{ NickelError, NickelErrorKind, ErrorWithStatusCode, UserDefinedError, Other };
 pub use mimes::get_media_type;
 

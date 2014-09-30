@@ -5,7 +5,7 @@ extern crate http;
 use http::status::NotFound;
 use nickel::{
     Nickel, NickelError, ErrorWithStatusCode, Continue, Halt, Request, Response,
-    QueryString, JsonBody, StaticFilesHandler, MiddlewareResult
+    QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter
 };
 use std::io::net::ip::Ipv4Addr;
 

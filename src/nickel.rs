@@ -1,6 +1,6 @@
 use std::io::net::ip::{Port, IpAddr};
 
-use router::{Router, RequestHandler};
+use router::{Router, RequestHandler, HttpRouter};
 use middleware::{MiddlewareStack, Middleware, ErrorHandler, MiddlewareResult};
 use nickel_error::{ NickelError, ErrorWithStatusCode };
 use server::Server;
@@ -215,7 +215,7 @@ impl Nickel {
     ///
     /// # Example
     /// ```{rust}
-    /// use nickel::{Nickel, Request, Response};
+    /// use nickel::{Nickel, Request, Response, HttpRouter};
     ///
     /// let mut server = Nickel::new();
     /// let mut router = Nickel::router();
