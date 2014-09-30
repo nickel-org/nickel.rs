@@ -77,6 +77,42 @@ pub trait HttpRouter {
     /// };
     /// server.get("/user/**/:userid", very_wild_handler);
     /// ```
+    ///
+    /// # Macro example
+    ///
+    /// ```{rust}
+    /// # #![feature(phase)]
+    /// #[phase(plugin)] extern crate nickel_macros;
+    /// extern crate nickel;
+    /// use nickel::Nickel;
+    ///
+    /// fn main() {
+    ///     let router = router! {
+    ///         //  without variables or wildcards
+    ///         get "/user" => |request, response| {
+    ///             response.send("This matches /user");
+    ///         }
+    ///         // with variables
+    ///         get "/user/:userid" => |request, response| {
+    ///             let text = format!("This is user: {}", request.param("userid"));
+    ///             response.send(text.as_slice());
+    ///         }
+    ///         // with simple wildcard
+    ///         get "/user/*/:userid" => |request, response| {
+    ///             response.send("This matches /user/list/4711");
+    ///             response.send("NOT /user/extended/list/4711");
+    ///         }
+    ///         // with double wildcard
+    ///         get "/user/**/:userid" => |request, response| {
+    ///             response.send("This matches /user/list/4711");
+    ///             response.send("AND /user/extended/list/4711");
+    ///         }
+    ///     };
+    ///
+    ///     let mut server = Nickel::new();
+    ///     server.utilize(router);
+    /// }
+    /// ```
     fn get(&mut self, uri: &str, handler: RequestHandler) {
         self.add_route(Get, uri, handler);
     }
