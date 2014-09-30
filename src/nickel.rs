@@ -5,7 +5,7 @@ use middleware::{MiddlewareStack, Middleware, ErrorHandler, MiddlewareResult};
 use nickel_error::{ NickelError, ErrorWithStatusCode };
 use server::Server;
 
-use http::method::{ Method, Get, Post, Put, Delete };
+use http::method::Method;
 use http::status::NotFound;
 use request::Request;
 use response::Response;
@@ -20,6 +20,14 @@ use default_error_handler::DefaultErrorHandler;
 pub struct Nickel{
     middleware_stack: MiddlewareStack,
     server: Option<Server>,
+}
+
+impl HttpRouter for Nickel {
+    fn add_route(&mut self, method: Method, uri: &str, handler: RequestHandler) {
+        let mut router = Router::new();
+        router.add_route(method, uri, handler);
+        self.utilize(router);
+    }
 }
 
 impl Nickel {
@@ -62,115 +70,6 @@ impl Nickel {
     /// ```
     pub fn utilize<T: Middleware>(&mut self, handler: T){
         self.middleware_stack.add_middleware(handler);
-    }
-
-    /// Registers a handler to be used for a specific GET request.
-    /// Handlers are assigned to paths and paths are allowed to contain
-    /// variables and wildcards.
-    ///
-    /// A handler added through this API will
-    /// be attached to the default router. Consider creating the router
-    /// middleware manually for advanced functionality.
-    ///
-    /// # Example
-    ///
-    /// ```{rust}
-    /// use nickel::{Nickel, Request, Response};
-    /// let mut server = Nickel::new();
-    ///
-    /// //  without variables or wildcards
-    /// fn bare_handler(request: &Request, response: &mut Response) {
-    ///     response.send("This matches /user");
-    /// };
-    /// server.get("/user", bare_handler);
-    ///
-    /// // with variables
-    /// fn var_handler(request: &Request, response: &mut Response) {
-    ///     let text = format!("This is user: {}", request.param("userid"));
-    ///     response.send(text.as_slice());
-    /// };
-    /// server.get("/user/:userid", var_handler);
-    ///
-    /// // with simple wildcard
-    /// fn wild_handler(request: &Request, response: &mut Response) {
-    ///     response.send("This matches /user/list/4711 but not /user/extended/list/4711");
-    /// };
-    /// server.get("/user/*/:userid", wild_handler);
-    ///
-    /// // with double wildcard
-    /// fn very_wild_handler(request: &Request, response: &mut Response) {
-    ///     response.send("This matches /user/list/4711 and also /user/extended/list/4711");
-    /// };
-    /// server.get("/user/**/:userid", very_wild_handler);
-    /// ```
-    pub fn get(&mut self, uri: &str, handler: RequestHandler){
-        self.register_route_with_new_router(Get, uri, handler);
-    }
-
-    /// Registers a handler to be used for a specific POST request.
-    /// A handler added through this API will be attached to the default router.
-    /// Consider creating the router middleware manually for advanced functionality.
-    ///
-    /// Take a look at `get(...)` for a more detailed description.
-    /// # Example
-    ///
-    /// ```{rust}
-    /// use nickel::{Nickel, Request, Response};
-    /// fn handler(request: &Request, response: &mut Response) {
-    ///     response.send("This matches a POST request to /a/post/request");
-    /// };
-    ///
-    /// let mut server = Nickel::new();
-    /// server.post("/a/post/request", handler);
-    /// ```
-    pub fn post(&mut self, uri: &str, handler: RequestHandler){
-        self.register_route_with_new_router(Post, uri, handler);
-    }
-
-    /// Registers a handler to be used for a specific PUT request.
-    /// A handler added through this API will be attached to the default router.
-    /// Consider creating the router middleware manually for advanced functionality.
-    ///
-    /// Take a look at `get(...)` for a more detailed description.
-    /// # Example
-    ///
-    /// ```{rust}
-    /// use nickel::{Nickel, Request, Response};
-    /// fn handler(request: &Request, response: &mut Response) {
-    ///     response.send("This matches a POST request to /a/put/request");
-    /// };
-    ///
-    /// let mut server = Nickel::new();
-    /// server.put("/a/put/request", handler);
-    /// ```
-    pub fn put(&mut self, uri: &str, handler: RequestHandler){
-        self.register_route_with_new_router(Put, uri, handler);
-    }
-
-    /// Registers a handler to be used for a specific DELETE request.
-    /// A handler added through this API will be attached to the default router.
-    /// Consider creating the router middleware manually for advanced functionality.
-    ///
-    /// Take a look at `get(...)` for a more detailed description.
-    /// # Example
-    ///
-    /// ```{rust}
-    /// use nickel::{Nickel, Request, Response};
-    /// fn handler(request: &Request, response: &mut Response) {
-    ///     response.send("This matches a DELETE request to /a/delete/request");
-    /// };
-    ///
-    /// let mut server = Nickel::new();
-    /// server.delete("/a/delete/request", handler);
-    /// ```
-    pub fn delete(&mut self, uri: &str, handler: RequestHandler){
-        self.register_route_with_new_router(Delete, uri, handler);
-    }
-
-    fn register_route_with_new_router(&mut self, method: Method, uri: &str, handler: fn(request: &Request, response: &mut Response)) {
-        let mut router = Router::new();
-        router.add_route(method, uri, handler);
-        self.utilize(router);
     }
 
     /// Registers an error handler which will be invoked among other error handler

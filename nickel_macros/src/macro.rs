@@ -4,6 +4,7 @@
 macro_rules! router (
     ($($method:ident $path:expr => |$req:ident, $res:ident| $b:block)+) => (
         {
+            use nickel::HttpRouter;
             let mut router = nickel::Router::new();
 
             $(

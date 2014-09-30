@@ -2,12 +2,11 @@ extern crate serialize;
 extern crate nickel;
 extern crate http;
 
-use nickel::{ Nickel, Request, Response }; 
+use nickel::{Nickel, Request, Response, HttpRouter};
 use std::io::net::ip::Ipv4Addr;
 use std::collections::HashMap;
 
 fn main() {
-
     let mut server = Nickel::new();
 
     fn root_handler (_request: &Request, response: &mut Response) {

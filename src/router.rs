@@ -24,7 +24,7 @@ pub trait HttpRouter {
     /// # Example
     ///
     /// ```{rust}
-    /// use nickel::{Nickel, Request, Response};
+    /// use nickel::{Nickel, Request, Response, HttpRouter};
     /// let mut server = Nickel::new();
     ///
     /// //  without variables or wildcards
@@ -64,7 +64,7 @@ pub trait HttpRouter {
     /// # Example
     ///
     /// ```{rust}
-    /// use nickel::{Nickel, Request, Response};
+    /// use nickel::{Nickel, Request, Response, HttpRouter};
     /// fn handler(request: &Request, response: &mut Response) {
     ///     response.send("This matches a POST request to /a/post/request");
     /// };
@@ -84,7 +84,7 @@ pub trait HttpRouter {
     /// # Example
     ///
     /// ```{rust}
-    /// use nickel::{Nickel, Request, Response};
+    /// use nickel::{Nickel, Request, Response, HttpRouter};
     /// fn handler(request: &Request, response: &mut Response) {
     ///     response.send("This matches a POST request to /a/put/request");
     /// };
@@ -104,7 +104,7 @@ pub trait HttpRouter {
     /// # Example
     ///
     /// ```{rust}
-    /// use nickel::{Nickel, Request, Response};
+    /// use nickel::{Nickel, Request, Response, HttpRouter};
     /// fn handler(request: &Request, response: &mut Response) {
     ///     response.send("This matches a DELETE request to /a/delete/request");
     /// };
