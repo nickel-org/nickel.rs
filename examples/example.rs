@@ -16,14 +16,13 @@ struct Person {
 }
 
 fn main() {
-
     let mut server = Nickel::new();
 
     // we would love to use a closure for the handler but it seems to be hard
     // to achieve with the current version of rust.
 
     //this is an example middleware function that just logs each request
-    fn logger (request: &Request, _response: &mut Response) -> MiddlewareResult {
+    fn logger(request: &Request, _response: &mut Response) -> MiddlewareResult {
         println!("logging request: {}", request.origin.request_uri);
 
         // a request is supposed to return a `bool` to indicate whether additional
@@ -42,7 +41,7 @@ fn main() {
 
     let mut router = Nickel::router();
 
-    fn user_handler (request: &Request, response: &mut Response) {
+    fn user_handler(request: &Request, response: &mut Response) {
         let text = format!("This is user: {}", request.param("userid"));
         response.send(text.as_slice());
     }
@@ -50,21 +49,21 @@ fn main() {
     // go to http://localhost:6767/user/4711 to see this route in action
     router.get("/user/:userid", user_handler);
 
-    fn bar_handler (_request: &Request, response: &mut Response) {
+    fn bar_handler(_request: &Request, response: &mut Response) {
         response.send("This is the /bar handler");
     }
 
     // go to http://localhost:6767/bar to see this route in action
     router.get("/bar", bar_handler);
 
-    fn simple_wildcard (_request: &Request, response: &mut Response) {
+    fn simple_wildcard(_request: &Request, response: &mut Response) {
         response.send("This matches /some/crazy/route but not /some/super/crazy/route");
     }
 
     // go to http://localhost:6767/some/crazy/route to see this route in action
     router.get("/some/*/route", simple_wildcard);
 
-    fn double_wildcard (_request: &Request, response: &mut Response) {
+    fn double_wildcard(_request: &Request, response: &mut Response) {
         response.send("This matches /a/crazy/route and also /a/super/crazy/route");
     }
 
@@ -73,7 +72,7 @@ fn main() {
 
     // try it with curl
     // curl 'http://localhost:6767/a/post/request' -H 'Content-Type: application/json;charset=UTF-8'  --data-binary $'{ "firstname": "John","lastname": "Connor" }'
-    fn post_handler (request: &Request, response: &mut Response) {
+    fn post_handler(request: &Request, response: &mut Response) {
 
         let person = request.json_as::<Person>().unwrap();
         let text = format!("Hello {} {}", person.firstname, person.lastname);
@@ -84,7 +83,7 @@ fn main() {
     router.post("/a/post/request", post_handler);
 
     // try calling http://localhost:6767/query?foo=bar
-    fn query_handler (request: &Request, response: &mut Response) {
+    fn query_handler(request: &Request, response: &mut Response) {
         let text = format!("Your foo values in the query string are: {}", request.query("foo", "This is only a default value!"));
         response.send(text.as_slice());
     }
@@ -97,7 +96,7 @@ fn main() {
     server.utilize(StaticFilesHandler::new("examples/assets/"));
 
     //this is how to overwrite the default error handler to handle 404 cases with a custom view
-    fn custom_404 (err: &NickelError, _req: &Request, response: &mut Response) -> MiddlewareResult {
+    fn custom_404(err: &NickelError, _req: &Request, response: &mut Response) -> MiddlewareResult {
         match err.kind {
             ErrorWithStatusCode(NotFound) => {
                 response.content_type("html")
