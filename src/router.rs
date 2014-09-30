@@ -11,6 +11,31 @@ use response::Response;
 use middleware::{Middleware, Halt, Continue, MiddlewareResult};
 
 pub trait HttpRouter {
+    /// Registers a handler to be used for a specified method.
+    ///
+    /// # Example
+    ///
+    /// ```{rust}
+    /// extern crate nickel;
+    /// extern crate http;
+    /// use nickel::{Nickel, Request, Response, HttpRouter};
+    /// use http::method::{Get, Post, Put, Delete};
+    ///
+    /// fn main() {
+    ///     fn read_handler(request: &Request, response: &mut Response) {
+    ///         response.send("Get request!");
+    ///     };
+    ///     fn modify_handler(request: &Request, response: &mut Response) {
+    ///         response.send(format!("Method is: {}", request.origin.method));
+    ///     };
+    ///
+    ///     let mut server = Nickel::new();
+    ///     server.add_route(Get, "/foo", read_handler);
+    ///     server.add_route(Post, "/foo", modify_handler);
+    ///     server.add_route(Put, "/foo", modify_handler);
+    ///     server.add_route(Delete, "/foo", modify_handler);
+    /// }
+    /// ```
     fn add_route(&mut self, Method, &str, RequestHandler);
 
     /// Registers a handler to be used for a specific GET request.
