@@ -33,8 +33,11 @@ impl<'a, 'b> Response<'a, 'b> {
     /// Returns the response for chaining.
     ///
     /// # Example
-    /// ```{rust,ignore}
-    /// response.content_type("html");
+    /// ```{rust}
+    /// # use nickel::{Request, Response};
+    /// fn handler(request: &Request, response: &mut Response) {
+    ///     response.content_type("html");
+    /// }
     /// ```
     pub fn content_type(&mut self, text: &str) -> &mut Response<'a,'b> {
         self.origin.headers.content_type = get_media_type(text);
@@ -44,8 +47,15 @@ impl<'a, 'b> Response<'a, 'b> {
     /// Sets the status code and returns the response for chaining
     ///
     /// # Example
-    /// ```{rust,ignore}
-    /// response.status_code(http::status::NotFound);
+    /// ```{rust}
+    /// # extern crate http;
+    /// # extern crate nickel;
+    /// # use nickel::{Request, Response};
+    /// # fn main() {
+    /// fn handler(request: &Request, response: &mut Response) {
+    ///     response.status_code(http::status::NotFound);
+    /// }
+    /// # }
     /// ```
     pub fn status_code(&mut self, status: http::status::Status) -> &mut Response<'a,'b> {
         self.origin.status = status;
@@ -55,8 +65,11 @@ impl<'a, 'b> Response<'a, 'b> {
     /// Writes a response
     ///
     /// # Example
-    /// ```{rust,ignore}
-    /// response.send("hello world");
+    /// ```{rust}
+    /// # use nickel::{Request, Response};
+    /// fn handler(request: &Request, response: &mut Response) {
+    ///     response.send("hello world");
+    /// }
     /// ```
     pub fn send<T: BytesContainer> (&mut self, text: T) {
         // TODO: This needs to be more sophisticated to return the correct headers
@@ -81,8 +94,12 @@ impl<'a, 'b> Response<'a, 'b> {
     /// Writes a file to the output.
     ///
     /// # Example
-    /// ```{rust,ignore}
-    /// response.send_file(some_path);
+    /// ```{rust}
+    /// # use nickel::{Request, Response};
+    /// fn handler(request: &Request, response: &mut Response) {
+    ///     let favicon = Path::new("/assets/favicon.ico");
+    ///     response.send_file(&favicon).ok().expect("Failed to send favicon");
+    /// }
     /// ```
     pub fn send_file(&mut self, path: &Path) -> IoResult<()> {
         let mut file = try!(File::open(path));
@@ -96,10 +113,14 @@ impl<'a, 'b> Response<'a, 'b> {
     /// Renders the given template bound with the given data.
     ///
     /// # Example
-    /// ```{rust,ignore}
-    /// let mut data = HashMap::<&'static str, &'static str>::new();
-    /// data.insert("name", "user");
-    /// response.render("examples/assets/template.tpl", &data);
+    /// ```{rust}
+    /// # use nickel::{Request, Response};
+    /// # use std::collections::hashmap::HashMap;
+    /// fn handler(request: &Request, response: &mut Response) {
+    ///     let mut data = HashMap::new();
+    ///     data.insert("name", "user");
+    ///     response.render("examples/assets/template.tpl", &data);
+    /// }
     /// ```
     pub fn render<'a, T: Encodable<Encoder<'a>, Error>>
         (&mut self, path: &'static str, data: &T) {
