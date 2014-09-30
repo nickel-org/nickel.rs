@@ -15,7 +15,7 @@ pub struct Server {
     middleware_stack: MiddlewareStack,
     ip: IpAddr,
     port: Port,
-    templates: Arc<RWLock<HashMap<&'static str, mustache::Template>>>
+    templates: response::TemplateCache
 }
 
 impl HttpServer for Arc<Server> {
@@ -26,7 +26,7 @@ impl HttpServer for Arc<Server> {
     fn handle_request(&self, req: Request, res: &mut ResponseWriter) {
 
         let nickel_req = &mut request::Request::from_internal(&req);
-        let nickel_res = &mut response::Response::from_internal(res, self.templates.clone());
+        let nickel_res = &mut response::Response::from_internal(res, &self.templates);
 
         self.middleware_stack.invoke(nickel_req, nickel_res);
     }
@@ -38,7 +38,7 @@ impl Server {
             middleware_stack: middleware_stack,
             ip: ip,
             port: port,
-            templates: Arc::new(RWLock::new(HashMap::<&'static str, mustache::Template>::new()))
+            templates: RWLock::new(HashMap::<&'static str, mustache::Template>::new())
         }
     }
 

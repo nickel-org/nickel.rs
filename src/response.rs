@@ -1,4 +1,4 @@
-use std::sync::{Arc, RWLock};
+use std::sync::RWLock;
 use std::collections::HashMap;
 use std::collections::hashmap::{Occupied, Vacant};
 use std::io::{IoResult, File};
@@ -12,16 +12,18 @@ use mimes::get_media_type;
 use mustache;
 use mustache::{Template, Encoder, Error};
 
+pub type TemplateCache = RWLock<HashMap<&'static str, Template>>;
+
 ///A container for the response
 pub struct Response<'a, 'b: 'a> {
     ///the original `http::server::ResponseWriter`
     pub origin: &'a mut ResponseWriter<'b>,
-    templates: Arc<RWLock<HashMap<&'static str, Template>>>
+    templates: &'a TemplateCache
 }
 
 impl<'a, 'b> Response<'a, 'b> {
     pub fn from_internal<'c, 'd>(response: &'c mut ResponseWriter<'d>,
-                                 templates: Arc<RWLock<HashMap<&'static str, Template>>>)
+                                 templates: &'c TemplateCache)
                                 -> Response<'c, 'd> {
         Response {
             origin: response,
