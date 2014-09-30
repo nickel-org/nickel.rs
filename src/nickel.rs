@@ -19,7 +19,6 @@ use default_error_handler::DefaultErrorHandler;
 /// holds all public APIs.
 pub struct Nickel{
     middleware_stack: MiddlewareStack,
-    server: Option<Server>,
 }
 
 impl HttpRouter for Nickel {
@@ -40,10 +39,7 @@ impl Nickel {
         // they don't like the default behaviour.
         middleware_stack.add_error_handler(DefaultErrorHandler);
 
-        Nickel {
-            middleware_stack: middleware_stack,
-            server: None
-        }
+        Nickel { middleware_stack: middleware_stack }
     }
 
     /// Registers a middleware handler which will be invoked among other middleware
@@ -210,7 +206,6 @@ impl Nickel {
         }
 
         self.middleware_stack.add_middleware(not_found_handler);
-        self.server = Some(Server::new(self.middleware_stack, ip, port));
-        self.server.unwrap().serve();
+        Server::new(self.middleware_stack, ip, port).serve();
     }
 }
