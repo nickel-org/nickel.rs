@@ -1,5 +1,6 @@
 use std::sync::{Arc, RWLock};
 use std::collections::HashMap;
+use std::collections::hashmap::{Occupied, Vacant};
 use std::io::{IoResult, File};
 use std::io::util::copy;
 use std::path::BytesContainer;
@@ -28,7 +29,7 @@ impl<'a, 'b> Response<'a, 'b> {
         }
     }
 
-    /// Sets the content type by it's short form. 
+    /// Sets the content type by it's short form.
     /// Returns the response for chaining.
     ///
     /// # Example
@@ -103,27 +104,30 @@ impl<'a, 'b> Response<'a, 'b> {
     pub fn render<'a, T: Encodable<Encoder<'a>, Error>>
         (&mut self, path: &'static str, data: &T) {
             // Fast path doesn't need writer lock
-            let _ = match self.templates.read().find(&path)
-            {
-                Some(t) =>
-                {
+            match self.templates.read().find(&path) {
+                Some(t) => {
                     let _ = t.render(self.origin, data);
                     return
                 },
                 None => {}
-            };
+            }
 
             // We didn't find the template, get writers lock
             let mut templates = self.templates.write();
             // Search again incase there was a race to compile the template
-            let template = templates.find_or_insert_with(path, |_| {
-                let mut file = File::open(&Path::new(path));
-                let raw_template = file.read_to_string()
-                    .ok()
-                    .expect(format!("Couldn't open the template file: {}",
-                                    path).as_slice());
-                mustache::compile_str(raw_template.as_slice())
-            });
+            let template = match templates.entry(path) {
+                Vacant(entry) => {
+                    let mut file = File::open(&Path::new(path));
+                    let raw_template =
+                        file.read_to_string()
+                            .ok()
+                            .expect(format!("Couldn't open the template file: {}",
+                                            path).as_slice());
+
+                    entry.set(mustache::compile_str(raw_template.as_slice()))
+                },
+                Occupied(entry) => entry.into_mut()
+            };
 
             let _ = template.render(self.origin, data);
     }
