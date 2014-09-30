@@ -58,7 +58,8 @@ impl<'a, 'b> QueryString for request::Request<'a, 'b> {
                 Some(result) => Some(result),
                 _ => Some(vec![default.to_string().clone()])
             }
-        }).unwrap()
+        }).expect("QueryStore not available. Ensure the middleware \
+                  is added before the route that depends on it.")
     }
 }
 
