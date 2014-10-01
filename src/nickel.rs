@@ -14,6 +14,7 @@ use response::Response;
 
 //pre defined middleware
 use static_files_handler::StaticFilesHandler;
+use favicon_handler::FaviconHandler;
 use json_body_parser::JsonBodyParser;
 use query_string::QueryStringParser;
 use default_error_handler::DefaultErrorHandler;
@@ -206,6 +207,19 @@ impl Nickel {
     /// ```
     pub fn static_files(root_path: &str) -> StaticFilesHandler {
         StaticFilesHandler::new(root_path)
+    }
+
+    /// Create a new middleware to serve the ico file from an in-memory cache.
+    /// The file is loaded when the server stops.
+    ///
+    ///
+    /// # Example
+    /// ```{rust,ignore}
+    /// let mut server = Nickel::new();
+    /// server.utilize(Nickel::favicon("/path/to/ico/file"));
+    /// ```
+    pub fn favicon(icon_path: &str) -> FaviconHandler {
+        FaviconHandler::new(icon_path)
     }
 
     /// Create a new middleware to serve as a router.
