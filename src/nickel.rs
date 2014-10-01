@@ -209,8 +209,8 @@ impl Nickel {
         StaticFilesHandler::new(root_path)
     }
 
-    /// Create a new middleware to serve the ico file from an in-memory cache.
-    /// The file is loaded when the server stops.
+    /// Create a new middleware to serve an /favicon.ico file from an in-memory cache. 
+    /// The file is only loaded once when the server starts.
     ///
     ///
     /// # Example
