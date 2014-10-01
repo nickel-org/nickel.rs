@@ -36,7 +36,7 @@ pub trait HttpRouter {
     ///     server.add_route(Delete, "/foo", modify_handler);
     /// }
     /// ```
-    fn add_route(&mut self, Method, &str, RequestHandler);
+    fn add_route<H: RequestHandler>(&mut self, Method, &str, H);
 
     /// Registers a handler to be used for a specific GET request.
     /// Handlers are assigned to paths and paths are allowed to contain
@@ -115,7 +115,7 @@ pub trait HttpRouter {
     ///     server.utilize(router);
     /// }
     /// ```
-    fn get(&mut self, uri: &str, handler: RequestHandler) {
+    fn get<H: RequestHandler>(&mut self, uri: &str, handler: H) {
         self.add_route(Get, uri, handler);
     }
 
@@ -135,7 +135,7 @@ pub trait HttpRouter {
     /// let mut server = Nickel::new();
     /// server.post("/a/post/request", handler);
     /// ```
-    fn post(&mut self, uri: &str, handler: RequestHandler) {
+    fn post<H: RequestHandler>(&mut self, uri: &str, handler: H) {
         self.add_route(Post, uri, handler);
     }
 
@@ -155,7 +155,7 @@ pub trait HttpRouter {
     /// let mut server = Nickel::new();
     /// server.put("/a/put/request", handler);
     /// ```
-    fn put(&mut self, uri: &str, handler: RequestHandler) {
+    fn put<H: RequestHandler>(&mut self, uri: &str, handler: H) {
         self.add_route(Put, uri, handler);
     }
 
@@ -175,12 +175,14 @@ pub trait HttpRouter {
     /// let mut server = Nickel::new();
     /// server.delete("/a/delete/request", handler);
     /// ```
-    fn delete(&mut self, uri: &str, handler: RequestHandler) {
+    fn delete<H: RequestHandler>(&mut self, uri: &str, handler: H) {
         self.add_route(Delete, uri, handler);
     }
 }
 
-pub type RequestHandler = fn(request: &Request, response: &mut Response);
+pub trait RequestHandler : Sync + Send {
+    fn handle(&self, &Request, &mut Response);
+}
 
 /// A Route is the basic data structure that stores both the path
 /// and the handler that gets executed for the route.
@@ -188,9 +190,15 @@ pub type RequestHandler = fn(request: &Request, response: &mut Response);
 pub struct Route {
     pub path: String,
     pub method: Method,
-    pub handler: fn(request: &Request, response: &mut Response),
+    pub handler: Box<RequestHandler + Send + Sync + 'static>,
     pub variables: HashMap<String, uint>,
     matcher: Regex
+}
+
+impl RequestHandler for fn(request: &Request, response: &mut Response) {
+    fn handle(&self, req: &Request, res: &mut Response) {
+        (*self)(req, res)
+    }
 }
 
 /// A RouteResult is what the router returns when `match_route` is called.
@@ -300,7 +308,7 @@ impl<'a> Router {
 }
 
 impl HttpRouter for Router {
-    fn add_route(&mut self, method: Method, path: &str, handler: RequestHandler) {
+    fn add_route<H: RequestHandler>(&mut self, method: Method, path: &str, handler: H) {
         static FORMAT_VAR: &'static str = ":format";
 
         let with_format = if path.contains(FORMAT_VAR) {
@@ -311,11 +319,12 @@ impl HttpRouter for Router {
 
         let matcher = path_utils::create_regex(with_format[]);
         let variable_infos = path_utils::get_variable_info(with_format[]);
+
         let route = Route {
             path: with_format,
             method: method,
             matcher: matcher,
-            handler: handler,
+            handler: box handler,
             variables: variable_infos
         };
         self.routes.push(route);
@@ -332,7 +341,7 @@ impl Middleware for Router {
                         res.origin.status = ::http::status::Ok;
                         let handler = &route_result.route.handler;
                         req.route_result = Some(route_result);
-                        (*handler)(req, res);
+                        handler.handle(req, res);
                         Ok(Halt)
                     },
                     None => Ok(Continue)
