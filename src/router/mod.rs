@@ -11,11 +11,9 @@ use response::Response;
 use middleware::{Middleware, Halt, Continue, MiddlewareResult};
 
 pub use self::http_router::HttpRouter;
+pub use self::request_handler::RequestHandler;
 mod http_router;
-
-pub trait RequestHandler : Sync + Send {
-    fn handle(&self, &Request, &mut Response);
-}
+mod request_handler;
 
 /// A Route is the basic data structure that stores both the path
 /// and the handler that gets executed for the route.
@@ -26,12 +24,6 @@ pub struct Route {
     pub handler: Box<RequestHandler + Send + Sync + 'static>,
     pub variables: HashMap<String, uint>,
     matcher: Regex
-}
-
-impl RequestHandler for fn(request: &Request, response: &mut Response) {
-    fn handle(&self, req: &Request, res: &mut Response) {
-        (*self)(req, res)
-    }
 }
 
 /// A RouteResult is what the router returns when `match_route` is called.
