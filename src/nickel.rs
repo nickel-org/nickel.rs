@@ -209,19 +209,6 @@ impl Nickel {
         StaticFilesHandler::new(root_path)
     }
 
-    /// Create a new middleware to serve an /favicon.ico file from an in-memory cache. 
-    /// The file is only loaded once when the server starts.
-    ///
-    ///
-    /// # Example
-    /// ```{rust,ignore}
-    /// let mut server = Nickel::new();
-    /// server.utilize(Nickel::favicon("/path/to/ico/file"));
-    /// ```
-    pub fn favicon(icon_path: &str) -> FaviconHandler {
-        FaviconHandler::new(icon_path)
-    }
-
     /// Create a new middleware to serve as a router.
     ///
     ///

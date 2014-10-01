@@ -9,7 +9,6 @@ use response;
 use middleware::{Action, Halt, Continue, Middleware};
 use nickel_error::NickelError;
 
-#[deriving(Clone)]
 pub struct FaviconHandler {
     icon: Vec<u8>,
     icon_path: Path, // Is it useful to log where in-memory favicon came from every request?
@@ -27,6 +26,15 @@ impl Middleware for FaviconHandler {
 }
 
 impl FaviconHandler {
+    /// Create a new middleware to serve an /favicon.ico file from an in-memory cache. 
+    /// The file is only read from disk once when the server starts.
+    ///
+    ///
+    /// # Example
+    /// ```{rust,ignore}
+    /// let mut server = Nickel::new();
+    /// server.utilize(FaviconHandler::new("/path/to/ico/file"));
+    /// ```
     pub fn new (icon_path: &str) -> FaviconHandler {
         let _icon_path = Path::new(icon_path);
         FaviconHandler {
