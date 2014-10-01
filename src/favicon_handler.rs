@@ -26,7 +26,7 @@ impl Middleware for FaviconHandler {
 }
 
 impl FaviconHandler {
-    /// Create a new middleware to serve an /favicon.ico file from an in-memory cache.
+    /// Create a new middleware to serve an /favicon.ico file from an in-memory cache. 
     /// The file is only read from disk once when the server starts.
     ///
     ///
