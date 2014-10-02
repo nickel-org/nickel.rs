@@ -53,9 +53,14 @@ impl MiddlewareStack {
     pub fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: &mut Response) {
         for handler in self.handlers.iter() {
             match handler.invoke(req, res) {
-                Ok(Halt) => return,
+                Ok(Halt) => 
+                {
+                    debug!("{} {} {} {}", req.origin.method, req.origin.remote_addr, req.origin.request_uri, res.origin.status);
+                    return
+                }
                 Ok(Continue) => {},
                 Err(mut err) => {
+                    warn!("{} {} {} {}", req.origin.method, req.origin.remote_addr, req.origin.request_uri, err.kind);
                     for error_handler in self.error_handlers.iter().rev() {
                         match error_handler.invoke(&err, req, res) {
                             Ok(Continue) => {},

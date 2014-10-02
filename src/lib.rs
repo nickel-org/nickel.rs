@@ -25,6 +25,9 @@ extern crate mustache;
 extern crate groupable;
 #[phase(plugin)]
 extern crate regex_macros;
+#[phase(plugin, link)]
+extern crate log;
+
 
 pub use nickel::Nickel;
 pub use request::Request;
