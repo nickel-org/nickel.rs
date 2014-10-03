@@ -1,6 +1,6 @@
 //!Router asigns handlers to paths and resolves them per request
 pub use self::http_router::HttpRouter;
-pub use self::request_handler::RequestHandler;
+pub use self::request_handler::{RequestHandler, ResponseFinalizer};
 pub use self::router::{Router, Route, RouteResult};
 mod http_router;
 mod request_handler;

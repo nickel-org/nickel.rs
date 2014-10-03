@@ -42,7 +42,7 @@ pub use router::{Router, Route, RouteResult, RequestHandler, HttpRouter};
 pub use nickel_error::{ NickelError, NickelErrorKind, ErrorWithStatusCode, UserDefinedError, Other };
 pub use mimes::get_media_type;
 
-mod router;
+pub mod router;
 mod server;
 mod nickel;
 mod request;
