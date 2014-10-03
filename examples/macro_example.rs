@@ -6,7 +6,7 @@ extern crate nickel;
 extern crate serialize;
 #[phase(plugin)] extern crate nickel_macros;
 
-use http::status::NotFound;
+use http::status;
 use nickel::{
     Nickel, NickelError, ErrorWithStatusCode, Continue, Halt, Request, Response,
     QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter
@@ -31,9 +31,9 @@ fn logger(request: &Request, _response: &mut Response) -> MiddlewareResult {
 //this is how to overwrite the default error handler to handle 404 cases with a custom view
 fn custom_404(err: &NickelError, _req: &Request, response: &mut Response) -> MiddlewareResult {
     match err.kind {
-        ErrorWithStatusCode(NotFound) => {
+        ErrorWithStatusCode(status::NotFound) => {
             response.content_type("html")
-                    .status_code(NotFound)
+                    .status_code(status::NotFound)
                     .send("<h1>Call the police!<h1>");
             Ok(Halt)
         },
@@ -59,23 +59,32 @@ fn main() {
     server.utilize(router! {
         // go to http://localhost:6767/user/4711 to see this route in action
         get "/user/:userid" => |request, response| {
-            let text = format!("This is user: {}", request.param("userid"));
-            response.send(text.as_slice());
+            format!("This is user: {}", request.param("userid"))
+        }
+
+        // go to http://localhost:6767/no_alloc/4711 to see this route in action
+        get "/no_alloc/:userid" => |request, response| {
+            ["This is user: ", request.param("userid")]
         }
 
         // go to http://localhost:6767/bar to see this route in action
         get "/bar" => |request, response| {
-            response.send("This is the /bar handler");
+            (200, "This is the /bar handler")
+        }
+
+        // go to http://localhost:6767/private to see this route in action
+        get "/private" => |request, response| {
+            (status::Unauthorized, "This is a private place")
         }
 
         // go to http://localhost:6767/some/crazy/route to see this route in action
         get "/some/*/route" => |request, response| {
-            response.send("This matches /some/crazy/route but not /some/super/crazy/route");
+            "This matches /some/crazy/route but not /some/super/crazy/route"
         }
 
         // go to http://localhost:6767/some/crazy/route to see this route in action
         get "/a/**/route" => |request, response| {
-            response.send("This matches /a/crazy/route and also /a/super/crazy/route");
+            "This matches /a/crazy/route and also /a/super/crazy/route"
         }
 
         // try it with curl
