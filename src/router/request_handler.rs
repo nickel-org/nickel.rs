@@ -23,20 +23,6 @@ impl ResponseFinalizer for () {
     fn respond(self, _: &mut Response) {}
 }
 
-impl ResponseFinalizer for String {
-    fn respond(self, res: &mut Response) {
-        res.origin.status = status::Ok;
-        res.send(self);
-    }
-}
-
-impl<'a> ResponseFinalizer for &'a str {
-    fn respond(self, res: &mut Response) {
-        res.origin.status = status::Ok;
-        res.send(self);
-    }
-}
-
 impl<'a, S: Show> ResponseFinalizer for &'a [S] {
     fn respond(self, res: &mut Response) {
         res.origin.status = status::Ok;
@@ -47,50 +33,45 @@ impl<'a, S: Show> ResponseFinalizer for &'a [S] {
     }
 }
 
-impl ResponseFinalizer for (status::Status, String) {
-    fn respond(self, res: &mut Response) {
-        let (status, data) = self;
-        res.origin.status = status;
-        res.send(data);
-    }
-}
+macro_rules! dual_impl(
+    ($view:ty, $alloc:ty |$s:ident, $res:ident| $b:block) => (
+        impl<'a> ResponseFinalizer for $view {
+            fn respond($s, $res: &mut Response) $b
+        }
 
-impl<'a> ResponseFinalizer for (status::Status, &'a str) {
-    fn respond(self, res: &mut Response) {
-        let (status, data) = self;
-        res.origin.status = status;
-        res.send(data);
-    }
-}
+        impl ResponseFinalizer for $alloc {
+            fn respond($s, $res: &mut Response) $b
+        }
+    )
+)
 
-impl<'a> ResponseFinalizer for (uint, String) {
-    fn respond(self, res: &mut Response) {
-        let (status, data) = self;
-        match FromPrimitive::from_uint(status) {
-            Some(status) => {
+dual_impl!(&'a str,
+           String
+            |self, res| {
+                res.origin.status = status::Ok;
+                res.send(self);
+            })
+
+dual_impl!((status::Status, &'a str),
+           (status::Status, String)
+            |self, res| {
+                let (status, data) = self;
                 res.origin.status = status;
                 res.send(data);
-            }
-            None => {
-                res.origin.status = status::InternalServerError;
-                res.send("ERROR") //FIXME
-            }
-        }
-    }
-}
+            })
 
-impl<'a> ResponseFinalizer for (uint, &'a str) {
-    fn respond(self, res: &mut Response) {
-        let (status, data) = self;
-        match FromPrimitive::from_uint(status) {
-            Some(status) => {
-                res.origin.status = status;
-                res.send(data);
-            }
-            None => {
-                res.origin.status = status::InternalServerError;
-                res.send("ERROR") //FIXME
-            }
-        }
-    }
-}
+dual_impl!((uint, &'a str),
+           (uint, String)
+           |self, res| {
+                let (status, data) = self;
+                match FromPrimitive::from_uint(status) {
+                    Some(status) => {
+                        res.origin.status = status;
+                        res.send(data);
+                    }
+                    None => {
+                        res.origin.status = status::InternalServerError;
+                        res.send("ERROR") //FIXME
+                    }
+                }
+            })
