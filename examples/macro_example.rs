@@ -1,6 +1,5 @@
 #![feature(phase)]
-
-
+extern crate url;
 extern crate http;
 extern crate nickel;
 extern crate serialize;
@@ -70,6 +69,13 @@ fn main() {
         // go to http://localhost:6767/bar to see this route in action
         get "/bar" => |request, response| {
             (200, "This is the /bar handler")
+        }
+
+        // go to http://localhost:6767/redirect to see this route in action
+        get "/redirect" => |request, response| {
+            use http::headers::response::Location;
+            let root = url::Url::parse("http://www.rust-lang.org/").unwrap();
+            (status::TemporaryRedirect, "Redirecting you to 'rust-lang.org'", vec![Location(root)])
         }
 
         // go to http://localhost:6767/private to see this route in action

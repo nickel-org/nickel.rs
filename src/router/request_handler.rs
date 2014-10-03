@@ -1,6 +1,7 @@
 use request::Request;
 use response::Response;
 use http::status;
+use http::headers;
 use std::fmt::Show;
 
 pub trait RequestHandler : Sync + Send {
@@ -74,4 +75,16 @@ dual_impl!((uint, &'a str),
                         res.send("ERROR") //FIXME
                     }
                 }
+            })
+
+dual_impl!((status::Status, &'a str, Vec<headers::response::Header>),
+           (status::Status, String, Vec<headers::response::Header>)
+           |self, res| {
+                let (status, data, headers) = self;
+
+                res.origin.status = status;
+                for header in headers.into_iter() {
+                    res.origin.headers.insert(header);
+                }
+                res.send(data);
             })
