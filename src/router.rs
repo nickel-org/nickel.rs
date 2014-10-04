@@ -293,10 +293,18 @@ impl<'a> Router {
 
 impl HttpRouter for Router {
     fn add_route(&mut self, method: Method, path: &str, handler: RequestHandler) {
-        let matcher = path_utils::create_regex(path);
-        let variable_infos = path_utils::get_variable_info(path);
+        static FORMAT_SEQ: &'static str = "(\\.:format)?";
+
+        let with_format = if path.ends_with(FORMAT_SEQ) {
+            path.to_string()
+        } else {
+            format!("{}{}", path, FORMAT_SEQ)
+        };
+
+        let matcher = path_utils::create_regex(with_format[]);
+        let variable_infos = path_utils::get_variable_info(with_format[]);
         let route = Route {
-            path: path.to_string(),
+            path: with_format,
             method: method,
             matcher: matcher,
             handler: handler,
@@ -404,9 +412,11 @@ fn can_match_var_routes () {
 
     assert_eq!(route_result.param("userid"), "4711");
 
-    //assert the route has identified the variable
-    assert_eq!(route.variables.len(), 1);
+    // assert the route has identified the variable
+    assert_eq!(route.variables.len(), 2);
     assert_eq!(route.variables["userid".to_string()], 0);
+    // routes have an implicit format variable
+    assert_eq!(route.variables["format".to_string()], 1);
 
     let route_result = route_store.match_route(&method::Get, "/bar/4711");
     assert!(route_result.is_none());
@@ -414,17 +424,35 @@ fn can_match_var_routes () {
     let route_result = route_store.match_route(&method::Get, "/foo");
     assert!(route_result.is_none());
 
-    //ensure that this will work with commas too
+    // ensure that this will work with commas too
     let route_result = route_store.match_route(&method::Get, "/foo/123,456");
     assert!(route_result.is_some());
 
     let route_result = route_result.unwrap();
     assert_eq!(route_result.param("userid"), "123,456");
 
-    //ensure that this will work with spacing too
+    // ensure that this will work with spacing too
     let route_result = route_store.match_route(&method::Get, "/foo/John%20Doe");
     assert!(route_result.is_some());
 
     let route_result = route_result.unwrap();
     assert_eq!(route_result.param("userid"), "John%20Doe");
+
+    // check for optional format param
+    let route_result = route_store.match_route(&method::Get, "/foo/John%20Doe.json");
+    assert!(route_result.is_some());
+
+    let route_result = route_result.unwrap();
+    assert_eq!(route_result.param("userid"), "John%20Doe");
+    assert_eq!(route_result.param("format"), ".json");
+
+    // ensure format works with queries
+    let route_result = route_store.match_route(&method::Get,
+                                               "/foo/5490,1234.csv?foo=true&bar=false");
+    assert!(route_result.is_some());
+
+    let route_result = route_result.unwrap();
+    // NOTE: `.param` doesn't cover query params currently
+    assert_eq!(route_result.param("userid"), "5490,1234");
+    assert_eq!(route_result.param("format"), ".csv");
 }
