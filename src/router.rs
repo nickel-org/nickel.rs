@@ -67,13 +67,15 @@ pub trait HttpRouter {
     ///
     /// // with simple wildcard
     /// fn wild_handler(request: &Request, response: &mut Response) {
-    ///     response.send("This matches /user/list/4711 but not /user/extended/list/4711");
+    ///     response.send("This matches /user/list/4711");
+    ///     response.send("NOT /user/extended/list/4711");
     /// };
     /// server.get("/user/*/:userid", wild_handler);
     ///
     /// // with double wildcard
     /// fn very_wild_handler(request: &Request, response: &mut Response) {
-    ///     response.send("This matches /user/list/4711 and also /user/extended/list/4711");
+    ///     response.send("This matches /user/list/4711");
+    ///     response.send("AND and also /user/extended/list/4711");
     /// };
     /// server.get("/user/**/:userid", very_wild_handler);
     /// ```
@@ -228,16 +230,18 @@ mod path_utils {
     static REGEX_START:&'static str             = "^";
     static REGEX_END:&'static str               = "$";
     pub fn create_regex (route_path: &str) -> Regex {
-
-        let updated_path = route_path.to_string()
-                                     // first mark all double wildcards for replacement. We can't directly replace them
-                                     // since the replacement does contain the * symbol as well, which would get overwritten
-                                     // with the next replace call
-                                     .replace("**", "___DOUBLE_WILDCARD___")
-                                     // then replace the regular wildcard symbols (*) with the appropriate regex
-                                     .replace("*", VAR_SEQ)
-                                     // now replace the previously marked double wild cards (**)
-                                     .replace("___DOUBLE_WILDCARD___", VAR_SEQ_WITH_SLASH);
+        let updated_path =
+            route_path.to_string()
+                      // first mark all double wildcards for replacement.
+                      // We can't directly replace them since the replacement
+                      // does contain the * symbol as well, which would get
+                      // overwritten with the next replace call
+                      .replace("**", "___DOUBLE_WILDCARD___")
+                      // then replace the regular wildcard symbols (*) with the
+                      // appropriate regex
+                      .replace("*", VAR_SEQ)
+                      // now replace the previously marked double wild cards (**)
+                      .replace("___DOUBLE_WILDCARD___", VAR_SEQ_WITH_SLASH);
 
         // then replace the variable symbols (:variable) with the appropriate regex
         let result = [REGEX_START,
@@ -272,22 +276,26 @@ impl<'a> Router {
         }
     }
 
-    pub fn match_route(&'a self, method: &Method, path: &str) -> Option<RouteResult<'a>> {
-        self.routes.iter().find(|item| item.method == *method && item.matcher.is_match(path))
-            .map(|route| {
-                let vec = match route.matcher.captures(path) {
-                    Some(captures) => {
-                        range(0, route.variables.len()).map(|pos|
-                            captures.at(pos + 1).to_string()
-                        ).collect()
-                    },
-                    None => vec![],
-                };
-                RouteResult {
-                    route: route,
-                    params: vec
-                }
-            })
+    pub fn match_route(&'a self, method: &Method, path: &str)
+                        -> Option<RouteResult<'a>> {
+        self.routes.iter().find(|item| {
+            item.method == *method
+            && item.matcher.is_match(path)
+        }).map(|route| {
+            let vec = match route.matcher.captures(path) {
+                Some(captures) => {
+                    range(0, route.variables.len()).map(|pos|
+                        captures.at(pos + 1).to_string()
+                    ).collect()
+                },
+                None => vec![],
+            };
+
+            RouteResult {
+                route: route,
+                params: vec
+            }
+        })
     }
 }
 
