@@ -202,7 +202,13 @@ pub struct RouteResult<'a> {
 
 impl<'a> RouteResult<'a> {
     pub fn param(&self, key: &str) -> &str {
-        let idx = self.route.variables.find_equiv(&key).unwrap();
+        let idx = match self.route.variables.find_equiv(&key) {
+            Some(idx) => idx,
+            None => {
+                fail!("Unknown param '{}' for route '{}'", key, self.route.path)
+            }
+        };
+
         self.params[*idx].as_slice()
     }
 }
