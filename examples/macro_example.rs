@@ -63,12 +63,12 @@ fn main() {
 
         // go to http://localhost:6767/no_alloc/4711 to see this route in action
         get "/no_alloc/:userid" => |request, response| {
-            ["This is user: ", request.param("userid")]
+            ["This is user: ", request.param("userid")][]
         }
 
         // go to http://localhost:6767/bar to see this route in action
         get "/bar" => |request, response| {
-            (200, "This is the /bar handler")
+            (200u, "This is the /bar handler")
         }
 
         // go to http://localhost:6767/redirect to see this route in action

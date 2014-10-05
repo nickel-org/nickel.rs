@@ -7,13 +7,16 @@ macro_rules! router (
             use nickel::HttpRouter;
             use nickel::router::ResponseFinalizer;
             let mut router = nickel::Router::new();
+            #[inline(always)]
+            fn restrict<R: ResponseFinalizer>(r: R, res: &mut nickel::Response) {
+                r.respond(res)
+            }
 
             $(
                 {
                     #[allow(unused_variable)]
                     fn f($req: &nickel::Request, $res: &mut nickel::Response) {
-                        let r = $b;
-                        r.respond($res);
+                        restrict($b, $res)
                     }
                     router.$method($path, f)
                 }
