@@ -172,6 +172,11 @@ Nickel is open source and licensed with the [MIT license](https://github.com/nic
 
 ##Contributing
 
-I would love to find a helping hand. Especially if you know Rust, because I don't :)
+Nickel.rs is a community effort. We welcome new contributors with open arms. 
 There is list of [open issues](https://github.com/nickel-org/nickel/issues?state=open) right here on github.
+
+If you need a helping hand reach out to @cburgdorf, @Ryman or @SimonPersson.
+
+Make sure to follow this [commit message convention](https://github.com/ajoslin/conventional-changelog/blob/master/CONVENTIONS.md) because we will auto generate a changelog with [clog](https://github.com/thoughtram/clog) in the future.
+
 And hey, did you know you can also contribute by just starring the project here on github :)
