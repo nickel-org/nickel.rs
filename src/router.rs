@@ -301,12 +301,12 @@ impl<'a> Router {
 
 impl HttpRouter for Router {
     fn add_route(&mut self, method: Method, path: &str, handler: RequestHandler) {
-        static FORMAT_SEQ: &'static str = "(\\.:format)?";
+        static FORMAT_VAR: &'static str = ":format";
 
-        let with_format = if path.ends_with(FORMAT_SEQ) {
+        let with_format = if path.contains(FORMAT_VAR) {
             path.to_string()
         } else {
-            format!("{}{}", path, FORMAT_SEQ)
+            format!("{}(\\.{})?", path, FORMAT_VAR)
         };
 
         let matcher = path_utils::create_regex(with_format[]);
@@ -414,6 +414,7 @@ fn can_match_var_routes () {
 
     route_store.add_route(method::Get, "/foo/:userid", handler);
     route_store.add_route(method::Get, "/bar", handler);
+    route_store.add_route(method::Get, "/file/:format/:file", handler);
 
     let route_result = route_store.match_route(&method::Get, "/foo/4711").unwrap();
     let route = route_result.route;
@@ -463,4 +464,14 @@ fn can_match_var_routes () {
     // NOTE: `.param` doesn't cover query params currently
     assert_eq!(route_result.param("userid"), "5490,1234");
     assert_eq!(route_result.param("format"), ".csv");
+
+    // ensure format works if defined by user
+    let route_result = route_store.match_route(&method::Get,
+                                               "/file/markdown/something?foo=true");
+    assert!(route_result.is_some());
+
+    let route_result = route_result.unwrap();
+    // NOTE: `.param` doesn't cover query params currently
+    assert_eq!(route_result.param("file"), "something");
+    assert_eq!(route_result.param("format"), "markdown");
 }
