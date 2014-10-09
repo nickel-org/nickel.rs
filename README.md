@@ -7,7 +7,7 @@ Some of the features are:
 
 * Easy handlers: A handler is just a function that takes a `Request` and `ResponseWriter`
 * Variables in routes. Just write `my/route/:someid`
-* Easy parameter access: `request.params.get(&"someid")`
+* Easy parameter access: `request.param("someid")`
 * simple wildcard routes: `/some/*/route`
 * double wildcard routes: `/a/**/route`
 * middleware
