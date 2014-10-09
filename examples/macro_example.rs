@@ -55,19 +55,23 @@ fn main() {
     // go to http://localhost:6767/thoughtram_logo_brain.png to see static file serving in action
     server.utilize(StaticFilesHandler::new("examples/assets/"));
 
+    // The return type for a route can be anything that implements `ResponseFinalizer`
     server.utilize(router! {
         // go to http://localhost:6767/user/4711 to see this route in action
         get "/user/:userid" => |request, response| {
+            // returning a String
             format!("This is user: {}", request.param("userid"))
         }
 
         // go to http://localhost:6767/no_alloc/4711 to see this route in action
         get "/no_alloc/:userid" => |request, response| {
+            // returning a slice of T where T: Show
             ["This is user: ", request.param("userid")][]
         }
 
         // go to http://localhost:6767/bar to see this route in action
         get "/bar" => |request, response| {
+            // returning a http status code and a static string
             (200u, "This is the /bar handler")
         }
 
@@ -75,16 +79,19 @@ fn main() {
         get "/redirect" => |request, response| {
             use http::headers::response::Location;
             let root = url::Url::parse("http://www.rust-lang.org/").unwrap();
+            // returning a typed http status, a response body and some additional headers
             (status::TemporaryRedirect, "Redirecting you to 'rust-lang.org'", vec![Location(root)])
         }
 
         // go to http://localhost:6767/private to see this route in action
         get "/private" => |request, response| {
+            // returning a typed http status and a response body
             (status::Unauthorized, "This is a private place")
         }
 
         // go to http://localhost:6767/some/crazy/route to see this route in action
         get "/some/*/route" => |request, response| {
+            // returning a static string
             "This matches /some/crazy/route but not /some/super/crazy/route"
         }
 
@@ -99,12 +106,14 @@ fn main() {
             let person = request.json_as::<Person>().unwrap();
             let text = format!("Hello {} {}", person.firstname, person.lastname);
             response.send(text.as_slice());
+            // a 'regular' handler with no return, handling everything via the response object
         }
 
         // try calling http://localhost:6767/query?foo=bar
         get "/query" => |request, response| {
             let text = format!("Your foo values in the query string are: {}", request.query("foo", "This is only a default value!"));
             response.send(text.as_slice());
+            // a 'regular' handler with no return, handling everything via the response object
         }
     });
 

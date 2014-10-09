@@ -5,6 +5,12 @@ use http::headers;
 use std::fmt::Show;
 use middleware::{MiddlewareResult, Halt};
 
+/// Handles a HTTP request
+/// This is pre-implemented for any function which takes a
+/// `Request` and `Response` parameter and returns anything
+/// implementing the `ResponseFinalizer` trait.
+///
+/// Please see the examples for usage.
 pub trait RequestHandler : Sync + Send {
     fn handle(&self, &Request, &mut Response) -> MiddlewareResult;
 }
@@ -17,6 +23,11 @@ impl<R> RequestHandler for fn(request: &Request, response: &mut Response) -> R
     }
 }
 
+/// This trait provides convenience for translating a number
+/// of common return types into a `MiddlewareResult` while
+/// also modifying the `Response` as required.
+///
+/// Please see the examples for some uses.
 pub trait ResponseFinalizer {
     fn respond(self, &mut Response) -> MiddlewareResult;
 }

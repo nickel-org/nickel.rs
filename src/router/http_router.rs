@@ -3,6 +3,7 @@ use router::RequestHandler;
 
 pub trait HttpRouter {
     /// Registers a handler to be used for a specified method.
+    /// A handler can be anything implementing the `RequestHandler` trait.
     ///
     /// # Example
     ///
