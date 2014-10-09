@@ -1,4 +1,4 @@
-use middleware::{Middleware, Halt, Continue, MiddlewareResult};
+use middleware::{Middleware, Continue, MiddlewareResult};
 use super::path_utils;
 use http::server::request::AbsolutePath;
 use request::Request;
@@ -93,8 +93,7 @@ impl Middleware for Router {
                         res.origin.status = ::http::status::Ok;
                         let handler = &route_result.route.handler;
                         req.route_result = Some(route_result);
-                        handler.handle(req, res);
-                        Ok(Halt)
+                        handler.handle(req, res)
                     },
                     None => Ok(Continue)
                 }
