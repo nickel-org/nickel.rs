@@ -2,7 +2,7 @@ extern crate serialize;
 extern crate nickel;
 extern crate http;
 
-use http::status::NotFound;
+use http::status::{NotFound, BadRequest};
 use nickel::{
     Nickel, NickelError, ErrorWithStatusCode, Continue, Halt, Request, Response,
     QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter
@@ -85,6 +85,19 @@ fn main() {
     }
 
     router.get("/query", query_handler);
+
+    // try calling http://localhost:6767/strict?state=valid
+    // then try calling http://localhost:6767/strict?state=invalid
+    fn strict_handler(request: &Request, response: &mut Response) -> MiddlewareResult {
+        if request.query("state", "invalid")[0].as_slice() != "valid" {
+            Err(NickelError::new("Error Parsing JSON", ErrorWithStatusCode(BadRequest)))
+        } else {
+            response.send("Congratulations on conforming!");
+            Ok(Halt)
+        }
+    }
+
+    router.get("/strict", strict_handler);
 
     server.utilize(router);
 
