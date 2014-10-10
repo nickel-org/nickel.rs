@@ -2,7 +2,7 @@
 #![comment = "A expressjs inspired web framework for Rust"]
 #![license = "MIT"]
 #![crate_type = "rlib"]
-#![feature(macro_rules, phase)]
+#![feature(macro_rules, phase, slicing_syntax)]
 
 //!Nickel is supposed to be a simple and lightweight foundation for web applications written in Rust. Its API is inspired by the popular express framework for JavaScript.
 //!
