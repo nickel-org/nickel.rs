@@ -4,6 +4,7 @@ use http::status;
 use http::headers;
 use std::fmt::Show;
 use middleware::{MiddlewareResult, Halt};
+use serialize::json;
 
 /// Handles a HTTP request
 /// This is pre-implemented for any function which takes a
@@ -41,6 +42,13 @@ impl ResponseFinalizer for () {
 impl ResponseFinalizer for MiddlewareResult {
     fn respond(self, _res: &mut Response) -> MiddlewareResult {
         self
+    }
+}
+
+impl ResponseFinalizer for json::Json {
+    fn respond(self, res: &mut Response) -> MiddlewareResult {
+        res.send(json::encode(&self));
+        Ok(Halt)
     }
 }
 

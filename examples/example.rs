@@ -8,11 +8,22 @@ use nickel::{
     QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter
 };
 use std::io::net::ip::Ipv4Addr;
+use std::collections::treemap::TreeMap;
+use serialize::json::{Json, Object, ToJson};
 
 #[deriving(Decodable, Encodable)]
 struct Person {
     firstname: String,
     lastname:  String,
+}
+
+impl ToJson for Person {
+    fn to_json(&self) -> Json {
+        let mut map = TreeMap::new();
+        map.insert("first_name".to_string(), self.firstname.to_json());
+        map.insert("last_name".to_string(), self.lastname.to_json());
+        Object(map)
+    }
 }
 
 fn main() {
@@ -78,6 +89,17 @@ fn main() {
 
     // go to http://localhost:6767/a/post/request to see this route in action
     router.post("/a/post/request", post_handler);
+
+    fn json_response(_request: &Request, _response: &mut Response) -> Json {
+        let person = Person {
+            firstname: "Pea".to_string(),
+            lastname: "Nut".to_string()
+        };
+        person.to_json()
+    }
+
+    // go to http://localhost:6767/api/person/1 to see this route in action
+    router.get("/api/person/1", json_response);
 
     // try calling http://localhost:6767/query?foo=bar
     fn query_handler(request: &Request, _response: &mut Response) -> String {
