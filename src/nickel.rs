@@ -81,14 +81,15 @@ impl Nickel {
     /// # extern crate nickel;
     /// # fn main() {
     /// use nickel::{Nickel, Request, Response, Continue, Halt, MiddlewareResult};
-    /// use nickel::{NickelError, ErrorWithStatusCode, get_media_type};
+    /// use nickel::{NickelError, ErrorWithStatusCode};
     /// use http::status::NotFound;
+    /// use nickel::mimes::Html;
     ///
     /// fn error_handler(err: &NickelError, req: &Request, response: &mut Response)
     ///                  -> MiddlewareResult {
     ///    match err.kind {
     ///        ErrorWithStatusCode(NotFound) => {
-    ///            response.origin.headers.content_type = get_media_type("html");
+    ///            response.content_type(Html);
     ///            response.origin.status = NotFound;
     ///            response.send("<h1>Call the police!<h1>");
     ///            Ok(Halt)

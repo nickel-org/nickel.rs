@@ -8,6 +8,7 @@ use request;
 use response;
 use middleware::{Action, Halt, Continue, Middleware};
 use nickel_error::NickelError;
+use mimes::Ico;
 
 pub struct FaviconHandler {
     icon: Vec<u8>,
@@ -26,7 +27,7 @@ impl Middleware for FaviconHandler {
 }
 
 impl FaviconHandler {
-    /// Create a new middleware to serve an /favicon.ico file from an in-memory cache. 
+    /// Create a new middleware to serve an /favicon.ico file from an in-memory cache.
     /// The file is only read from disk once when the server starts.
     ///
     ///
@@ -74,7 +75,7 @@ impl FaviconHandler {
 
     pub fn send_favicon (&self, req: &request::Request, res: &mut response::Response) {
         debug!("{} {}", req.origin.method, self.icon_path.display());
-        res.content_type("ico");
-        res.send(self.icon.clone());
+        res.content_type(Ico);
+        res.send(self.icon.as_slice());
     }
 }

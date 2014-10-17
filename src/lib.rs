@@ -51,7 +51,7 @@ mod middleware;
 mod favicon_handler;
 mod static_files_handler;
 mod json_body_parser;
-mod mimes;
+pub mod mimes;
 mod query_string;
 mod urlencoded;
 mod nickel_error;

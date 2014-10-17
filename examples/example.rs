@@ -7,6 +7,7 @@ use nickel::{
     Nickel, NickelError, ErrorWithStatusCode, Continue, Halt, Request, Response,
     QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter
 };
+use nickel::mimes;
 use std::io::net::ip::Ipv4Addr;
 use std::collections::treemap::TreeMap;
 use serialize::json::{Json, Object, ToJson};
@@ -130,7 +131,7 @@ fn main() {
     fn custom_404(err: &NickelError, _req: &Request, response: &mut Response) -> MiddlewareResult {
         match err.kind {
             ErrorWithStatusCode(NotFound) => {
-                response.content_type("html")
+                response.content_type(mimes::Html)
                         .status_code(NotFound)
                         .send("<h1>Call the police!<h1>");
                 Ok(Halt)

@@ -1,3827 +1,857 @@
-use http::headers::content_type::MediaType;
+use http::headers::content_type;
+use std::from_str::FromStr;
 
-pub fn get_media_type(ext: &str) -> Option<MediaType> {
-    match ext {
-    "ez" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "andrew-inset".to_string(),
-        parameters: vec![]
-    }),
-    "aw" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "applixware".to_string(),
-        parameters: vec![]
-    }),
-    "atom" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "atom+xml".to_string(),
-        parameters: vec![]
-    }),
-    "atomcat" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "atomcat+xml".to_string(),
-        parameters: vec![]
-    }),
-    "atomsvc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "atomsvc+xml".to_string(),
-        parameters: vec![]
-    }),
-    "ccxml" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "ccxml+xml".to_string(),
-        parameters: vec![]
-    }),
-    "cdmia" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "cdmi-capability".to_string(),
-        parameters: vec![]
-    }),
-    "cdmic" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "cdmi-container".to_string(),
-        parameters: vec![]
-    }),
-    "cdmid" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "cdmi-domain".to_string(),
-        parameters: vec![]
-    }),
-    "cdmio" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "cdmi-object".to_string(),
-        parameters: vec![]
-    }),
-    "cdmiq" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "cdmi-queue".to_string(),
-        parameters: vec![]
-    }),
-    "cu" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "cu-seeme".to_string(),
-        parameters: vec![]
-    }),
-    "davmount" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "davmount+xml".to_string(),
-        parameters: vec![]
-    }),
-    "dbk" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "docbook+xml".to_string(),
-        parameters: vec![]
-    }),
-    "dssc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "dssc+der".to_string(),
-        parameters: vec![]
-    }),
-    "xdssc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "dssc+xml".to_string(),
-        parameters: vec![]
-    }),
-    "ecma" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "ecmascript".to_string(),
-        parameters: vec![]
-    }),
-    "emma" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "emma+xml".to_string(),
-        parameters: vec![]
-    }),
-    "epub" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "epub+zip".to_string(),
-        parameters: vec![]
-    }),
-    "exi" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "exi".to_string(),
-        parameters: vec![]
-    }),
-    "pfr" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "font-tdpfr".to_string(),
-        parameters: vec![]
-    }),
-    "gml" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "gml+xml".to_string(),
-        parameters: vec![]
-    }),
-    "gpx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "gpx+xml".to_string(),
-        parameters: vec![]
-    }),
-    "gxf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "gxf".to_string(),
-        parameters: vec![]
-    }),
-    "stk" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "hyperstudio".to_string(),
-        parameters: vec![]
-    }),
-    "ink" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "inkml+xml".to_string(),
-        parameters: vec![]
-    }),
-    "ipfix" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "ipfix".to_string(),
-        parameters: vec![]
-    }),
-    "jar" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "java-archive".to_string(),
-        parameters: vec![]
-    }),
-    "ser" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "java-serialized-object".to_string(),
-        parameters: vec![]
-    }),
-    "class" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "java-vm".to_string(),
-        parameters: vec![]
-    }),
-    "js" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "javascript".to_string(),
-        parameters: vec![]
-    }),
-    "json" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "json".to_string(),
-        parameters: vec![]
-    }),
-    "jsonml" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "jsonml+json".to_string(),
-        parameters: vec![]
-    }),
-    "lostxml" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "lost+xml".to_string(),
-        parameters: vec![]
-    }),
-    "hqx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "mac-binhex40".to_string(),
-        parameters: vec![]
-    }),
-    "cpt" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "mac-compactpro".to_string(),
-        parameters: vec![]
-    }),
-    "mads" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "mads+xml".to_string(),
-        parameters: vec![]
-    }),
-    "mrc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "marc".to_string(),
-        parameters: vec![]
-    }),
-    "mrcx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "marcxml+xml".to_string(),
-        parameters: vec![]
-    }),
-    "ma" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "mathematica".to_string(),
-        parameters: vec![]
-    }),
-    "mathml" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "mathml+xml".to_string(),
-        parameters: vec![]
-    }),
-    "mbox" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "mbox".to_string(),
-        parameters: vec![]
-    }),
-    "mscml" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "mediaservercontrol+xml".to_string(),
-        parameters: vec![]
-    }),
-    "metalink" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "metalink+xml".to_string(),
-        parameters: vec![]
-    }),
-    "meta4" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "metalink4+xml".to_string(),
-        parameters: vec![]
-    }),
-    "mets" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "mets+xml".to_string(),
-        parameters: vec![]
-    }),
-    "mods" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "mods+xml".to_string(),
-        parameters: vec![]
-    }),
-    "m21" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "mp21".to_string(),
-        parameters: vec![]
-    }),
-    "mp4s" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "mp4".to_string(),
-        parameters: vec![]
-    }),
-    "doc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "msword".to_string(),
-        parameters: vec![]
-    }),
-    "mxf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "mxf".to_string(),
-        parameters: vec![]
-    }),
-    "bin" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "octet-stream".to_string(),
-        parameters: vec![]
-    }),
-    "oda" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "oda".to_string(),
-        parameters: vec![]
-    }),
-    "opf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "oebps-package+xml".to_string(),
-        parameters: vec![]
-    }),
-    "ogx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "ogg".to_string(),
-        parameters: vec![]
-    }),
-    "omdoc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "omdoc+xml".to_string(),
-        parameters: vec![]
-    }),
-    "onetoc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "onenote".to_string(),
-        parameters: vec![]
-    }),
-    "oxps" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "oxps".to_string(),
-        parameters: vec![]
-    }),
-    "xer" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "patch-ops-error+xml".to_string(),
-        parameters: vec![]
-    }),
-    "pdf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "pdf".to_string(),
-        parameters: vec![]
-    }),
-    "pgp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "pgp-encrypted".to_string(),
-        parameters: vec![]
-    }),
-    "asc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "pgp-signature".to_string(),
-        parameters: vec![]
-    }),
-    "prf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "pics-rules".to_string(),
-        parameters: vec![]
-    }),
-    "p10" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "pkcs10".to_string(),
-        parameters: vec![]
-    }),
-    "p7m" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "pkcs7-mime".to_string(),
-        parameters: vec![]
-    }),
-    "p7s" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "pkcs7-signature".to_string(),
-        parameters: vec![]
-    }),
-    "p8" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "pkcs8".to_string(),
-        parameters: vec![]
-    }),
-    "ac" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "pkix-attr-cert".to_string(),
-        parameters: vec![]
-    }),
-    "cer" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "pkix-cert".to_string(),
-        parameters: vec![]
-    }),
-    "crl" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "pkix-crl".to_string(),
-        parameters: vec![]
-    }),
-    "pkipath" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "pkix-pkipath".to_string(),
-        parameters: vec![]
-    }),
-    "pki" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "pkixcmp".to_string(),
-        parameters: vec![]
-    }),
-    "pls" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "pls+xml".to_string(),
-        parameters: vec![]
-    }),
-    "ai" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "postscript".to_string(),
-        parameters: vec![]
-    }),
-    "cww" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "prs.cww".to_string(),
-        parameters: vec![]
-    }),
-    "pskcxml" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "pskc+xml".to_string(),
-        parameters: vec![]
-    }),
-    "rdf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "rdf+xml".to_string(),
-        parameters: vec![]
-    }),
-    "rif" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "reginfo+xml".to_string(),
-        parameters: vec![]
-    }),
-    "rnc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "relax-ng-compact-syntax".to_string(),
-        parameters: vec![]
-    }),
-    "rl" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "resource-lists+xml".to_string(),
-        parameters: vec![]
-    }),
-    "rld" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "resource-lists-diff+xml".to_string(),
-        parameters: vec![]
-    }),
-    "rs" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "rls-services+xml".to_string(),
-        parameters: vec![]
-    }),
-    "gbr" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "rpki-ghostbusters".to_string(),
-        parameters: vec![]
-    }),
-    "mft" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "rpki-manifest".to_string(),
-        parameters: vec![]
-    }),
-    "roa" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "rpki-roa".to_string(),
-        parameters: vec![]
-    }),
-    "rsd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "rsd+xml".to_string(),
-        parameters: vec![]
-    }),
-    "rss" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "rss+xml".to_string(),
-        parameters: vec![]
-    }),
-    "rtf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "rtf".to_string(),
-        parameters: vec![]
-    }),
-    "sbml" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "sbml+xml".to_string(),
-        parameters: vec![]
-    }),
-    "scq" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "scvp-cv-request".to_string(),
-        parameters: vec![]
-    }),
-    "scs" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "scvp-cv-response".to_string(),
-        parameters: vec![]
-    }),
-    "spq" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "scvp-vp-request".to_string(),
-        parameters: vec![]
-    }),
-    "spp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "scvp-vp-response".to_string(),
-        parameters: vec![]
-    }),
-    "sdp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "sdp".to_string(),
-        parameters: vec![]
-    }),
-    "setpay" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "set-payment-initiation".to_string(),
-        parameters: vec![]
-    }),
-    "setreg" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "set-registration-initiation".to_string(),
-        parameters: vec![]
-    }),
-    "shf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "shf+xml".to_string(),
-        parameters: vec![]
-    }),
-    "smi" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "smil+xml".to_string(),
-        parameters: vec![]
-    }),
-    "rq" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "sparql-query".to_string(),
-        parameters: vec![]
-    }),
-    "srx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "sparql-results+xml".to_string(),
-        parameters: vec![]
-    }),
-    "gram" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "srgs".to_string(),
-        parameters: vec![]
-    }),
-    "grxml" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "srgs+xml".to_string(),
-        parameters: vec![]
-    }),
-    "sru" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "sru+xml".to_string(),
-        parameters: vec![]
-    }),
-    "ssdl" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "ssdl+xml".to_string(),
-        parameters: vec![]
-    }),
-    "ssml" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "ssml+xml".to_string(),
-        parameters: vec![]
-    }),
-    "tei" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "tei+xml".to_string(),
-        parameters: vec![]
-    }),
-    "tfi" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "thraud+xml".to_string(),
-        parameters: vec![]
-    }),
-    "tsd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "timestamped-data".to_string(),
-        parameters: vec![]
-    }),
-    "plb" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.3gpp.pic-bw-large".to_string(),
-        parameters: vec![]
-    }),
-    "psb" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.3gpp.pic-bw-small".to_string(),
-        parameters: vec![]
-    }),
-    "pvb" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.3gpp.pic-bw-var".to_string(),
-        parameters: vec![]
-    }),
-    "tcap" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.3gpp2.tcap".to_string(),
-        parameters: vec![]
-    }),
-    "pwn" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.3m.post-it-notes".to_string(),
-        parameters: vec![]
-    }),
-    "aso" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.accpac.simply.aso".to_string(),
-        parameters: vec![]
-    }),
-    "imp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.accpac.simply.imp".to_string(),
-        parameters: vec![]
-    }),
-    "acu" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.acucobol".to_string(),
-        parameters: vec![]
-    }),
-    "atc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.acucorp".to_string(),
-        parameters: vec![]
-    }),
-    "air" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.adobe.air-application-installer-package+zip".to_string(),
-        parameters: vec![]
-    }),
-    "fcdt" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.adobe.formscentral.fcdt".to_string(),
-        parameters: vec![]
-    }),
-    "fxp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.adobe.fxp".to_string(),
-        parameters: vec![]
-    }),
-    "xdp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.adobe.xdp+xml".to_string(),
-        parameters: vec![]
-    }),
-    "xfdf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.adobe.xfdf".to_string(),
-        parameters: vec![]
-    }),
-    "ahead" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ahead.space".to_string(),
-        parameters: vec![]
-    }),
-    "azf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.airzip.filesecure.azf".to_string(),
-        parameters: vec![]
-    }),
-    "azs" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.airzip.filesecure.azs".to_string(),
-        parameters: vec![]
-    }),
-    "azw" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.amazon.ebook".to_string(),
-        parameters: vec![]
-    }),
-    "acc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.americandynamics.acc".to_string(),
-        parameters: vec![]
-    }),
-    "ami" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.amiga.ami".to_string(),
-        parameters: vec![]
-    }),
-    "apk" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.android.package-archive".to_string(),
-        parameters: vec![]
-    }),
-    "cii" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.anser-web-certificate-issue-initiation".to_string(),
-        parameters: vec![]
-    }),
-    "fti" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.anser-web-funds-transfer-initiation".to_string(),
-        parameters: vec![]
-    }),
-    "atx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.antix.game-component".to_string(),
-        parameters: vec![]
-    }),
-    "mpkg" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.apple.installer+xml".to_string(),
-        parameters: vec![]
-    }),
-    "m3u8" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.apple.mpegurl".to_string(),
-        parameters: vec![]
-    }),
-    "swi" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.aristanetworks.swi".to_string(),
-        parameters: vec![]
-    }),
-    "iota" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.astraea-software.iota".to_string(),
-        parameters: vec![]
-    }),
-    "aep" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.audiograph".to_string(),
-        parameters: vec![]
-    }),
-    "mpm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.blueice.multipass".to_string(),
-        parameters: vec![]
-    }),
-    "bmi" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.bmi".to_string(),
-        parameters: vec![]
-    }),
-    "rep" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.businessobjects".to_string(),
-        parameters: vec![]
-    }),
-    "cdxml" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.chemdraw+xml".to_string(),
-        parameters: vec![]
-    }),
-    "mmd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.chipnuts.karaoke-mmd".to_string(),
-        parameters: vec![]
-    }),
-    "cdy" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.cinderella".to_string(),
-        parameters: vec![]
-    }),
-    "cla" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.claymore".to_string(),
-        parameters: vec![]
-    }),
-    "rp9" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.cloanto.rp9".to_string(),
-        parameters: vec![]
-    }),
-    "c4g" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.clonk.c4group".to_string(),
-        parameters: vec![]
-    }),
-    "c11amc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.cluetrust.cartomobile-config".to_string(),
-        parameters: vec![]
-    }),
-    "c11amz" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.cluetrust.cartomobile-config-pkg".to_string(),
-        parameters: vec![]
-    }),
-    "csp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.commonspace".to_string(),
-        parameters: vec![]
-    }),
-    "cdbcmsg" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.contact.cmsg".to_string(),
-        parameters: vec![]
-    }),
-    "cmc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.cosmocaller".to_string(),
-        parameters: vec![]
-    }),
-    "clkx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.crick.clicker".to_string(),
-        parameters: vec![]
-    }),
-    "clkk" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.crick.clicker.keyboard".to_string(),
-        parameters: vec![]
-    }),
-    "clkp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.crick.clicker.palette".to_string(),
-        parameters: vec![]
-    }),
-    "clkt" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.crick.clicker.template".to_string(),
-        parameters: vec![]
-    }),
-    "clkw" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.crick.clicker.wordbank".to_string(),
-        parameters: vec![]
-    }),
-    "wbs" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.criticaltools.wbs+xml".to_string(),
-        parameters: vec![]
-    }),
-    "pml" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ctc-posml".to_string(),
-        parameters: vec![]
-    }),
-    "ppd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.cups-ppd".to_string(),
-        parameters: vec![]
-    }),
-    "car" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.curl.car".to_string(),
-        parameters: vec![]
-    }),
-    "pcurl" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.curl.pcurl".to_string(),
-        parameters: vec![]
-    }),
-    "dart" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.dart".to_string(),
-        parameters: vec![]
-    }),
-    "rdz" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.data-vision.rdz".to_string(),
-        parameters: vec![]
-    }),
-    "uvf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.dece.data".to_string(),
-        parameters: vec![]
-    }),
-    "uvt" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.dece.ttml+xml".to_string(),
-        parameters: vec![]
-    }),
-    "uvx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.dece.unspecified".to_string(),
-        parameters: vec![]
-    }),
-    "uvz" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.dece.zip".to_string(),
-        parameters: vec![]
-    }),
-    "fe_launch" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.denovo.fcselayout-link".to_string(),
-        parameters: vec![]
-    }),
-    "dna" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.dna".to_string(),
-        parameters: vec![]
-    }),
-    "mlp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.dolby.mlp".to_string(),
-        parameters: vec![]
-    }),
-    "dpg" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.dpgraph".to_string(),
-        parameters: vec![]
-    }),
-    "dfac" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.dreamfactory".to_string(),
-        parameters: vec![]
-    }),
-    "kpxx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ds-keypoint".to_string(),
-        parameters: vec![]
-    }),
-    "ait" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.dvb.ait".to_string(),
-        parameters: vec![]
-    }),
-    "svc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.dvb.service".to_string(),
-        parameters: vec![]
-    }),
-    "geo" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.dynageo".to_string(),
-        parameters: vec![]
-    }),
-    "mag" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ecowin.chart".to_string(),
-        parameters: vec![]
-    }),
-    "nml" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.enliven".to_string(),
-        parameters: vec![]
-    }),
-    "esf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.epson.esf".to_string(),
-        parameters: vec![]
-    }),
-    "msf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.epson.msf".to_string(),
-        parameters: vec![]
-    }),
-    "qam" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.epson.quickanime".to_string(),
-        parameters: vec![]
-    }),
-    "slt" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.epson.salt".to_string(),
-        parameters: vec![]
-    }),
-    "ssf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.epson.ssf".to_string(),
-        parameters: vec![]
-    }),
-    "es3" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.eszigno3+xml".to_string(),
-        parameters: vec![]
-    }),
-    "ez2" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ezpix-album".to_string(),
-        parameters: vec![]
-    }),
-    "ez3" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ezpix-package".to_string(),
-        parameters: vec![]
-    }),
-    "fdf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.fdf".to_string(),
-        parameters: vec![]
-    }),
-    "mseed" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.fdsn.mseed".to_string(),
-        parameters: vec![]
-    }),
-    "seed" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.fdsn.seed".to_string(),
-        parameters: vec![]
-    }),
-    "gph" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.flographit".to_string(),
-        parameters: vec![]
-    }),
-    "ftc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.fluxtime.clip".to_string(),
-        parameters: vec![]
-    }),
-    "fm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.framemaker".to_string(),
-        parameters: vec![]
-    }),
-    "fnc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.frogans.fnc".to_string(),
-        parameters: vec![]
-    }),
-    "ltf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.frogans.ltf".to_string(),
-        parameters: vec![]
-    }),
-    "fsc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.fsc.weblaunch".to_string(),
-        parameters: vec![]
-    }),
-    "oas" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.fujitsu.oasys".to_string(),
-        parameters: vec![]
-    }),
-    "oa2" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.fujitsu.oasys2".to_string(),
-        parameters: vec![]
-    }),
-    "oa3" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.fujitsu.oasys3".to_string(),
-        parameters: vec![]
-    }),
-    "fg5" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.fujitsu.oasysgp".to_string(),
-        parameters: vec![]
-    }),
-    "bh2" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.fujitsu.oasysprs".to_string(),
-        parameters: vec![]
-    }),
-    "ddd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.fujixerox.ddd".to_string(),
-        parameters: vec![]
-    }),
-    "xdw" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.fujixerox.docuworks".to_string(),
-        parameters: vec![]
-    }),
-    "xbd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.fujixerox.docuworks.binder".to_string(),
-        parameters: vec![]
-    }),
-    "fzs" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.fuzzysheet".to_string(),
-        parameters: vec![]
-    }),
-    "txd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.genomatix.tuxedo".to_string(),
-        parameters: vec![]
-    }),
-    "ggb" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.geogebra.file".to_string(),
-        parameters: vec![]
-    }),
-    "ggt" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.geogebra.tool".to_string(),
-        parameters: vec![]
-    }),
-    "gex" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.geometry-explorer".to_string(),
-        parameters: vec![]
-    }),
-    "gxt" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.geonext".to_string(),
-        parameters: vec![]
-    }),
-    "g2w" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.geoplan".to_string(),
-        parameters: vec![]
-    }),
-    "g3w" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.geospace".to_string(),
-        parameters: vec![]
-    }),
-    "gmx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.gmx".to_string(),
-        parameters: vec![]
-    }),
-    "kml" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.google-earth.kml+xml".to_string(),
-        parameters: vec![]
-    }),
-    "kmz" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.google-earth.kmz".to_string(),
-        parameters: vec![]
-    }),
-    "gqf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.grafeq".to_string(),
-        parameters: vec![]
-    }),
-    "gac" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.groove-account".to_string(),
-        parameters: vec![]
-    }),
-    "ghf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.groove-help".to_string(),
-        parameters: vec![]
-    }),
-    "gim" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.groove-identity-message".to_string(),
-        parameters: vec![]
-    }),
-    "grv" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.groove-injector".to_string(),
-        parameters: vec![]
-    }),
-    "gtm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.groove-tool-message".to_string(),
-        parameters: vec![]
-    }),
-    "tpl" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.groove-tool-template".to_string(),
-        parameters: vec![]
-    }),
-    "vcg" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.groove-vcard".to_string(),
-        parameters: vec![]
-    }),
-    "hal" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.hal+xml".to_string(),
-        parameters: vec![]
-    }),
-    "zmm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.handheld-entertainment+xml".to_string(),
-        parameters: vec![]
-    }),
-    "hbci" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.hbci".to_string(),
-        parameters: vec![]
-    }),
-    "les" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.hhe.lesson-player".to_string(),
-        parameters: vec![]
-    }),
-    "hpgl" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.hp-hpgl".to_string(),
-        parameters: vec![]
-    }),
-    "hpid" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.hp-hpid".to_string(),
-        parameters: vec![]
-    }),
-    "hps" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.hp-hps".to_string(),
-        parameters: vec![]
-    }),
-    "jlt" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.hp-jlyt".to_string(),
-        parameters: vec![]
-    }),
-    "pcl" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.hp-pcl".to_string(),
-        parameters: vec![]
-    }),
-    "pclxl" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.hp-pclxl".to_string(),
-        parameters: vec![]
-    }),
-    "sfd-hdstx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.hydrostatix.sof-data".to_string(),
-        parameters: vec![]
-    }),
-    "mpy" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ibm.minipay".to_string(),
-        parameters: vec![]
-    }),
-    "afp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ibm.modcap".to_string(),
-        parameters: vec![]
-    }),
-    "irm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ibm.rights-management".to_string(),
-        parameters: vec![]
-    }),
-    "sc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ibm.secure-container".to_string(),
-        parameters: vec![]
-    }),
-    "icc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.iccprofile".to_string(),
-        parameters: vec![]
-    }),
-    "igl" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.igloader".to_string(),
-        parameters: vec![]
-    }),
-    "ivp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.immervision-ivp".to_string(),
-        parameters: vec![]
-    }),
-    "ivu" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.immervision-ivu".to_string(),
-        parameters: vec![]
-    }),
-    "igm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.insors.igm".to_string(),
-        parameters: vec![]
-    }),
-    "xpw" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.intercon.formnet".to_string(),
-        parameters: vec![]
-    }),
-    "i2g" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.intergeo".to_string(),
-        parameters: vec![]
-    }),
-    "qbo" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.intu.qbo".to_string(),
-        parameters: vec![]
-    }),
-    "qfx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.intu.qfx".to_string(),
-        parameters: vec![]
-    }),
-    "rcprofile" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ipunplugged.rcprofile".to_string(),
-        parameters: vec![]
-    }),
-    "irp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.irepository.package+xml".to_string(),
-        parameters: vec![]
-    }),
-    "xpr" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.is-xpr".to_string(),
-        parameters: vec![]
-    }),
-    "fcs" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.isac.fcs".to_string(),
-        parameters: vec![]
-    }),
-    "jam" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.jam".to_string(),
-        parameters: vec![]
-    }),
-    "rms" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.jcp.javame.midlet-rms".to_string(),
-        parameters: vec![]
-    }),
-    "jisp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.jisp".to_string(),
-        parameters: vec![]
-    }),
-    "joda" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.joost.joda-archive".to_string(),
-        parameters: vec![]
-    }),
-    "ktz" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.kahootz".to_string(),
-        parameters: vec![]
-    }),
-    "karbon" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.kde.karbon".to_string(),
-        parameters: vec![]
-    }),
-    "chrt" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.kde.kchart".to_string(),
-        parameters: vec![]
-    }),
-    "kfo" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.kde.kformula".to_string(),
-        parameters: vec![]
-    }),
-    "flw" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.kde.kivio".to_string(),
-        parameters: vec![]
-    }),
-    "kon" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.kde.kontour".to_string(),
-        parameters: vec![]
-    }),
-    "kpr" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.kde.kpresenter".to_string(),
-        parameters: vec![]
-    }),
-    "ksp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.kde.kspread".to_string(),
-        parameters: vec![]
-    }),
-    "kwd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.kde.kword".to_string(),
-        parameters: vec![]
-    }),
-    "htke" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.kenameaapp".to_string(),
-        parameters: vec![]
-    }),
-    "kia" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.kidspiration".to_string(),
-        parameters: vec![]
-    }),
-    "kne" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.kinar".to_string(),
-        parameters: vec![]
-    }),
-    "skp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.koan".to_string(),
-        parameters: vec![]
-    }),
-    "sse" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.kodak-descriptor".to_string(),
-        parameters: vec![]
-    }),
-    "lasxml" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.las.las+xml".to_string(),
-        parameters: vec![]
-    }),
-    "lbd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.llamagraphics.life-balance.desktop".to_string(),
-        parameters: vec![]
-    }),
-    "lbe" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.llamagraphics.life-balance.exchange+xml".to_string(),
-        parameters: vec![]
-    }),
-    "123" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.lotus-1-2-3".to_string(),
-        parameters: vec![]
-    }),
-    "apr" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.lotus-approach".to_string(),
-        parameters: vec![]
-    }),
-    "pre" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.lotus-freelance".to_string(),
-        parameters: vec![]
-    }),
-    "nsf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.lotus-notes".to_string(),
-        parameters: vec![]
-    }),
-    "org" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.lotus-organizer".to_string(),
-        parameters: vec![]
-    }),
-    "scm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.lotus-screencam".to_string(),
-        parameters: vec![]
-    }),
-    "lwp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.lotus-wordpro".to_string(),
-        parameters: vec![]
-    }),
-    "portpkg" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.macports.portpkg".to_string(),
-        parameters: vec![]
-    }),
-    "mcd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.mcd".to_string(),
-        parameters: vec![]
-    }),
-    "mc1" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.medcalcdata".to_string(),
-        parameters: vec![]
-    }),
-    "cdkey" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.mediastation.cdkey".to_string(),
-        parameters: vec![]
-    }),
-    "mwf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.mfer".to_string(),
-        parameters: vec![]
-    }),
-    "mfm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.mfmp".to_string(),
-        parameters: vec![]
-    }),
-    "flo" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.micrografx.flo".to_string(),
-        parameters: vec![]
-    }),
-    "igx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.micrografx.igx".to_string(),
-        parameters: vec![]
-    }),
-    "mif" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.mif".to_string(),
-        parameters: vec![]
-    }),
-    "daf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.mobius.daf".to_string(),
-        parameters: vec![]
-    }),
-    "dis" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.mobius.dis".to_string(),
-        parameters: vec![]
-    }),
-    "mbk" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.mobius.mbk".to_string(),
-        parameters: vec![]
-    }),
-    "mqy" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.mobius.mqy".to_string(),
-        parameters: vec![]
-    }),
-    "msl" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.mobius.msl".to_string(),
-        parameters: vec![]
-    }),
-    "plc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.mobius.plc".to_string(),
-        parameters: vec![]
-    }),
-    "txf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.mobius.txf".to_string(),
-        parameters: vec![]
-    }),
-    "mpn" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.mophun.application".to_string(),
-        parameters: vec![]
-    }),
-    "mpc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.mophun.certificate".to_string(),
-        parameters: vec![]
-    }),
-    "xul" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.mozilla.xul+xml".to_string(),
-        parameters: vec![]
-    }),
-    "cil" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-artgalry".to_string(),
-        parameters: vec![]
-    }),
-    "cab" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-cab-compressed".to_string(),
-        parameters: vec![]
-    }),
-    "xls" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-excel".to_string(),
-        parameters: vec![]
-    }),
-    "xlam" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-excel.addin.macroenabled.12".to_string(),
-        parameters: vec![]
-    }),
-    "xlsb" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-excel.sheet.binary.macroenabled.12".to_string(),
-        parameters: vec![]
-    }),
-    "xlsm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-excel.sheet.macroenabled.12".to_string(),
-        parameters: vec![]
-    }),
-    "xltm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-excel.template.macroenabled.12".to_string(),
-        parameters: vec![]
-    }),
-    "eot" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-fontobject".to_string(),
-        parameters: vec![]
-    }),
-    "chm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-htmlhelp".to_string(),
-        parameters: vec![]
-    }),
-    "ims" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-ims".to_string(),
-        parameters: vec![]
-    }),
-    "lrm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-lrm".to_string(),
-        parameters: vec![]
-    }),
-    "thmx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-officetheme".to_string(),
-        parameters: vec![]
-    }),
-    "cat" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-pki.seccat".to_string(),
-        parameters: vec![]
-    }),
-    "stl" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-pki.stl".to_string(),
-        parameters: vec![]
-    }),
-    "ppt" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-powerpoint".to_string(),
-        parameters: vec![]
-    }),
-    "ppam" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-powerpoint.addin.macroenabled.12".to_string(),
-        parameters: vec![]
-    }),
-    "pptm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-powerpoint.presentation.macroenabled.12".to_string(),
-        parameters: vec![]
-    }),
-    "sldm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-powerpoint.slide.macroenabled.12".to_string(),
-        parameters: vec![]
-    }),
-    "ppsm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-powerpoint.slideshow.macroenabled.12".to_string(),
-        parameters: vec![]
-    }),
-    "potm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-powerpoint.template.macroenabled.12".to_string(),
-        parameters: vec![]
-    }),
-    "mpp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-project".to_string(),
-        parameters: vec![]
-    }),
-    "docm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-word.document.macroenabled.12".to_string(),
-        parameters: vec![]
-    }),
-    "dotm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-word.template.macroenabled.12".to_string(),
-        parameters: vec![]
-    }),
-    "wps" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-works".to_string(),
-        parameters: vec![]
-    }),
-    "wpl" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-wpl".to_string(),
-        parameters: vec![]
-    }),
-    "xps" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ms-xpsdocument".to_string(),
-        parameters: vec![]
-    }),
-    "mseq" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.mseq".to_string(),
-        parameters: vec![]
-    }),
-    "mus" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.musician".to_string(),
-        parameters: vec![]
-    }),
-    "msty" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.muvee.style".to_string(),
-        parameters: vec![]
-    }),
-    "taglet" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.mynfc".to_string(),
-        parameters: vec![]
-    }),
-    "nlu" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.neurolanguage.nlu".to_string(),
-        parameters: vec![]
-    }),
-    "ntf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.nitf".to_string(),
-        parameters: vec![]
-    }),
-    "nnd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.noblenet-directory".to_string(),
-        parameters: vec![]
-    }),
-    "nns" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.noblenet-sealer".to_string(),
-        parameters: vec![]
-    }),
-    "nnw" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.noblenet-web".to_string(),
-        parameters: vec![]
-    }),
-    "ngdat" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.nokia.n-gage.data".to_string(),
-        parameters: vec![]
-    }),
-    "n-gage" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.nokia.n-gage.symbian.install".to_string(),
-        parameters: vec![]
-    }),
-    "rpst" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.nokia.radio-preset".to_string(),
-        parameters: vec![]
-    }),
-    "rpss" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.nokia.radio-presets".to_string(),
-        parameters: vec![]
-    }),
-    "edm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.novadigm.edm".to_string(),
-        parameters: vec![]
-    }),
-    "edx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.novadigm.edx".to_string(),
-        parameters: vec![]
-    }),
-    "ext" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.novadigm.ext".to_string(),
-        parameters: vec![]
-    }),
-    "odc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.oasis.opendocument.chart".to_string(),
-        parameters: vec![]
-    }),
-    "otc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.oasis.opendocument.chart-template".to_string(),
-        parameters: vec![]
-    }),
-    "odb" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.oasis.opendocument.database".to_string(),
-        parameters: vec![]
-    }),
-    "odf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.oasis.opendocument.formula".to_string(),
-        parameters: vec![]
-    }),
-    "odft" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.oasis.opendocument.formula-template".to_string(),
-        parameters: vec![]
-    }),
-    "odg" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.oasis.opendocument.graphics".to_string(),
-        parameters: vec![]
-    }),
-    "otg" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.oasis.opendocument.graphics-template".to_string(),
-        parameters: vec![]
-    }),
-    "odi" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.oasis.opendocument.image".to_string(),
-        parameters: vec![]
-    }),
-    "oti" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.oasis.opendocument.image-template".to_string(),
-        parameters: vec![]
-    }),
-    "odp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.oasis.opendocument.presentation".to_string(),
-        parameters: vec![]
-    }),
-    "otp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.oasis.opendocument.presentation-template".to_string(),
-        parameters: vec![]
-    }),
-    "ods" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.oasis.opendocument.spreadsheet".to_string(),
-        parameters: vec![]
-    }),
-    "ots" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.oasis.opendocument.spreadsheet-template".to_string(),
-        parameters: vec![]
-    }),
-    "odt" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.oasis.opendocument.text".to_string(),
-        parameters: vec![]
-    }),
-    "odm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.oasis.opendocument.text-master".to_string(),
-        parameters: vec![]
-    }),
-    "ott" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.oasis.opendocument.text-template".to_string(),
-        parameters: vec![]
-    }),
-    "oth" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.oasis.opendocument.text-web".to_string(),
-        parameters: vec![]
-    }),
-    "xo" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.olpc-sugar".to_string(),
-        parameters: vec![]
-    }),
-    "dd2" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.oma.dd2+xml".to_string(),
-        parameters: vec![]
-    }),
-    "oxt" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.openofficeorg.extension".to_string(),
-        parameters: vec![]
-    }),
-    "pptx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.openxmlformats-officedocument.presentationml.presentation".to_string(),
-        parameters: vec![]
-    }),
-    "sldx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.openxmlformats-officedocument.presentationml.slide".to_string(),
-        parameters: vec![]
-    }),
-    "ppsx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.openxmlformats-officedocument.presentationml.slideshow".to_string(),
-        parameters: vec![]
-    }),
-    "potx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.openxmlformats-officedocument.presentationml.template".to_string(),
-        parameters: vec![]
-    }),
-    "xlsx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.openxmlformats-officedocument.spreadsheetml.sheet".to_string(),
-        parameters: vec![]
-    }),
-    "xltx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.openxmlformats-officedocument.spreadsheetml.template".to_string(),
-        parameters: vec![]
-    }),
-    "docx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.openxmlformats-officedocument.wordprocessingml.document".to_string(),
-        parameters: vec![]
-    }),
-    "dotx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.openxmlformats-officedocument.wordprocessingml.template".to_string(),
-        parameters: vec![]
-    }),
-    "mgp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.osgeo.mapguide.package".to_string(),
-        parameters: vec![]
-    }),
-    "dp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.osgi.dp".to_string(),
-        parameters: vec![]
-    }),
-    "esa" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.osgi.subsystem".to_string(),
-        parameters: vec![]
-    }),
-    "pdb" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.palm".to_string(),
-        parameters: vec![]
-    }),
-    "paw" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.pawaafile".to_string(),
-        parameters: vec![]
-    }),
-    "str" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.pg.format".to_string(),
-        parameters: vec![]
-    }),
-    "ei6" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.pg.osasli".to_string(),
-        parameters: vec![]
-    }),
-    "efif" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.picsel".to_string(),
-        parameters: vec![]
-    }),
-    "wg" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.pmi.widget".to_string(),
-        parameters: vec![]
-    }),
-    "plf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.pocketlearn".to_string(),
-        parameters: vec![]
-    }),
-    "pbd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.powerbuilder6".to_string(),
-        parameters: vec![]
-    }),
-    "box" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.previewsystems.box".to_string(),
-        parameters: vec![]
-    }),
-    "mgz" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.proteus.magazine".to_string(),
-        parameters: vec![]
-    }),
-    "qps" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.publishare-delta-tree".to_string(),
-        parameters: vec![]
-    }),
-    "ptid" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.pvi.ptid1".to_string(),
-        parameters: vec![]
-    }),
-    "qxd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.quark.quarkxpress".to_string(),
-        parameters: vec![]
-    }),
-    "bed" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.realvnc.bed".to_string(),
-        parameters: vec![]
-    }),
-    "mxl" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.recordare.musicxml".to_string(),
-        parameters: vec![]
-    }),
-    "musicxml" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.recordare.musicxml+xml".to_string(),
-        parameters: vec![]
-    }),
-    "cryptonote" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.rig.cryptonote".to_string(),
-        parameters: vec![]
-    }),
-    "cod" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.rim.cod".to_string(),
-        parameters: vec![]
-    }),
-    "rm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.rn-realmedia".to_string(),
-        parameters: vec![]
-    }),
-    "rmvb" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.rn-realmedia-vbr".to_string(),
-        parameters: vec![]
-    }),
-    "link66" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.route66.link66+xml".to_string(),
-        parameters: vec![]
-    }),
-    "st" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.sailingtracker.track".to_string(),
-        parameters: vec![]
-    }),
-    "see" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.seemail".to_string(),
-        parameters: vec![]
-    }),
-    "sema" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.sema".to_string(),
-        parameters: vec![]
-    }),
-    "semd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.semd".to_string(),
-        parameters: vec![]
-    }),
-    "semf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.semf".to_string(),
-        parameters: vec![]
-    }),
-    "ifm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.shana.informed.formdata".to_string(),
-        parameters: vec![]
-    }),
-    "itp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.shana.informed.formtemplate".to_string(),
-        parameters: vec![]
-    }),
-    "iif" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.shana.informed.interchange".to_string(),
-        parameters: vec![]
-    }),
-    "ipk" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.shana.informed.package".to_string(),
-        parameters: vec![]
-    }),
-    "twd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.simtech-mindmapper".to_string(),
-        parameters: vec![]
-    }),
-    "mmf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.smaf".to_string(),
-        parameters: vec![]
-    }),
-    "teacher" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.smart.teacher".to_string(),
-        parameters: vec![]
-    }),
-    "sdkm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.solent.sdkm+xml".to_string(),
-        parameters: vec![]
-    }),
-    "dxp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.spotfire.dxp".to_string(),
-        parameters: vec![]
-    }),
-    "sfs" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.spotfire.sfs".to_string(),
-        parameters: vec![]
-    }),
-    "sdc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.stardivision.calc".to_string(),
-        parameters: vec![]
-    }),
-    "sda" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.stardivision.draw".to_string(),
-        parameters: vec![]
-    }),
-    "sdd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.stardivision.impress".to_string(),
-        parameters: vec![]
-    }),
-    "smf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.stardivision.math".to_string(),
-        parameters: vec![]
-    }),
-    "sdw" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.stardivision.writer".to_string(),
-        parameters: vec![]
-    }),
-    "sgl" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.stardivision.writer-global".to_string(),
-        parameters: vec![]
-    }),
-    "smzip" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.stepmania.package".to_string(),
-        parameters: vec![]
-    }),
-    "sm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.stepmania.stepchart".to_string(),
-        parameters: vec![]
-    }),
-    "sxc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.sun.xml.calc".to_string(),
-        parameters: vec![]
-    }),
-    "stc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.sun.xml.calc.template".to_string(),
-        parameters: vec![]
-    }),
-    "sxd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.sun.xml.draw".to_string(),
-        parameters: vec![]
-    }),
-    "std" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.sun.xml.draw.template".to_string(),
-        parameters: vec![]
-    }),
-    "sxi" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.sun.xml.impress".to_string(),
-        parameters: vec![]
-    }),
-    "sti" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.sun.xml.impress.template".to_string(),
-        parameters: vec![]
-    }),
-    "sxm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.sun.xml.math".to_string(),
-        parameters: vec![]
-    }),
-    "sxw" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.sun.xml.writer".to_string(),
-        parameters: vec![]
-    }),
-    "sxg" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.sun.xml.writer.global".to_string(),
-        parameters: vec![]
-    }),
-    "stw" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.sun.xml.writer.template".to_string(),
-        parameters: vec![]
-    }),
-    "sus" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.sus-calendar".to_string(),
-        parameters: vec![]
-    }),
-    "svd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.svd".to_string(),
-        parameters: vec![]
-    }),
-    "sis" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.symbian.install".to_string(),
-        parameters: vec![]
-    }),
-    "xsm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.syncml+xml".to_string(),
-        parameters: vec![]
-    }),
-    "bdm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.syncml.dm+wbxml".to_string(),
-        parameters: vec![]
-    }),
-    "xdm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.syncml.dm+xml".to_string(),
-        parameters: vec![]
-    }),
-    "tao" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.tao.intent-module-archive".to_string(),
-        parameters: vec![]
-    }),
-    "pcap" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.tcpdump.pcap".to_string(),
-        parameters: vec![]
-    }),
-    "tmo" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.tmobile-livetv".to_string(),
-        parameters: vec![]
-    }),
-    "tpt" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.trid.tpt".to_string(),
-        parameters: vec![]
-    }),
-    "mxs" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.triscape.mxs".to_string(),
-        parameters: vec![]
-    }),
-    "tra" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.trueapp".to_string(),
-        parameters: vec![]
-    }),
-    "ufd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.ufdl".to_string(),
-        parameters: vec![]
-    }),
-    "utz" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.uiq.theme".to_string(),
-        parameters: vec![]
-    }),
-    "umj" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.umajin".to_string(),
-        parameters: vec![]
-    }),
-    "unityweb" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.unity".to_string(),
-        parameters: vec![]
-    }),
-    "uoml" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.uoml+xml".to_string(),
-        parameters: vec![]
-    }),
-    "vcx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.vcx".to_string(),
-        parameters: vec![]
-    }),
-    "vsd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.visio".to_string(),
-        parameters: vec![]
-    }),
-    "vis" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.visionary".to_string(),
-        parameters: vec![]
-    }),
-    "vsf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.vsf".to_string(),
-        parameters: vec![]
-    }),
-    "wbxml" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.wap.wbxml".to_string(),
-        parameters: vec![]
-    }),
-    "wmlc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.wap.wmlc".to_string(),
-        parameters: vec![]
-    }),
-    "wmlsc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.wap.wmlscriptc".to_string(),
-        parameters: vec![]
-    }),
-    "wtb" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.webturbo".to_string(),
-        parameters: vec![]
-    }),
-    "nbp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.wolfram.player".to_string(),
-        parameters: vec![]
-    }),
-    "wpd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.wordperfect".to_string(),
-        parameters: vec![]
-    }),
-    "wqd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.wqd".to_string(),
-        parameters: vec![]
-    }),
-    "stf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.wt.stf".to_string(),
-        parameters: vec![]
-    }),
-    "xar" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.xara".to_string(),
-        parameters: vec![]
-    }),
-    "xfdl" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.xfdl".to_string(),
-        parameters: vec![]
-    }),
-    "hvd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.yamaha.hv-dic".to_string(),
-        parameters: vec![]
-    }),
-    "hvs" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.yamaha.hv-script".to_string(),
-        parameters: vec![]
-    }),
-    "hvp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.yamaha.hv-voice".to_string(),
-        parameters: vec![]
-    }),
-    "osf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.yamaha.openscoreformat".to_string(),
-        parameters: vec![]
-    }),
-    "osfpvg" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.yamaha.openscoreformat.osfpvg+xml".to_string(),
-        parameters: vec![]
-    }),
-    "saf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.yamaha.smaf-audio".to_string(),
-        parameters: vec![]
-    }),
-    "spf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.yamaha.smaf-phrase".to_string(),
-        parameters: vec![]
-    }),
-    "cmp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.yellowriver-custom-menu".to_string(),
-        parameters: vec![]
-    }),
-    "zir" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.zul".to_string(),
-        parameters: vec![]
-    }),
-    "zaz" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "vnd.zzazz.deck+xml".to_string(),
-        parameters: vec![]
-    }),
-    "vxml" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "voicexml+xml".to_string(),
-        parameters: vec![]
-    }),
-    "wgt" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "widget".to_string(),
-        parameters: vec![]
-    }),
-    "hlp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "winhlp".to_string(),
-        parameters: vec![]
-    }),
-    "wsdl" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "wsdl+xml".to_string(),
-        parameters: vec![]
-    }),
-    "wspolicy" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "wspolicy+xml".to_string(),
-        parameters: vec![]
-    }),
-    "7z" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-7z-compressed".to_string(),
-        parameters: vec![]
-    }),
-    "abw" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-abiword".to_string(),
-        parameters: vec![]
-    }),
-    "ace" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-ace-compressed".to_string(),
-        parameters: vec![]
-    }),
-    "dmg" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-apple-diskimage".to_string(),
-        parameters: vec![]
-    }),
-    "aab" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-authorware-bin".to_string(),
-        parameters: vec![]
-    }),
-    "aam" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-authorware-map".to_string(),
-        parameters: vec![]
-    }),
-    "aas" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-authorware-seg".to_string(),
-        parameters: vec![]
-    }),
-    "bcpio" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-bcpio".to_string(),
-        parameters: vec![]
-    }),
-    "torrent" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-bittorrent".to_string(),
-        parameters: vec![]
-    }),
-    "blb" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-blorb".to_string(),
-        parameters: vec![]
-    }),
-    "bz" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-bzip".to_string(),
-        parameters: vec![]
-    }),
-    "bz2" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-bzip2".to_string(),
-        parameters: vec![]
-    }),
-    "cbr" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-cbr".to_string(),
-        parameters: vec![]
-    }),
-    "vcd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-cdlink".to_string(),
-        parameters: vec![]
-    }),
-    "cfs" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-cfs-compressed".to_string(),
-        parameters: vec![]
-    }),
-    "chat" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-chat".to_string(),
-        parameters: vec![]
-    }),
-    "pgn" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-chess-pgn".to_string(),
-        parameters: vec![]
-    }),
-    "nsc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-conference".to_string(),
-        parameters: vec![]
-    }),
-    "cpio" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-cpio".to_string(),
-        parameters: vec![]
-    }),
-    "csh" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-csh".to_string(),
-        parameters: vec![]
-    }),
-    "deb" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-debian-package".to_string(),
-        parameters: vec![]
-    }),
-    "dgc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-dgc-compressed".to_string(),
-        parameters: vec![]
-    }),
-    "dir" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-director".to_string(),
-        parameters: vec![]
-    }),
-    "wad" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-doom".to_string(),
-        parameters: vec![]
-    }),
-    "ncx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-dtbncx+xml".to_string(),
-        parameters: vec![]
-    }),
-    "dtb" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-dtbook+xml".to_string(),
-        parameters: vec![]
-    }),
-    "res" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-dtbresource+xml".to_string(),
-        parameters: vec![]
-    }),
-    "dvi" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-dvi".to_string(),
-        parameters: vec![]
-    }),
-    "evy" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-envoy".to_string(),
-        parameters: vec![]
-    }),
-    "eva" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-eva".to_string(),
-        parameters: vec![]
-    }),
-    "bdf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-font-bdf".to_string(),
-        parameters: vec![]
-    }),
-    "gsf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-font-ghostscript".to_string(),
-        parameters: vec![]
-    }),
-    "psf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-font-linux-psf".to_string(),
-        parameters: vec![]
-    }),
-    "otf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-font-otf".to_string(),
-        parameters: vec![]
-    }),
-    "pcf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-font-pcf".to_string(),
-        parameters: vec![]
-    }),
-    "snf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-font-snf".to_string(),
-        parameters: vec![]
-    }),
-    "ttf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-font-ttf".to_string(),
-        parameters: vec![]
-    }),
-    "pfa" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-font-type1".to_string(),
-        parameters: vec![]
-    }),
-    "woff" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "font-woff".to_string(),
-        parameters: vec![]
-    }),
-    "arc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-freearc".to_string(),
-        parameters: vec![]
-    }),
-    "spl" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-futuresplash".to_string(),
-        parameters: vec![]
-    }),
-    "gca" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-gca-compressed".to_string(),
-        parameters: vec![]
-    }),
-    "ulx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-glulx".to_string(),
-        parameters: vec![]
-    }),
-    "gnumeric" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-gnumeric".to_string(),
-        parameters: vec![]
-    }),
-    "gramps" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-gramps-xml".to_string(),
-        parameters: vec![]
-    }),
-    "gtar" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-gtar".to_string(),
-        parameters: vec![]
-    }),
-    "hdf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-hdf".to_string(),
-        parameters: vec![]
-    }),
-    "install" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-install-instructions".to_string(),
-        parameters: vec![]
-    }),
-    "iso" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-iso9660-image".to_string(),
-        parameters: vec![]
-    }),
-    "jnlp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-java-jnlp-file".to_string(),
-        parameters: vec![]
-    }),
-    "latex" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-latex".to_string(),
-        parameters: vec![]
-    }),
-    "lzh" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-lzh-compressed".to_string(),
-        parameters: vec![]
-    }),
-    "mie" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-mie".to_string(),
-        parameters: vec![]
-    }),
-    "prc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-mobipocket-ebook".to_string(),
-        parameters: vec![]
-    }),
-    "application" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-ms-application".to_string(),
-        parameters: vec![]
-    }),
-    "lnk" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-ms-shortcut".to_string(),
-        parameters: vec![]
-    }),
-    "wmd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-ms-wmd".to_string(),
-        parameters: vec![]
-    }),
-    "wmz" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-ms-wmz".to_string(),
-        parameters: vec![]
-    }),
-    "xbap" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-ms-xbap".to_string(),
-        parameters: vec![]
-    }),
-    "mdb" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-msaccess".to_string(),
-        parameters: vec![]
-    }),
-    "obd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-msbinder".to_string(),
-        parameters: vec![]
-    }),
-    "crd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-mscardfile".to_string(),
-        parameters: vec![]
-    }),
-    "clp" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-msclip".to_string(),
-        parameters: vec![]
-    }),
-    "exe" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-msdownload".to_string(),
-        parameters: vec![]
-    }),
-    "mvb" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-msmediaview".to_string(),
-        parameters: vec![]
-    }),
-    "wmf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-msmetafile".to_string(),
-        parameters: vec![]
-    }),
-    "mny" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-msmoney".to_string(),
-        parameters: vec![]
-    }),
-    "pub" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-mspublisher".to_string(),
-        parameters: vec![]
-    }),
-    "scd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-msschedule".to_string(),
-        parameters: vec![]
-    }),
-    "trm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-msterminal".to_string(),
-        parameters: vec![]
-    }),
-    "wri" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-mswrite".to_string(),
-        parameters: vec![]
-    }),
-    "nc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-netcdf".to_string(),
-        parameters: vec![]
-    }),
-    "nzb" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-nzb".to_string(),
-        parameters: vec![]
-    }),
-    "p12" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-pkcs12".to_string(),
-        parameters: vec![]
-    }),
-    "p7b" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-pkcs7-certificates".to_string(),
-        parameters: vec![]
-    }),
-    "p7r" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-pkcs7-certreqresp".to_string(),
-        parameters: vec![]
-    }),
-    "rar" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-rar-compressed".to_string(),
-        parameters: vec![]
-    }),
-    "ris" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-research-info-systems".to_string(),
-        parameters: vec![]
-    }),
-    "sh" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-sh".to_string(),
-        parameters: vec![]
-    }),
-    "shar" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-shar".to_string(),
-        parameters: vec![]
-    }),
-    "swf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-shockwave-flash".to_string(),
-        parameters: vec![]
-    }),
-    "xap" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-silverlight-app".to_string(),
-        parameters: vec![]
-    }),
-    "sql" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-sql".to_string(),
-        parameters: vec![]
-    }),
-    "sit" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-stuffit".to_string(),
-        parameters: vec![]
-    }),
-    "sitx" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-stuffitx".to_string(),
-        parameters: vec![]
-    }),
-    "srt" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-subrip".to_string(),
-        parameters: vec![]
-    }),
-    "sv4cpio" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-sv4cpio".to_string(),
-        parameters: vec![]
-    }),
-    "sv4crc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-sv4crc".to_string(),
-        parameters: vec![]
-    }),
-    "t3" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-t3vm-image".to_string(),
-        parameters: vec![]
-    }),
-    "gam" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-tads".to_string(),
-        parameters: vec![]
-    }),
-    "tar" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-tar".to_string(),
-        parameters: vec![]
-    }),
-    "tcl" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-tcl".to_string(),
-        parameters: vec![]
-    }),
-    "tex" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-tex".to_string(),
-        parameters: vec![]
-    }),
-    "tfm" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-tex-tfm".to_string(),
-        parameters: vec![]
-    }),
-    "texinfo" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-texinfo".to_string(),
-        parameters: vec![]
-    }),
-    "obj" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-tgif".to_string(),
-        parameters: vec![]
-    }),
-    "ustar" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-ustar".to_string(),
-        parameters: vec![]
-    }),
-    "src" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-wais-source".to_string(),
-        parameters: vec![]
-    }),
-    "der" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-x509-ca-cert".to_string(),
-        parameters: vec![]
-    }),
-    "fig" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-xfig".to_string(),
-        parameters: vec![]
-    }),
-    "xlf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-xliff+xml".to_string(),
-        parameters: vec![]
-    }),
-    "xpi" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-xpinstall".to_string(),
-        parameters: vec![]
-    }),
-    "xz" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-xz".to_string(),
-        parameters: vec![]
-    }),
-    "z1" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "x-zmachine".to_string(),
-        parameters: vec![]
-    }),
-    "xaml" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "xaml+xml".to_string(),
-        parameters: vec![]
-    }),
-    "xdf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "xcap-diff+xml".to_string(),
-        parameters: vec![]
-    }),
-    "xenc" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "xenc+xml".to_string(),
-        parameters: vec![]
-    }),
-    "xhtml" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "xhtml+xml".to_string(),
-        parameters: vec![]
-    }),
-    "xml" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "xml".to_string(),
-        parameters: vec![]
-    }),
-    "dtd" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "xml-dtd".to_string(),
-        parameters: vec![]
-    }),
-    "xop" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "xop+xml".to_string(),
-        parameters: vec![]
-    }),
-    "xpl" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "xproc+xml".to_string(),
-        parameters: vec![]
-    }),
-    "xslt" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "xslt+xml".to_string(),
-        parameters: vec![]
-    }),
-    "xspf" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "xspf+xml".to_string(),
-        parameters: vec![]
-    }),
-    "mxml" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "xv+xml".to_string(),
-        parameters: vec![]
-    }),
-    "yang" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "yang".to_string(),
-        parameters: vec![]
-    }),
-    "yin" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "yin+xml".to_string(),
-        parameters: vec![]
-    }),
-    "zip" => Some(MediaType {
-        type_: "application".to_string(),
-        subtype: "zip".to_string(),
-        parameters: vec![]
-    }),
-    "adp" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "adpcm".to_string(),
-        parameters: vec![]
-    }),
-    "au" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "basic".to_string(),
-        parameters: vec![]
-    }),
-    "mid" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "midi".to_string(),
-        parameters: vec![]
-    }),
-    "mp4a" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "mp4".to_string(),
-        parameters: vec![]
-    }),
-    "mpga" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "mpeg".to_string(),
-        parameters: vec![]
-    }),
-    "oga" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "ogg".to_string(),
-        parameters: vec![]
-    }),
-    "s3m" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "s3m".to_string(),
-        parameters: vec![]
-    }),
-    "sil" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "silk".to_string(),
-        parameters: vec![]
-    }),
-    "uva" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "vnd.dece.audio".to_string(),
-        parameters: vec![]
-    }),
-    "eol" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "vnd.digital-winds".to_string(),
-        parameters: vec![]
-    }),
-    "dra" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "vnd.dra".to_string(),
-        parameters: vec![]
-    }),
-    "dts" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "vnd.dts".to_string(),
-        parameters: vec![]
-    }),
-    "dtshd" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "vnd.dts.hd".to_string(),
-        parameters: vec![]
-    }),
-    "lvp" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "vnd.lucent.voice".to_string(),
-        parameters: vec![]
-    }),
-    "pya" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "vnd.ms-playready.media.pya".to_string(),
-        parameters: vec![]
-    }),
-    "ecelp4800" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "vnd.nuera.ecelp4800".to_string(),
-        parameters: vec![]
-    }),
-    "ecelp7470" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "vnd.nuera.ecelp7470".to_string(),
-        parameters: vec![]
-    }),
-    "ecelp9600" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "vnd.nuera.ecelp9600".to_string(),
-        parameters: vec![]
-    }),
-    "rip" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "vnd.rip".to_string(),
-        parameters: vec![]
-    }),
-    "weba" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "webm".to_string(),
-        parameters: vec![]
-    }),
-    "aac" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "x-aac".to_string(),
-        parameters: vec![]
-    }),
-    "aif" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "x-aiff".to_string(),
-        parameters: vec![]
-    }),
-    "caf" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "x-caf".to_string(),
-        parameters: vec![]
-    }),
-    "flac" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "x-flac".to_string(),
-        parameters: vec![]
-    }),
-    "mka" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "x-matroska".to_string(),
-        parameters: vec![]
-    }),
-    "m3u" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "x-mpegurl".to_string(),
-        parameters: vec![]
-    }),
-    "wax" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "x-ms-wax".to_string(),
-        parameters: vec![]
-    }),
-    "wma" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "x-ms-wma".to_string(),
-        parameters: vec![]
-    }),
-    "ram" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "x-pn-realaudio".to_string(),
-        parameters: vec![]
-    }),
-    "rmp" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "x-pn-realaudio-plugin".to_string(),
-        parameters: vec![]
-    }),
-    "wav" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "x-wav".to_string(),
-        parameters: vec![]
-    }),
-    "xm" => Some(MediaType {
-        type_: "audio".to_string(),
-        subtype: "xm".to_string(),
-        parameters: vec![]
-    }),
-    "cdx" => Some(MediaType {
-        type_: "chemical".to_string(),
-        subtype: "x-cdx".to_string(),
-        parameters: vec![]
-    }),
-    "cif" => Some(MediaType {
-        type_: "chemical".to_string(),
-        subtype: "x-cif".to_string(),
-        parameters: vec![]
-    }),
-    "cmdf" => Some(MediaType {
-        type_: "chemical".to_string(),
-        subtype: "x-cmdf".to_string(),
-        parameters: vec![]
-    }),
-    "cml" => Some(MediaType {
-        type_: "chemical".to_string(),
-        subtype: "x-cml".to_string(),
-        parameters: vec![]
-    }),
-    "csml" => Some(MediaType {
-        type_: "chemical".to_string(),
-        subtype: "x-csml".to_string(),
-        parameters: vec![]
-    }),
-    "xyz" => Some(MediaType {
-        type_: "chemical".to_string(),
-        subtype: "x-xyz".to_string(),
-        parameters: vec![]
-    }),
-    "bmp" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "bmp".to_string(),
-        parameters: vec![]
-    }),
-    "cgm" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "cgm".to_string(),
-        parameters: vec![]
-    }),
-    "g3" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "g3fax".to_string(),
-        parameters: vec![]
-    }),
-    "gif" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "gif".to_string(),
-        parameters: vec![]
-    }),
-    "ief" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "ief".to_string(),
-        parameters: vec![]
-    }),
-    "jpeg" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "jpeg".to_string(),
-        parameters: vec![]
-    }),
-    "ktx" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "ktx".to_string(),
-        parameters: vec![]
-    }),
-    "png" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "png".to_string(),
-        parameters: vec![]
-    }),
-    "btif" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "prs.btif".to_string(),
-        parameters: vec![]
-    }),
-    "sgi" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "sgi".to_string(),
-        parameters: vec![]
-    }),
-    "svg" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "svg+xml".to_string(),
-        parameters: vec![]
-    }),
-    "tiff" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "tiff".to_string(),
-        parameters: vec![]
-    }),
-    "psd" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "vnd.adobe.photoshop".to_string(),
-        parameters: vec![]
-    }),
-    "uvi" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "vnd.dece.graphic".to_string(),
-        parameters: vec![]
-    }),
-    "sub" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "vnd.dvb.subtitle".to_string(),
-        parameters: vec![]
-    }),
-    "djvu" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "vnd.djvu".to_string(),
-        parameters: vec![]
-    }),
-    "dwg" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "vnd.dwg".to_string(),
-        parameters: vec![]
-    }),
-    "dxf" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "vnd.dxf".to_string(),
-        parameters: vec![]
-    }),
-    "fbs" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "vnd.fastbidsheet".to_string(),
-        parameters: vec![]
-    }),
-    "fpx" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "vnd.fpx".to_string(),
-        parameters: vec![]
-    }),
-    "fst" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "vnd.fst".to_string(),
-        parameters: vec![]
-    }),
-    "mmr" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "vnd.fujixerox.edmics-mmr".to_string(),
-        parameters: vec![]
-    }),
-    "rlc" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "vnd.fujixerox.edmics-rlc".to_string(),
-        parameters: vec![]
-    }),
-    "mdi" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "vnd.ms-modi".to_string(),
-        parameters: vec![]
-    }),
-    "wdp" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "vnd.ms-photo".to_string(),
-        parameters: vec![]
-    }),
-    "npx" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "vnd.net-fpx".to_string(),
-        parameters: vec![]
-    }),
-    "wbmp" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "vnd.wap.wbmp".to_string(),
-        parameters: vec![]
-    }),
-    "xif" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "vnd.xiff".to_string(),
-        parameters: vec![]
-    }),
-    "webp" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "webp".to_string(),
-        parameters: vec![]
-    }),
-    "3ds" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "x-3ds".to_string(),
-        parameters: vec![]
-    }),
-    "ras" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "x-cmu-raster".to_string(),
-        parameters: vec![]
-    }),
-    "cmx" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "x-cmx".to_string(),
-        parameters: vec![]
-    }),
-    "fh" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "x-freehand".to_string(),
-        parameters: vec![]
-    }),
-    "ico" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "x-icon".to_string(),
-        parameters: vec![]
-    }),
-    "sid" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "x-mrsid-image".to_string(),
-        parameters: vec![]
-    }),
-    "pcx" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "x-pcx".to_string(),
-        parameters: vec![]
-    }),
-    "pic" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "x-pict".to_string(),
-        parameters: vec![]
-    }),
-    "pnm" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "x-portable-anymap".to_string(),
-        parameters: vec![]
-    }),
-    "pbm" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "x-portable-bitmap".to_string(),
-        parameters: vec![]
-    }),
-    "pgm" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "x-portable-graymap".to_string(),
-        parameters: vec![]
-    }),
-    "ppm" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "x-portable-pixmap".to_string(),
-        parameters: vec![]
-    }),
-    "rgb" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "x-rgb".to_string(),
-        parameters: vec![]
-    }),
-    "tga" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "x-tga".to_string(),
-        parameters: vec![]
-    }),
-    "xbm" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "x-xbitmap".to_string(),
-        parameters: vec![]
-    }),
-    "xpm" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "x-xpixmap".to_string(),
-        parameters: vec![]
-    }),
-    "xwd" => Some(MediaType {
-        type_: "image".to_string(),
-        subtype: "x-xwindowdump".to_string(),
-        parameters: vec![]
-    }),
-    "eml" => Some(MediaType {
-        type_: "message".to_string(),
-        subtype: "rfc822".to_string(),
-        parameters: vec![]
-    }),
-    "igs" => Some(MediaType {
-        type_: "model".to_string(),
-        subtype: "iges".to_string(),
-        parameters: vec![]
-    }),
-    "msh" => Some(MediaType {
-        type_: "model".to_string(),
-        subtype: "mesh".to_string(),
-        parameters: vec![]
-    }),
-    "dae" => Some(MediaType {
-        type_: "model".to_string(),
-        subtype: "vnd.collada+xml".to_string(),
-        parameters: vec![]
-    }),
-    "dwf" => Some(MediaType {
-        type_: "model".to_string(),
-        subtype: "vnd.dwf".to_string(),
-        parameters: vec![]
-    }),
-    "gdl" => Some(MediaType {
-        type_: "model".to_string(),
-        subtype: "vnd.gdl".to_string(),
-        parameters: vec![]
-    }),
-    "gtw" => Some(MediaType {
-        type_: "model".to_string(),
-        subtype: "vnd.gtw".to_string(),
-        parameters: vec![]
-    }),
-    "mts" => Some(MediaType {
-        type_: "model".to_string(),
-        subtype: "vnd.mts".to_string(),
-        parameters: vec![]
-    }),
-    "vtu" => Some(MediaType {
-        type_: "model".to_string(),
-        subtype: "vnd.vtu".to_string(),
-        parameters: vec![]
-    }),
-    "wrl" => Some(MediaType {
-        type_: "model".to_string(),
-        subtype: "vrml".to_string(),
-        parameters: vec![]
-    }),
-    "x3db" => Some(MediaType {
-        type_: "model".to_string(),
-        subtype: "x3d+binary".to_string(),
-        parameters: vec![]
-    }),
-    "x3dv" => Some(MediaType {
-        type_: "model".to_string(),
-        subtype: "x3d+vrml".to_string(),
-        parameters: vec![]
-    }),
-    "x3d" => Some(MediaType {
-        type_: "model".to_string(),
-        subtype: "x3d+xml".to_string(),
-        parameters: vec![]
-    }),
-    "appcache" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "cache-manifest".to_string(),
-        parameters: vec![]
-    }),
-    "ics" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "calendar".to_string(),
-        parameters: vec![]
-    }),
-    "css" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "css".to_string(),
-        parameters: vec![]
-    }),
-    "csv" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "csv".to_string(),
-        parameters: vec![]
-    }),
-    "html" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "html".to_string(),
-        parameters: vec![]
-    }),
-    "n3" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "n3".to_string(),
-        parameters: vec![]
-    }),
-    "txt" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "plain".to_string(),
-        parameters: vec![]
-    }),
-    "dsc" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "prs.lines.tag".to_string(),
-        parameters: vec![]
-    }),
-    "rtx" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "richtext".to_string(),
-        parameters: vec![]
-    }),
-    "sgml" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "sgml".to_string(),
-        parameters: vec![]
-    }),
-    "tsv" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "tab-separated-values".to_string(),
-        parameters: vec![]
-    }),
-    "t" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "troff".to_string(),
-        parameters: vec![]
-    }),
-    "ttl" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "turtle".to_string(),
-        parameters: vec![]
-    }),
-    "uri" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "uri-list".to_string(),
-        parameters: vec![]
-    }),
-    "vcard" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "vcard".to_string(),
-        parameters: vec![]
-    }),
-    "curl" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "vnd.curl".to_string(),
-        parameters: vec![]
-    }),
-    "dcurl" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "vnd.curl.dcurl".to_string(),
-        parameters: vec![]
-    }),
-    "scurl" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "vnd.curl.scurl".to_string(),
-        parameters: vec![]
-    }),
-    "mcurl" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "vnd.curl.mcurl".to_string(),
-        parameters: vec![]
-    }),
-    "fly" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "vnd.fly".to_string(),
-        parameters: vec![]
-    }),
-    "flx" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "vnd.fmi.flexstor".to_string(),
-        parameters: vec![]
-    }),
-    "gv" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "vnd.graphviz".to_string(),
-        parameters: vec![]
-    }),
-    "3dml" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "vnd.in3d.3dml".to_string(),
-        parameters: vec![]
-    }),
-    "spot" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "vnd.in3d.spot".to_string(),
-        parameters: vec![]
-    }),
-    "jad" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "vnd.sun.j2me.app-descriptor".to_string(),
-        parameters: vec![]
-    }),
-    "wml" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "vnd.wap.wml".to_string(),
-        parameters: vec![]
-    }),
-    "wmls" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "vnd.wap.wmlscript".to_string(),
-        parameters: vec![]
-    }),
-    "s" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "x-asm".to_string(),
-        parameters: vec![]
-    }),
-    "c" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "x-c".to_string(),
-        parameters: vec![]
-    }),
-    "f" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "x-fortran".to_string(),
-        parameters: vec![]
-    }),
-    "java" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "x-java-source".to_string(),
-        parameters: vec![]
-    }),
-    "opml" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "x-opml".to_string(),
-        parameters: vec![]
-    }),
-    "p" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "x-pascal".to_string(),
-        parameters: vec![]
-    }),
-    "nfo" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "x-nfo".to_string(),
-        parameters: vec![]
-    }),
-    "etx" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "x-setext".to_string(),
-        parameters: vec![]
-    }),
-    "sfv" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "x-sfv".to_string(),
-        parameters: vec![]
-    }),
-    "uu" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "x-uuencode".to_string(),
-        parameters: vec![]
-    }),
-    "vcs" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "x-vcalendar".to_string(),
-        parameters: vec![]
-    }),
-    "vcf" => Some(MediaType {
-        type_: "text".to_string(),
-        subtype: "x-vcard".to_string(),
-        parameters: vec![]
-    }),
-    "3gp" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "3gpp".to_string(),
-        parameters: vec![]
-    }),
-    "3g2" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "3gpp2".to_string(),
-        parameters: vec![]
-    }),
-    "h261" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "h261".to_string(),
-        parameters: vec![]
-    }),
-    "h263" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "h263".to_string(),
-        parameters: vec![]
-    }),
-    "h264" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "h264".to_string(),
-        parameters: vec![]
-    }),
-    "jpgv" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "jpeg".to_string(),
-        parameters: vec![]
-    }),
-    "jpm" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "jpm".to_string(),
-        parameters: vec![]
-    }),
-    "mj2" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "mj2".to_string(),
-        parameters: vec![]
-    }),
-    "mp4" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "mp4".to_string(),
-        parameters: vec![]
-    }),
-    "mpeg" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "mpeg".to_string(),
-        parameters: vec![]
-    }),
-    "ogv" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "ogg".to_string(),
-        parameters: vec![]
-    }),
-    "qt" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "quicktime".to_string(),
-        parameters: vec![]
-    }),
-    "uvh" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "vnd.dece.hd".to_string(),
-        parameters: vec![]
-    }),
-    "uvm" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "vnd.dece.mobile".to_string(),
-        parameters: vec![]
-    }),
-    "uvp" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "vnd.dece.pd".to_string(),
-        parameters: vec![]
-    }),
-    "uvs" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "vnd.dece.sd".to_string(),
-        parameters: vec![]
-    }),
-    "uvv" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "vnd.dece.video".to_string(),
-        parameters: vec![]
-    }),
-    "dvb" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "vnd.dvb.file".to_string(),
-        parameters: vec![]
-    }),
-    "fvt" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "vnd.fvt".to_string(),
-        parameters: vec![]
-    }),
-    "mxu" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "vnd.mpegurl".to_string(),
-        parameters: vec![]
-    }),
-    "pyv" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "vnd.ms-playready.media.pyv".to_string(),
-        parameters: vec![]
-    }),
-    "uvu" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "vnd.uvvu.mp4".to_string(),
-        parameters: vec![]
-    }),
-    "viv" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "vnd.vivo".to_string(),
-        parameters: vec![]
-    }),
-    "webm" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "webm".to_string(),
-        parameters: vec![]
-    }),
-    "f4v" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "x-f4v".to_string(),
-        parameters: vec![]
-    }),
-    "fli" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "x-fli".to_string(),
-        parameters: vec![]
-    }),
-    "flv" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "x-flv".to_string(),
-        parameters: vec![]
-    }),
-    "m4v" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "x-m4v".to_string(),
-        parameters: vec![]
-    }),
-    "mkv" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "x-matroska".to_string(),
-        parameters: vec![]
-    }),
-    "mng" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "x-mng".to_string(),
-        parameters: vec![]
-    }),
-    "asf" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "x-ms-asf".to_string(),
-        parameters: vec![]
-    }),
-    "vob" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "x-ms-vob".to_string(),
-        parameters: vec![]
-    }),
-    "wm" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "x-ms-wm".to_string(),
-        parameters: vec![]
-    }),
-    "wmv" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "x-ms-wmv".to_string(),
-        parameters: vec![]
-    }),
-    "wmx" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "x-ms-wmx".to_string(),
-        parameters: vec![]
-    }),
-    "wvx" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "x-ms-wvx".to_string(),
-        parameters: vec![]
-    }),
-    "avi" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "x-msvideo".to_string(),
-        parameters: vec![]
-    }),
-    "movie" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "x-sgi-movie".to_string(),
-        parameters: vec![]
-    }),
-    "smv" => Some(MediaType {
-        type_: "video".to_string(),
-        subtype: "x-smv".to_string(),
-        parameters: vec![]
-    }),
-    "ice" => Some(MediaType {
-        type_: "x-conference".to_string(),
-        subtype: "x-cooltalk".to_string(),
-        parameters: vec![]
-    }),
-        _ => None
+macro_rules! mimes(
+    ($($t:expr { $($name:ident, $as_s:pat, $subt:expr,)+ })+) => (
+        #[allow(non_camel_case_types)]
+        #[deriving(Show, PartialEq, Eq, Hash)]
+        pub enum MediaType {
+            $(
+                $(
+                    $name
+                ),*
+            ),*
+        }
+
+        pub fn get_media_type(ty: MediaType) -> content_type::MediaType {
+            let (ty, subty) = match ty {
+                $(
+                    $(
+                        $name => ($t, $subt)
+                    ),*
+                ),*
+            };
+
+            content_type::MediaType {
+                type_: ty.to_string(),
+                subtype: subty.to_string(),
+                parameters: vec![]
+            }
+        }
+
+        impl FromStr for MediaType {
+            fn from_str(s: &str) -> Option<MediaType> {
+                match s {
+                    $(
+                        $(
+                            $as_s => Some($name)
+                        ),*
+                    ),*,
+                    _ => None
+                }
+            }
+        }
+    )
+)
+
+mimes!(
+
+    "application" {
+
+        Ez, "ez", "andrew-inset",
+        Aw, "aw", "applixware",
+        Atom, "atom", "atom+xml",
+        Atomcat, "atomcat", "atomcat+xml",
+        Atomsvc, "atomsvc", "atomsvc+xml",
+        Ccxml, "ccxml", "ccxml+xml",
+        Cdmia, "cdmia", "cdmi-capability",
+        Cdmic, "cdmic", "cdmi-container",
+        Cdmid, "cdmid", "cdmi-domain",
+        Cdmio, "cdmio", "cdmi-object",
+        Cdmiq, "cdmiq", "cdmi-queue",
+        Cu, "cu", "cu-seeme",
+        Davmount, "davmount", "davmount+xml",
+        Dbk, "dbk", "docbook+xml",
+        Dssc, "dssc", "dssc+der",
+        Xdssc, "xdssc", "dssc+xml",
+        Ecma, "ecma", "ecmascript",
+        Emma, "emma", "emma+xml",
+        Epub, "epub", "epub+zip",
+        Exi, "exi", "exi",
+        Pfr, "pfr", "font-tdpfr",
+        Gml, "gml", "gml+xml",
+        Gpx, "gpx", "gpx+xml",
+        Gxf, "gxf", "gxf",
+        Stk, "stk", "hyperstudio",
+        Ink, "ink", "inkml+xml",
+        Ipfix, "ipfix", "ipfix",
+        Jar, "jar", "java-archive",
+        Ser, "ser", "java-serialized-object",
+        Class, "class", "java-vm",
+        Js, "js", "javascript",
+        Json, "json", "json",
+        Jsonml, "jsonml", "jsonml+json",
+        Lostxml, "lostxml", "lost+xml",
+        Hqx, "hqx", "mac-binhex40",
+        Cpt, "cpt", "mac-compactpro",
+        Mads, "mads", "mads+xml",
+        Mrc, "mrc", "marc",
+        Mrcx, "mrcx", "marcxml+xml",
+        Ma, "ma", "mathematica",
+        Mathml, "mathml", "mathml+xml",
+        Mbox, "mbox", "mbox",
+        Mscml, "mscml", "mediaservercontrol+xml",
+        Metalink, "metalink", "metalink+xml",
+        Meta4, "meta4", "metalink4+xml",
+        Mets, "mets", "mets+xml",
+        Mods, "mods", "mods+xml",
+        M21, "m21", "mp21",
+        Mp4s, "mp4s", "mp4",
+        Doc, "doc", "msword",
+        Mxf, "mxf", "mxf",
+        Bin, "bin", "octet-stream",
+        Oda, "oda", "oda",
+        Opf, "opf", "oebps-package+xml",
+        Ogx, "ogx", "ogg",
+        Omdoc, "omdoc", "omdoc+xml",
+        Onetoc, "onetoc", "onenote",
+        Oxps, "oxps", "oxps",
+        Xer, "xer", "patch-ops-error+xml",
+        Pdf, "pdf", "pdf",
+        Pgp, "pgp", "pgp-encrypted",
+        Asc, "asc", "pgp-signature",
+        Prf, "prf", "pics-rules",
+        P10, "p10", "pkcs10",
+        P7m, "p7m", "pkcs7-mime",
+        P7s, "p7s", "pkcs7-signature",
+        P8, "p8", "pkcs8",
+        Ac, "ac", "pkix-attr-cert",
+        Cer, "cer", "pkix-cert",
+        Crl, "crl", "pkix-crl",
+        Pkipath, "pkipath", "pkix-pkipath",
+        Pki, "pki", "pkixcmp",
+        Pls, "pls", "pls+xml",
+        Ai, "ai", "postscript",
+        Cww, "cww", "prs.cww",
+        Pskcxml, "pskcxml", "pskc+xml",
+        Rdf, "rdf", "rdf+xml",
+        Rif, "rif", "reginfo+xml",
+        Rnc, "rnc", "relax-ng-compact-syntax",
+        Rl, "rl", "resource-lists+xml",
+        Rld, "rld", "resource-lists-diff+xml",
+        Rs, "rs", "rls-services+xml",
+        Gbr, "gbr", "rpki-ghostbusters",
+        Mft, "mft", "rpki-manifest",
+        Roa, "roa", "rpki-roa",
+        Rsd, "rsd", "rsd+xml",
+        Rss, "rss", "rss+xml",
+        Rtf, "rtf", "rtf",
+        Sbml, "sbml", "sbml+xml",
+        Scq, "scq", "scvp-cv-request",
+        Scs, "scs", "scvp-cv-response",
+        Spq, "spq", "scvp-vp-request",
+        Spp, "spp", "scvp-vp-response",
+        Sdp, "sdp", "sdp",
+        Setpay, "setpay", "set-payment-initiation",
+        Setreg, "setreg", "set-registration-initiation",
+        Shf, "shf", "shf+xml",
+        Smi, "smi", "smil+xml",
+        Rq, "rq", "sparql-query",
+        Srx, "srx", "sparql-results+xml",
+        Gram, "gram", "srgs",
+        Grxml, "grxml", "srgs+xml",
+        Sru, "sru", "sru+xml",
+        Ssdl, "ssdl", "ssdl+xml",
+        Ssml, "ssml", "ssml+xml",
+        Tei, "tei", "tei+xml",
+        Tfi, "tfi", "thraud+xml",
+        Tsd, "tsd", "timestamped-data",
+        Plb, "plb", "vnd.3gpp.pic-bw-large",
+        Psb, "psb", "vnd.3gpp.pic-bw-small",
+        Pvb, "pvb", "vnd.3gpp.pic-bw-var",
+        Tcap, "tcap", "vnd.3gpp2.tcap",
+        Pwn, "pwn", "vnd.3m.post-it-notes",
+        Aso, "aso", "vnd.accpac.simply.aso",
+        Imp, "imp", "vnd.accpac.simply.imp",
+        Acu, "acu", "vnd.acucobol",
+        Atc, "atc", "vnd.acucorp",
+        Air, "air", "vnd.adobe.air-application-installer-package+zip",
+        Fcdt, "fcdt", "vnd.adobe.formscentral.fcdt",
+        Fxp, "fxp", "vnd.adobe.fxp",
+        Xdp, "xdp", "vnd.adobe.xdp+xml",
+        Xfdf, "xfdf", "vnd.adobe.xfdf",
+        Ahead, "ahead", "vnd.ahead.space",
+        Azf, "azf", "vnd.airzip.filesecure.azf",
+        Azs, "azs", "vnd.airzip.filesecure.azs",
+        Azw, "azw", "vnd.amazon.ebook",
+        Acc, "acc", "vnd.americandynamics.acc",
+        Ami, "ami", "vnd.amiga.ami",
+        Apk, "apk", "vnd.android.package-archive",
+        Cii, "cii", "vnd.anser-web-certificate-issue-initiation",
+        Fti, "fti", "vnd.anser-web-funds-transfer-initiation",
+        Atx, "atx", "vnd.antix.game-component",
+        Mpkg, "mpkg", "vnd.apple.installer+xml",
+        M3u8, "m3u8", "vnd.apple.mpegurl",
+        Swi, "swi", "vnd.aristanetworks.swi",
+        Iota, "iota", "vnd.astraea-software.iota",
+        Aep, "aep", "vnd.audiograph",
+        Mpm, "mpm", "vnd.blueice.multipass",
+        Bmi, "bmi", "vnd.bmi",
+        Rep, "rep", "vnd.businessobjects",
+        Cdxml, "cdxml", "vnd.chemdraw+xml",
+        Mmd, "mmd", "vnd.chipnuts.karaoke-mmd",
+        Cdy, "cdy", "vnd.cinderella",
+        Cla, "cla", "vnd.claymore",
+        Rp9, "rp9", "vnd.cloanto.rp9",
+        C4g, "c4g", "vnd.clonk.c4group",
+        C11amc, "c11amc", "vnd.cluetrust.cartomobile-config",
+        C11amz, "c11amz", "vnd.cluetrust.cartomobile-config-pkg",
+        Csp, "csp", "vnd.commonspace",
+        Cdbcmsg, "cdbcmsg", "vnd.contact.cmsg",
+        Cmc, "cmc", "vnd.cosmocaller",
+        Clkx, "clkx", "vnd.crick.clicker",
+        Clkk, "clkk", "vnd.crick.clicker.keyboard",
+        Clkp, "clkp", "vnd.crick.clicker.palette",
+        Clkt, "clkt", "vnd.crick.clicker.template",
+        Clkw, "clkw", "vnd.crick.clicker.wordbank",
+        Wbs, "wbs", "vnd.criticaltools.wbs+xml",
+        Pml, "pml", "vnd.ctc-posml",
+        Ppd, "ppd", "vnd.cups-ppd",
+        Car, "car", "vnd.curl.car",
+        Pcurl, "pcurl", "vnd.curl.pcurl",
+        Dart, "dart", "vnd.dart",
+        Rdz, "rdz", "vnd.data-vision.rdz",
+        Uvf, "uvf", "vnd.dece.data",
+        Uvt, "uvt", "vnd.dece.ttml+xml",
+        Uvx, "uvx", "vnd.dece.unspecified",
+        Uvz, "uvz", "vnd.dece.zip",
+        Fe_launch, "fe_launch", "vnd.denovo.fcselayout-link",
+        Dna, "dna", "vnd.dna",
+        Mlp, "mlp", "vnd.dolby.mlp",
+        Dpg, "dpg", "vnd.dpgraph",
+        Dfac, "dfac", "vnd.dreamfactory",
+        Kpxx, "kpxx", "vnd.ds-keypoint",
+        Ait, "ait", "vnd.dvb.ait",
+        Svc, "svc", "vnd.dvb.service",
+        Geo, "geo", "vnd.dynageo",
+        Mag, "mag", "vnd.ecowin.chart",
+        Nml, "nml", "vnd.enliven",
+        Esf, "esf", "vnd.epson.esf",
+        Msf, "msf", "vnd.epson.msf",
+        Qam, "qam", "vnd.epson.quickanime",
+        Slt, "slt", "vnd.epson.salt",
+        Ssf, "ssf", "vnd.epson.ssf",
+        Es3, "es3", "vnd.eszigno3+xml",
+        Ez2, "ez2", "vnd.ezpix-album",
+        Ez3, "ez3", "vnd.ezpix-package",
+        Fdf, "fdf", "vnd.fdf",
+        Mseed, "mseed", "vnd.fdsn.mseed",
+        Seed, "seed", "vnd.fdsn.seed",
+        Gph, "gph", "vnd.flographit",
+        Ftc, "ftc", "vnd.fluxtime.clip",
+        Fm, "fm", "vnd.framemaker",
+        Fnc, "fnc", "vnd.frogans.fnc",
+        Ltf, "ltf", "vnd.frogans.ltf",
+        Fsc, "fsc", "vnd.fsc.weblaunch",
+        Oas, "oas", "vnd.fujitsu.oasys",
+        Oa2, "oa2", "vnd.fujitsu.oasys2",
+        Oa3, "oa3", "vnd.fujitsu.oasys3",
+        Fg5, "fg5", "vnd.fujitsu.oasysgp",
+        Bh2, "bh2", "vnd.fujitsu.oasysprs",
+        Ddd, "ddd", "vnd.fujixerox.ddd",
+        Xdw, "xdw", "vnd.fujixerox.docuworks",
+        Xbd, "xbd", "vnd.fujixerox.docuworks.binder",
+        Fzs, "fzs", "vnd.fuzzysheet",
+        Txd, "txd", "vnd.genomatix.tuxedo",
+        Ggb, "ggb", "vnd.geogebra.file",
+        Ggt, "ggt", "vnd.geogebra.tool",
+        Gex, "gex", "vnd.geometry-explorer",
+        Gxt, "gxt", "vnd.geonext",
+        G2w, "g2w", "vnd.geoplan",
+        G3w, "g3w", "vnd.geospace",
+        Gmx, "gmx", "vnd.gmx",
+        Kml, "kml", "vnd.google-earth.kml+xml",
+        Kmz, "kmz", "vnd.google-earth.kmz",
+        Gqf, "gqf", "vnd.grafeq",
+        Gac, "gac", "vnd.groove-account",
+        Ghf, "ghf", "vnd.groove-help",
+        Gim, "gim", "vnd.groove-identity-message",
+        Grv, "grv", "vnd.groove-injector",
+        Gtm, "gtm", "vnd.groove-tool-message",
+        Tpl, "tpl", "vnd.groove-tool-template",
+        Vcg, "vcg", "vnd.groove-vcard",
+        Hal, "hal", "vnd.hal+xml",
+        Zmm, "zmm", "vnd.handheld-entertainment+xml",
+        Hbci, "hbci", "vnd.hbci",
+        Les, "les", "vnd.hhe.lesson-player",
+        Hpgl, "hpgl", "vnd.hp-hpgl",
+        Hpid, "hpid", "vnd.hp-hpid",
+        Hps, "hps", "vnd.hp-hps",
+        Jlt, "jlt", "vnd.hp-jlyt",
+        Pcl, "pcl", "vnd.hp-pcl",
+        Pclxl, "pclxl", "vnd.hp-pclxl",
+        Sfd_hdstx, "sfd-hdstx", "vnd.hydrostatix.sof-data",
+        Mpy, "mpy", "vnd.ibm.minipay",
+        Afp, "afp", "vnd.ibm.modcap",
+        Irm, "irm", "vnd.ibm.rights-management",
+        Sc, "sc", "vnd.ibm.secure-container",
+        Icc, "icc", "vnd.iccprofile",
+        Igl, "igl", "vnd.igloader",
+        Ivp, "ivp", "vnd.immervision-ivp",
+        Ivu, "ivu", "vnd.immervision-ivu",
+        Igm, "igm", "vnd.insors.igm",
+        Xpw, "xpw", "vnd.intercon.formnet",
+        I2g, "i2g", "vnd.intergeo",
+        Qbo, "qbo", "vnd.intu.qbo",
+        Qfx, "qfx", "vnd.intu.qfx",
+        Rcprofile, "rcprofile", "vnd.ipunplugged.rcprofile",
+        Irp, "irp", "vnd.irepository.package+xml",
+        Xpr, "xpr", "vnd.is-xpr",
+        Fcs, "fcs", "vnd.isac.fcs",
+        Jam, "jam", "vnd.jam",
+        Rms, "rms", "vnd.jcp.javame.midlet-rms",
+        Jisp, "jisp", "vnd.jisp",
+        Joda, "joda", "vnd.joost.joda-archive",
+        Ktz, "ktz", "vnd.kahootz",
+        Karbon, "karbon", "vnd.kde.karbon",
+        Chrt, "chrt", "vnd.kde.kchart",
+        Kfo, "kfo", "vnd.kde.kformula",
+        Flw, "flw", "vnd.kde.kivio",
+        Kon, "kon", "vnd.kde.kontour",
+        Kpr, "kpr", "vnd.kde.kpresenter",
+        Ksp, "ksp", "vnd.kde.kspread",
+        Kwd, "kwd", "vnd.kde.kword",
+        Htke, "htke", "vnd.kenameaapp",
+        Kia, "kia", "vnd.kidspiration",
+        Kne, "kne", "vnd.kinar",
+        Skp, "skp", "vnd.koan",
+        Sse, "sse", "vnd.kodak-descriptor",
+        Lasxml, "lasxml", "vnd.las.las+xml",
+        Lbd, "lbd", "vnd.llamagraphics.life-balance.desktop",
+        Lbe, "lbe", "vnd.llamagraphics.life-balance.exchange+xml",
+        Media123, "123", "vnd.lotus-1-2-3",
+        Apr, "apr", "vnd.lotus-approach",
+        Pre, "pre", "vnd.lotus-freelance",
+        Nsf, "nsf", "vnd.lotus-notes",
+        Org, "org", "vnd.lotus-organizer",
+        Scm, "scm", "vnd.lotus-screencam",
+        Lwp, "lwp", "vnd.lotus-wordpro",
+        Portpkg, "portpkg", "vnd.macports.portpkg",
+        Mcd, "mcd", "vnd.mcd",
+        Mc1, "mc1", "vnd.medcalcdata",
+        Cdkey, "cdkey", "vnd.mediastation.cdkey",
+        Mwf, "mwf", "vnd.mfer",
+        Mfm, "mfm", "vnd.mfmp",
+        Flo, "flo", "vnd.micrografx.flo",
+        Igx, "igx", "vnd.micrografx.igx",
+        Mif, "mif", "vnd.mif",
+        Daf, "daf", "vnd.mobius.daf",
+        Dis, "dis", "vnd.mobius.dis",
+        Mbk, "mbk", "vnd.mobius.mbk",
+        Mqy, "mqy", "vnd.mobius.mqy",
+        Msl, "msl", "vnd.mobius.msl",
+        Plc, "plc", "vnd.mobius.plc",
+        Txf, "txf", "vnd.mobius.txf",
+        Mpn, "mpn", "vnd.mophun.application",
+        Mpc, "mpc", "vnd.mophun.certificate",
+        Xul, "xul", "vnd.mozilla.xul+xml",
+        Cil, "cil", "vnd.ms-artgalry",
+        Cab, "cab", "vnd.ms-cab-compressed",
+        Xls, "xls", "vnd.ms-excel",
+        Xlam, "xlam", "vnd.ms-excel.addin.macroenabled.12",
+        Xlsb, "xlsb", "vnd.ms-excel.sheet.binary.macroenabled.12",
+        Xlsm, "xlsm", "vnd.ms-excel.sheet.macroenabled.12",
+        Xltm, "xltm", "vnd.ms-excel.template.macroenabled.12",
+        Eot, "eot", "vnd.ms-fontobject",
+        Chm, "chm", "vnd.ms-htmlhelp",
+        Ims, "ims", "vnd.ms-ims",
+        Lrm, "lrm", "vnd.ms-lrm",
+        Thmx, "thmx", "vnd.ms-officetheme",
+        Cat, "cat", "vnd.ms-pki.seccat",
+        Stl, "stl", "vnd.ms-pki.stl",
+        Ppt, "ppt", "vnd.ms-powerpoint",
+        Ppam, "ppam", "vnd.ms-powerpoint.addin.macroenabled.12",
+        Pptm, "pptm", "vnd.ms-powerpoint.presentation.macroenabled.12",
+        Sldm, "sldm", "vnd.ms-powerpoint.slide.macroenabled.12",
+        Ppsm, "ppsm", "vnd.ms-powerpoint.slideshow.macroenabled.12",
+        Potm, "potm", "vnd.ms-powerpoint.template.macroenabled.12",
+        Mpp, "mpp", "vnd.ms-project",
+        Docm, "docm", "vnd.ms-word.document.macroenabled.12",
+        Dotm, "dotm", "vnd.ms-word.template.macroenabled.12",
+        Wps, "wps", "vnd.ms-works",
+        Wpl, "wpl", "vnd.ms-wpl",
+        Xps, "xps", "vnd.ms-xpsdocument",
+        Mseq, "mseq", "vnd.mseq",
+        Mus, "mus", "vnd.musician",
+        Msty, "msty", "vnd.muvee.style",
+        Taglet, "taglet", "vnd.mynfc",
+        Nlu, "nlu", "vnd.neurolanguage.nlu",
+        Ntf, "ntf", "vnd.nitf",
+        Nnd, "nnd", "vnd.noblenet-directory",
+        Nns, "nns", "vnd.noblenet-sealer",
+        Nnw, "nnw", "vnd.noblenet-web",
+        Ngdat, "ngdat", "vnd.nokia.n-gage.data",
+        N_gage, "n-gage", "vnd.nokia.n-gage.symbian.install",
+        Rpst, "rpst", "vnd.nokia.radio-preset",
+        Rpss, "rpss", "vnd.nokia.radio-presets",
+        Edm, "edm", "vnd.novadigm.edm",
+        Edx, "edx", "vnd.novadigm.edx",
+        Ext, "ext", "vnd.novadigm.ext",
+        Odc, "odc", "vnd.oasis.opendocument.chart",
+        Otc, "otc", "vnd.oasis.opendocument.chart-template",
+        Odb, "odb", "vnd.oasis.opendocument.database",
+        Odf, "odf", "vnd.oasis.opendocument.formula",
+        Odft, "odft", "vnd.oasis.opendocument.formula-template",
+        Odg, "odg", "vnd.oasis.opendocument.graphics",
+        Otg, "otg", "vnd.oasis.opendocument.graphics-template",
+        Odi, "odi", "vnd.oasis.opendocument.image",
+        Oti, "oti", "vnd.oasis.opendocument.image-template",
+        Odp, "odp", "vnd.oasis.opendocument.presentation",
+        Otp, "otp", "vnd.oasis.opendocument.presentation-template",
+        Ods, "ods", "vnd.oasis.opendocument.spreadsheet",
+        Ots, "ots", "vnd.oasis.opendocument.spreadsheet-template",
+        Odt, "odt", "vnd.oasis.opendocument.text",
+        Odm, "odm", "vnd.oasis.opendocument.text-master",
+        Ott, "ott", "vnd.oasis.opendocument.text-template",
+        Oth, "oth", "vnd.oasis.opendocument.text-web",
+        Xo, "xo", "vnd.olpc-sugar",
+        Dd2, "dd2", "vnd.oma.dd2+xml",
+        Oxt, "oxt", "vnd.openofficeorg.extension",
+        Pptx, "pptx", "vnd.openxmlformats-officedocument.presentationml.presentation",
+        Sldx, "sldx", "vnd.openxmlformats-officedocument.presentationml.slide",
+        Ppsx, "ppsx", "vnd.openxmlformats-officedocument.presentationml.slideshow",
+        Potx, "potx", "vnd.openxmlformats-officedocument.presentationml.template",
+        Xlsx, "xlsx", "vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        Xltx, "xltx", "vnd.openxmlformats-officedocument.spreadsheetml.template",
+        Docx, "docx", "vnd.openxmlformats-officedocument.wordprocessingml.document",
+        Dotx, "dotx", "vnd.openxmlformats-officedocument.wordprocessingml.template",
+        Mgp, "mgp", "vnd.osgeo.mapguide.package",
+        Dp, "dp", "vnd.osgi.dp",
+        Esa, "esa", "vnd.osgi.subsystem",
+        Pdb, "pdb", "vnd.palm",
+        Paw, "paw", "vnd.pawaafile",
+        Str, "str", "vnd.pg.format",
+        Ei6, "ei6", "vnd.pg.osasli",
+        Efif, "efif", "vnd.picsel",
+        Wg, "wg", "vnd.pmi.widget",
+        Plf, "plf", "vnd.pocketlearn",
+        Pbd, "pbd", "vnd.powerbuilder6",
+        Box, "box", "vnd.previewsystems.box",
+        Mgz, "mgz", "vnd.proteus.magazine",
+        Qps, "qps", "vnd.publishare-delta-tree",
+        Ptid, "ptid", "vnd.pvi.ptid1",
+        Qxd, "qxd", "vnd.quark.quarkxpress",
+        Bed, "bed", "vnd.realvnc.bed",
+        Mxl, "mxl", "vnd.recordare.musicxml",
+        Musicxml, "musicxml", "vnd.recordare.musicxml+xml",
+        Cryptonote, "cryptonote", "vnd.rig.cryptonote",
+        Cod, "cod", "vnd.rim.cod",
+        Rm, "rm", "vnd.rn-realmedia",
+        Rmvb, "rmvb", "vnd.rn-realmedia-vbr",
+        Link66, "link66", "vnd.route66.link66+xml",
+        St, "st", "vnd.sailingtracker.track",
+        See, "see", "vnd.seemail",
+        Sema, "sema", "vnd.sema",
+        Semd, "semd", "vnd.semd",
+        Semf, "semf", "vnd.semf",
+        Ifm, "ifm", "vnd.shana.informed.formdata",
+        Itp, "itp", "vnd.shana.informed.formtemplate",
+        Iif, "iif", "vnd.shana.informed.interchange",
+        Ipk, "ipk", "vnd.shana.informed.package",
+        Twd, "twd", "vnd.simtech-mindmapper",
+        Mmf, "mmf", "vnd.smaf",
+        Teacher, "teacher", "vnd.smart.teacher",
+        Sdkm, "sdkm", "vnd.solent.sdkm+xml",
+        Dxp, "dxp", "vnd.spotfire.dxp",
+        Sfs, "sfs", "vnd.spotfire.sfs",
+        Sdc, "sdc", "vnd.stardivision.calc",
+        Sda, "sda", "vnd.stardivision.draw",
+        Sdd, "sdd", "vnd.stardivision.impress",
+        Smf, "smf", "vnd.stardivision.math",
+        Sdw, "sdw", "vnd.stardivision.writer",
+        Sgl, "sgl", "vnd.stardivision.writer-global",
+        Smzip, "smzip", "vnd.stepmania.package",
+        Sm, "sm", "vnd.stepmania.stepchart",
+        Sxc, "sxc", "vnd.sun.xml.calc",
+        Stc, "stc", "vnd.sun.xml.calc.template",
+        Sxd, "sxd", "vnd.sun.xml.draw",
+        Std, "std", "vnd.sun.xml.draw.template",
+        Sxi, "sxi", "vnd.sun.xml.impress",
+        Sti, "sti", "vnd.sun.xml.impress.template",
+        Sxm, "sxm", "vnd.sun.xml.math",
+        Sxw, "sxw", "vnd.sun.xml.writer",
+        Sxg, "sxg", "vnd.sun.xml.writer.global",
+        Stw, "stw", "vnd.sun.xml.writer.template",
+        Sus, "sus", "vnd.sus-calendar",
+        Svd, "svd", "vnd.svd",
+        Sis, "sis", "vnd.symbian.install",
+        Xsm, "xsm", "vnd.syncml+xml",
+        Bdm, "bdm", "vnd.syncml.dm+wbxml",
+        Xdm, "xdm", "vnd.syncml.dm+xml",
+        Tao, "tao", "vnd.tao.intent-module-archive",
+        Pcap, "pcap", "vnd.tcpdump.pcap",
+        Tmo, "tmo", "vnd.tmobile-livetv",
+        Tpt, "tpt", "vnd.trid.tpt",
+        Mxs, "mxs", "vnd.triscape.mxs",
+        Tra, "tra", "vnd.trueapp",
+        Ufd, "ufd", "vnd.ufdl",
+        Utz, "utz", "vnd.uiq.theme",
+        Umj, "umj", "vnd.umajin",
+        Unityweb, "unityweb", "vnd.unity",
+        Uoml, "uoml", "vnd.uoml+xml",
+        Vcx, "vcx", "vnd.vcx",
+        Vsd, "vsd", "vnd.visio",
+        Vis, "vis", "vnd.visionary",
+        Vsf, "vsf", "vnd.vsf",
+        Wbxml, "wbxml", "vnd.wap.wbxml",
+        Wmlc, "wmlc", "vnd.wap.wmlc",
+        Wmlsc, "wmlsc", "vnd.wap.wmlscriptc",
+        Wtb, "wtb", "vnd.webturbo",
+        Nbp, "nbp", "vnd.wolfram.player",
+        Wpd, "wpd", "vnd.wordperfect",
+        Wqd, "wqd", "vnd.wqd",
+        Stf, "stf", "vnd.wt.stf",
+        Xar, "xar", "vnd.xara",
+        Xfdl, "xfdl", "vnd.xfdl",
+        Hvd, "hvd", "vnd.yamaha.hv-dic",
+        Hvs, "hvs", "vnd.yamaha.hv-script",
+        Hvp, "hvp", "vnd.yamaha.hv-voice",
+        Osf, "osf", "vnd.yamaha.openscoreformat",
+        Osfpvg, "osfpvg", "vnd.yamaha.openscoreformat.osfpvg+xml",
+        Saf, "saf", "vnd.yamaha.smaf-audio",
+        Spf, "spf", "vnd.yamaha.smaf-phrase",
+        Cmp, "cmp", "vnd.yellowriver-custom-menu",
+        Zir, "zir", "vnd.zul",
+        Zaz, "zaz", "vnd.zzazz.deck+xml",
+        Vxml, "vxml", "voicexml+xml",
+        Wgt, "wgt", "widget",
+        Hlp, "hlp", "winhlp",
+        Wsdl, "wsdl", "wsdl+xml",
+        Wspolicy, "wspolicy", "wspolicy+xml",
+        Media7z, "7z", "x-7z-compressed",
+        Abw, "abw", "x-abiword",
+        Ace, "ace", "x-ace-compressed",
+        Dmg, "dmg", "x-apple-diskimage",
+        Aab, "aab", "x-authorware-bin",
+        Aam, "aam", "x-authorware-map",
+        Aas, "aas", "x-authorware-seg",
+        Bcpio, "bcpio", "x-bcpio",
+        Torrent, "torrent", "x-bittorrent",
+        Blb, "blb", "x-blorb",
+        Bz, "bz", "x-bzip",
+        Bz2, "bz2", "x-bzip2",
+        Cbr, "cbr", "x-cbr",
+        Vcd, "vcd", "x-cdlink",
+        Cfs, "cfs", "x-cfs-compressed",
+        Chat, "chat", "x-chat",
+        Pgn, "pgn", "x-chess-pgn",
+        Nsc, "nsc", "x-conference",
+        Cpio, "cpio", "x-cpio",
+        Csh, "csh", "x-csh",
+        Deb, "deb", "x-debian-package",
+        Dgc, "dgc", "x-dgc-compressed",
+        Dir, "dir", "x-director",
+        Wad, "wad", "x-doom",
+        Ncx, "ncx", "x-dtbncx+xml",
+        Dtb, "dtb", "x-dtbook+xml",
+        Res, "res", "x-dtbresource+xml",
+        Dvi, "dvi", "x-dvi",
+        Evy, "evy", "x-envoy",
+        Eva, "eva", "x-eva",
+        Bdf, "bdf", "x-font-bdf",
+        Gsf, "gsf", "x-font-ghostscript",
+        Psf, "psf", "x-font-linux-psf",
+        Otf, "otf", "x-font-otf",
+        Pcf, "pcf", "x-font-pcf",
+        Snf, "snf", "x-font-snf",
+        Ttf, "ttf", "x-font-ttf",
+        Pfa, "pfa", "x-font-type1",
+        Woff, "woff", "font-woff",
+        Arc, "arc", "x-freearc",
+        Spl, "spl", "x-futuresplash",
+        Gca, "gca", "x-gca-compressed",
+        Ulx, "ulx", "x-glulx",
+        Gnumeric, "gnumeric", "x-gnumeric",
+        Gramps, "gramps", "x-gramps-xml",
+        Gtar, "gtar", "x-gtar",
+        Hdf, "hdf", "x-hdf",
+        Install, "install", "x-install-instructions",
+        Iso, "iso", "x-iso9660-image",
+        Jnlp, "jnlp", "x-java-jnlp-file",
+        Latex, "latex", "x-latex",
+        Lzh, "lzh", "x-lzh-compressed",
+        Mie, "mie", "x-mie",
+        Prc, "prc", "x-mobipocket-ebook",
+        Application, "application", "x-ms-application",
+        Lnk, "lnk", "x-ms-shortcut",
+        Wmd, "wmd", "x-ms-wmd",
+        Wmz, "wmz", "x-ms-wmz",
+        Xbap, "xbap", "x-ms-xbap",
+        Mdb, "mdb", "x-msaccess",
+        Obd, "obd", "x-msbinder",
+        Crd, "crd", "x-mscardfile",
+        Clp, "clp", "x-msclip",
+        Exe, "exe", "x-msdownload",
+        Mvb, "mvb", "x-msmediaview",
+        Wmf, "wmf", "x-msmetafile",
+        Mny, "mny", "x-msmoney",
+        Pub, "pub", "x-mspublisher",
+        Scd, "scd", "x-msschedule",
+        Trm, "trm", "x-msterminal",
+        Wri, "wri", "x-mswrite",
+        Nc, "nc", "x-netcdf",
+        Nzb, "nzb", "x-nzb",
+        P12, "p12", "x-pkcs12",
+        P7b, "p7b", "x-pkcs7-certificates",
+        P7r, "p7r", "x-pkcs7-certreqresp",
+        Rar, "rar", "x-rar-compressed",
+        Ris, "ris", "x-research-info-systems",
+        Sh, "sh", "x-sh",
+        Shar, "shar", "x-shar",
+        Swf, "swf", "x-shockwave-flash",
+        Xap, "xap", "x-silverlight-app",
+        Sql, "sql", "x-sql",
+        Sit, "sit", "x-stuffit",
+        Sitx, "sitx", "x-stuffitx",
+        Srt, "srt", "x-subrip",
+        Sv4cpio, "sv4cpio", "x-sv4cpio",
+        Sv4crc, "sv4crc", "x-sv4crc",
+        T3, "t3", "x-t3vm-image",
+        Gam, "gam", "x-tads",
+        Tar, "tar", "x-tar",
+        Tcl, "tcl", "x-tcl",
+        Tex, "tex", "x-tex",
+        Tfm, "tfm", "x-tex-tfm",
+        Texinfo, "texinfo", "x-texinfo",
+        Obj, "obj", "x-tgif",
+        Ustar, "ustar", "x-ustar",
+        Src, "src", "x-wais-source",
+        Der, "der", "x-x509-ca-cert",
+        Fig, "fig", "x-xfig",
+        Xlf, "xlf", "x-xliff+xml",
+        Xpi, "xpi", "x-xpinstall",
+        Xz, "xz", "x-xz",
+        Z1, "z1", "x-zmachine",
+        Xaml, "xaml", "xaml+xml",
+        Xdf, "xdf", "xcap-diff+xml",
+        Xenc, "xenc", "xenc+xml",
+        Xhtml, "xhtml", "xhtml+xml",
+        Xml, "xml", "xml",
+        Dtd, "dtd", "xml-dtd",
+        Xop, "xop", "xop+xml",
+        Xpl, "xpl", "xproc+xml",
+        Xslt, "xslt", "xslt+xml",
+        Xspf, "xspf", "xspf+xml",
+        Mxml, "mxml", "xv+xml",
+        Yang, "yang", "yang",
+        Yin, "yin", "yin+xml",
+        Zip, "zip", "zip",
+
     }
-}
+
+    "audio" {
+
+        Adp, "adp", "adpcm",
+        Au, "au", "basic",
+        Mid, "mid", "midi",
+        Mp4a, "mp4a", "mp4",
+        Mpga, "mpga", "mpeg",
+        Oga, "oga", "ogg",
+        S3m, "s3m", "s3m",
+        Sil, "sil", "silk",
+        Uva, "uva", "vnd.dece.audio",
+        Eol, "eol", "vnd.digital-winds",
+        Dra, "dra", "vnd.dra",
+        Dts, "dts", "vnd.dts",
+        Dtshd, "dtshd", "vnd.dts.hd",
+        Lvp, "lvp", "vnd.lucent.voice",
+        Pya, "pya", "vnd.ms-playready.media.pya",
+        Ecelp4800, "ecelp4800", "vnd.nuera.ecelp4800",
+        Ecelp7470, "ecelp7470", "vnd.nuera.ecelp7470",
+        Ecelp9600, "ecelp9600", "vnd.nuera.ecelp9600",
+        Rip, "rip", "vnd.rip",
+        Weba, "weba", "webm",
+        Aac, "aac", "x-aac",
+        Aif, "aif", "x-aiff",
+        Caf, "caf", "x-caf",
+        Flac, "flac", "x-flac",
+        Mka, "mka", "x-matroska",
+        M3u, "m3u", "x-mpegurl",
+        Wax, "wax", "x-ms-wax",
+        Wma, "wma", "x-ms-wma",
+        Ram, "ram", "x-pn-realaudio",
+        Rmp, "rmp", "x-pn-realaudio-plugin",
+        Wav, "wav", "x-wav",
+        Xm, "xm", "xm",
+
+    }
+
+    "chemical" {
+
+        Cdx, "cdx", "x-cdx",
+        Cif, "cif", "x-cif",
+        Cmdf, "cmdf", "x-cmdf",
+        Cml, "cml", "x-cml",
+        Csml, "csml", "x-csml",
+        Xyz, "xyz", "x-xyz",
+
+    }
+
+    "image" {
+
+        Bmp, "bmp", "bmp",
+        Cgm, "cgm", "cgm",
+        G3, "g3", "g3fax",
+        Gif, "gif", "gif",
+        Ief, "ief", "ief",
+        Jpeg, "jpeg", "jpeg",
+        Ktx, "ktx", "ktx",
+        Png, "png", "png",
+        Btif, "btif", "prs.btif",
+        Sgi, "sgi", "sgi",
+        Svg, "svg", "svg+xml",
+        Tiff, "tiff", "tiff",
+        Psd, "psd", "vnd.adobe.photoshop",
+        Uvi, "uvi", "vnd.dece.graphic",
+        Sub, "sub", "vnd.dvb.subtitle",
+        Djvu, "djvu", "vnd.djvu",
+        Dwg, "dwg", "vnd.dwg",
+        Dxf, "dxf", "vnd.dxf",
+        Fbs, "fbs", "vnd.fastbidsheet",
+        Fpx, "fpx", "vnd.fpx",
+        Fst, "fst", "vnd.fst",
+        Mmr, "mmr", "vnd.fujixerox.edmics-mmr",
+        Rlc, "rlc", "vnd.fujixerox.edmics-rlc",
+        Mdi, "mdi", "vnd.ms-modi",
+        Wdp, "wdp", "vnd.ms-photo",
+        Npx, "npx", "vnd.net-fpx",
+        Wbmp, "wbmp", "vnd.wap.wbmp",
+        Xif, "xif", "vnd.xiff",
+        Webp, "webp", "webp",
+        Media3ds, "3ds", "x-3ds",
+        Ras, "ras", "x-cmu-raster",
+        Cmx, "cmx", "x-cmx",
+        Fh, "fh", "x-freehand",
+        Ico, "ico", "x-icon",
+        Sid, "sid", "x-mrsid-image",
+        Pcx, "pcx", "x-pcx",
+        Pic, "pic", "x-pict",
+        Pnm, "pnm", "x-portable-anymap",
+        Pbm, "pbm", "x-portable-bitmap",
+        Pgm, "pgm", "x-portable-graymap",
+        Ppm, "ppm", "x-portable-pixmap",
+        Rgb, "rgb", "x-rgb",
+        Tga, "tga", "x-tga",
+        Xbm, "xbm", "x-xbitmap",
+        Xpm, "xpm", "x-xpixmap",
+        Xwd, "xwd", "x-xwindowdump",
+
+    }
+
+    "message" {
+
+        Eml, "eml", "rfc822",
+
+    }
+
+    "model" {
+
+        Igs, "igs", "iges",
+        Msh, "msh", "mesh",
+        Dae, "dae", "vnd.collada+xml",
+        Dwf, "dwf", "vnd.dwf",
+        Gdl, "gdl", "vnd.gdl",
+        Gtw, "gtw", "vnd.gtw",
+        Mts, "mts", "vnd.mts",
+        Vtu, "vtu", "vnd.vtu",
+        Wrl, "wrl", "vrml",
+        X3db, "x3db", "x3d+binary",
+        X3dv, "x3dv", "x3d+vrml",
+        X3d, "x3d", "x3d+xml",
+
+    }
+
+    "text" {
+
+        Appcache, "appcache", "cache-manifest",
+        Ics, "ics", "calendar",
+        Css, "css", "css",
+        Csv, "csv", "csv",
+        Html, "html", "html",
+        N3, "n3", "n3",
+        Txt, "txt", "plain",
+        Dsc, "dsc", "prs.lines.tag",
+        Rtx, "rtx", "richtext",
+        Sgml, "sgml", "sgml",
+        Tsv, "tsv", "tab-separated-values",
+        T, "t", "troff",
+        Ttl, "ttl", "turtle",
+        Uri, "uri", "uri-list",
+        Vcard, "vcard", "vcard",
+        Curl, "curl", "vnd.curl",
+        Dcurl, "dcurl", "vnd.curl.dcurl",
+        Scurl, "scurl", "vnd.curl.scurl",
+        Mcurl, "mcurl", "vnd.curl.mcurl",
+        Fly, "fly", "vnd.fly",
+        Flx, "flx", "vnd.fmi.flexstor",
+        Gv, "gv", "vnd.graphviz",
+        Media3dml, "3dml", "vnd.in3d.3dml",
+        Spot, "spot", "vnd.in3d.spot",
+        Jad, "jad", "vnd.sun.j2me.app-descriptor",
+        Wml, "wml", "vnd.wap.wml",
+        Wmls, "wmls", "vnd.wap.wmlscript",
+        S, "s", "x-asm",
+        C, "c", "x-c",
+        F, "f", "x-fortran",
+        Java, "java", "x-java-source",
+        Opml, "opml", "x-opml",
+        P, "p", "x-pascal",
+        Nfo, "nfo", "x-nfo",
+        Etx, "etx", "x-setext",
+        Sfv, "sfv", "x-sfv",
+        Uu, "uu", "x-uuencode",
+        Vcs, "vcs", "x-vcalendar",
+        Vcf, "vcf", "x-vcard",
+
+    }
+
+    "video" {
+
+        Media3gp, "3gp", "3gpp",
+        Media3g2, "3g2", "3gpp2",
+        H261, "h261", "h261",
+        H263, "h263", "h263",
+        H264, "h264", "h264",
+        Jpgv, "jpgv", "jpeg",
+        Jpm, "jpm", "jpm",
+        Mj2, "mj2", "mj2",
+        Mp4, "mp4", "mp4",
+        Mpeg, "mpeg", "mpeg",
+        Ogv, "ogv", "ogg",
+        Qt, "qt", "quicktime",
+        Uvh, "uvh", "vnd.dece.hd",
+        Uvm, "uvm", "vnd.dece.mobile",
+        Uvp, "uvp", "vnd.dece.pd",
+        Uvs, "uvs", "vnd.dece.sd",
+        Uvv, "uvv", "vnd.dece.video",
+        Dvb, "dvb", "vnd.dvb.file",
+        Fvt, "fvt", "vnd.fvt",
+        Mxu, "mxu", "vnd.mpegurl",
+        Pyv, "pyv", "vnd.ms-playready.media.pyv",
+        Uvu, "uvu", "vnd.uvvu.mp4",
+        Viv, "viv", "vnd.vivo",
+        Webm, "webm", "webm",
+        F4v, "f4v", "x-f4v",
+        Fli, "fli", "x-fli",
+        Flv, "flv", "x-flv",
+        M4v, "m4v", "x-m4v",
+        Mkv, "mkv", "x-matroska",
+        Mng, "mng", "x-mng",
+        Asf, "asf", "x-ms-asf",
+        Vob, "vob", "x-ms-vob",
+        Wm, "wm", "x-ms-wm",
+        Wmv, "wmv", "x-ms-wmv",
+        Wmx, "wmx", "x-ms-wmx",
+        Wvx, "wvx", "x-ms-wvx",
+        Avi, "avi", "x-msvideo",
+        Movie, "movie", "x-sgi-movie",
+        Smv, "smv", "x-smv",
+
+    }
+
+    "x-conference" {
+
+        Ice, "ice", "x-cooltalk",
+
+    }
+)
