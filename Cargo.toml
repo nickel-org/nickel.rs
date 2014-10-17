@@ -53,3 +53,8 @@ path = "examples/example_template.rs"
 
 name = "macro_example"
 path = "examples/macro_example.rs"
+
+[[example]]
+
+name = "hello_world"
+path = "examples/hello_world.rs"
