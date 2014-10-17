@@ -10,6 +10,7 @@ use nickel::{
     Nickel, NickelError, ErrorWithStatusCode, Continue, Halt, Request, Response,
     QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter
 };
+use nickel::mimes;
 use std::io::net::ip::Ipv4Addr;
 
 #[deriving(Decodable, Encodable)]
@@ -31,7 +32,7 @@ fn logger(request: &Request, _response: &mut Response) -> MiddlewareResult {
 fn custom_404(err: &NickelError, _req: &Request, response: &mut Response) -> MiddlewareResult {
     match err.kind {
         ErrorWithStatusCode(status::NotFound) => {
-            response.content_type("html")
+            response.content_type(mimes::Html)
                     .status_code(status::NotFound)
                     .send("<h1>Call the police!<h1>");
             Ok(Halt)

@@ -5,7 +5,7 @@ use http::headers;
 use std::fmt::Show;
 use middleware::{MiddlewareResult, Halt};
 use serialize::json;
-use mimes::get_media_type;
+use mimes::{MediaType, Html, Json};
 
 /// Handles a HTTP request
 /// This is pre-implemented for any function which takes a
@@ -36,21 +36,21 @@ pub trait ResponseFinalizer {
 
 impl ResponseFinalizer for () {
     fn respond(self, res: &mut Response) -> MiddlewareResult {
-        maybe_set_type(res, "html");
+        maybe_set_type(res, Html);
         Ok(Halt)
     }
 }
 
 impl ResponseFinalizer for MiddlewareResult {
     fn respond(self, res: &mut Response) -> MiddlewareResult {
-        maybe_set_type(res, "html");
+        maybe_set_type(res, Html);
         self
     }
 }
 
 impl ResponseFinalizer for json::Json {
     fn respond(self, res: &mut Response) -> MiddlewareResult {
-        maybe_set_type(res, "json");
+        maybe_set_type(res, Json);
         res.send(json::encode(&self));
         Ok(Halt)
     }
@@ -58,7 +58,7 @@ impl ResponseFinalizer for json::Json {
 
 impl<'a, S: Show> ResponseFinalizer for &'a [S] {
     fn respond(self, res: &mut Response) -> MiddlewareResult {
-        maybe_set_type(res, "html");
+        maybe_set_type(res, Html);
         res.origin.status = status::Ok;
         for ref s in self.iter() {
             // FIXME : failure unhandled
@@ -83,7 +83,7 @@ macro_rules! dual_impl(
 dual_impl!(&'a str,
            String
             |self, res| {
-                maybe_set_type(res, "html");
+                maybe_set_type(res, Html);
                 res.origin.status = status::Ok;
                 res.send(self);
                 Ok(Halt)
@@ -92,7 +92,7 @@ dual_impl!(&'a str,
 dual_impl!((status::Status, &'a str),
            (status::Status, String)
             |self, res| {
-                maybe_set_type(res, "html");
+                maybe_set_type(res, Html);
                 let (status, data) = self;
                 res.origin.status = status;
                 res.send(data);
@@ -102,7 +102,7 @@ dual_impl!((status::Status, &'a str),
 dual_impl!((uint, &'a str),
            (uint, String)
            |self, res| {
-                maybe_set_type(res, "html");
+                maybe_set_type(res, Html);
                 let (status, data) = self;
                 match FromPrimitive::from_uint(status) {
                     Some(status) => {
@@ -124,13 +124,13 @@ dual_impl!((status::Status, &'a str, Vec<headers::response::Header>),
                 for header in headers.into_iter() {
                     res.origin.headers.insert(header);
                 }
-                maybe_set_type(res, "html");
+                maybe_set_type(res, Html);
                 res.send(data);
                 Ok(Halt)
             })
 
-fn maybe_set_type(res: &mut Response, ty: &str) {
+fn maybe_set_type(res: &mut Response, ty: MediaType) {
     if res.origin.headers.content_type.is_none() {
-        res.origin.headers.content_type = get_media_type(ty);
+        res.content_type(ty);
     }
 }

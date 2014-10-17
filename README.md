@@ -56,6 +56,7 @@ use nickel::{
     Nickel, NickelError, ErrorWithStatusCode, Continue, Halt, Request, Response,
     QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter
 };
+use nickel::mimes;
 use std::io::net::ip::Ipv4Addr;
 
 #[deriving(Decodable, Encodable)]
@@ -148,7 +149,7 @@ fn main() {
     fn custom_404(err: &NickelError, _req: &Request, response: &mut Response) -> MiddlewareResult {
         match err.kind {
             ErrorWithStatusCode(NotFound) => {
-                response.content_type("html")
+                response.content_type(mimes::Html)
                         .status_code(NotFound)
                         .send("<h1>Call the police!<h1>");
                 Ok(Halt)
@@ -172,7 +173,7 @@ Nickel is open source and licensed with the [MIT license](https://github.com/nic
 
 ##Contributing
 
-Nickel.rs is a community effort. We welcome new contributors with open arms. 
+Nickel.rs is a community effort. We welcome new contributors with open arms.
 There is list of [open issues](https://github.com/nickel-org/nickel/issues?state=open) right here on github.
 
 If you need a helping hand reach out to [@cburgdorf](https://github.com/cburgdorf), [@Ryman](https://github.com/Ryman) or [@SimonPersson](https://github.com/SimonPersson).
