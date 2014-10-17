@@ -86,9 +86,6 @@ impl<'a, 'b> Response<'a, 'b> {
 
         // we don't need to set this https://github.com/Ogeon/rustful/issues/3#issuecomment-44787613
         headers.content_length = None;
-        if headers.content_type.is_none() {
-            headers.content_type = get_media_type("txt");
-        }
 
         headers.server = Some(String::from_str("Nickel"));
     }
