@@ -2,17 +2,28 @@ extern crate serialize;
 extern crate nickel;
 extern crate http;
 
-use http::status::NotFound;
+use http::status::{NotFound, BadRequest};
 use nickel::{
     Nickel, NickelError, ErrorWithStatusCode, Continue, Halt, Request, Response,
     QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter
 };
 use std::io::net::ip::Ipv4Addr;
+use std::collections::treemap::TreeMap;
+use serialize::json::{Json, Object, ToJson};
 
 #[deriving(Decodable, Encodable)]
 struct Person {
     firstname: String,
     lastname:  String,
+}
+
+impl ToJson for Person {
+    fn to_json(&self) -> Json {
+        let mut map = TreeMap::new();
+        map.insert("first_name".to_string(), self.firstname.to_json());
+        map.insert("last_name".to_string(), self.lastname.to_json());
+        Object(map)
+    }
 }
 
 fn main() {
@@ -41,9 +52,8 @@ fn main() {
 
     let mut router = Nickel::router();
 
-    fn user_handler(request: &Request, response: &mut Response) {
-        let text = format!("This is user: {}", request.param("userid"));
-        response.send(text.as_slice());
+    fn user_handler(request: &Request, _response: &mut Response) -> String {
+        format!("This is user: {}", request.param("userid"))
     }
 
     // go to http://localhost:6767/user/4711 to see this route in action
@@ -63,8 +73,8 @@ fn main() {
     // go to http://localhost:6767/some/crazy/route to see this route in action
     router.get("/some/*/route", simple_wildcard);
 
-    fn double_wildcard(_request: &Request, response: &mut Response) {
-        response.send("This matches /a/crazy/route and also /a/super/crazy/route");
+    fn double_wildcard(_request: &Request, _response: &mut Response) -> &'static str {
+        "This matches /a/crazy/route and also /a/super/crazy/route"
     }
 
     // go to http://localhost:6767/a/nice/route or http://localhost:6767/a/super/nice/route to see this route in action
@@ -72,23 +82,44 @@ fn main() {
 
     // try it with curl
     // curl 'http://localhost:6767/a/post/request' -H 'Content-Type: application/json;charset=UTF-8'  --data-binary $'{ "firstname": "John","lastname": "Connor" }'
-    fn post_handler(request: &Request, response: &mut Response) {
-
+    fn post_handler(request: &Request, _response: &mut Response) -> String {
         let person = request.json_as::<Person>().unwrap();
-        let text = format!("Hello {} {}", person.firstname, person.lastname);
-        response.send(text.as_slice());
+        format!("Hello {} {}", person.firstname, person.lastname)
     }
 
     // go to http://localhost:6767/a/post/request to see this route in action
     router.post("/a/post/request", post_handler);
 
+    fn json_response(_request: &Request, _response: &mut Response) -> Json {
+        let person = Person {
+            firstname: "Pea".to_string(),
+            lastname: "Nut".to_string()
+        };
+        person.to_json()
+    }
+
+    // go to http://localhost:6767/api/person/1 to see this route in action
+    router.get("/api/person/1", json_response);
+
     // try calling http://localhost:6767/query?foo=bar
-    fn query_handler(request: &Request, response: &mut Response) {
-        let text = format!("Your foo values in the query string are: {}", request.query("foo", "This is only a default value!"));
-        response.send(text.as_slice());
+    fn query_handler(request: &Request, _response: &mut Response) -> String {
+        format!("Your foo values in the query string are: {}", request.query("foo", "This is only a default value!"))
     }
 
     router.get("/query", query_handler);
+
+    // try calling http://localhost:6767/strict?state=valid
+    // then try calling http://localhost:6767/strict?state=invalid
+    fn strict_handler(request: &Request, response: &mut Response) -> MiddlewareResult {
+        if request.query("state", "invalid")[0].as_slice() != "valid" {
+            Err(NickelError::new("Error Parsing JSON", ErrorWithStatusCode(BadRequest)))
+        } else {
+            response.send("Congratulations on conforming!");
+            Ok(Halt)
+        }
+    }
+
+    router.get("/strict", strict_handler);
 
     server.utilize(router);
 
