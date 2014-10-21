@@ -1,3 +1,4 @@
+use std::str;
 use serialize::json;
 use serialize::Decodable;
 use serialize::json::{ Json, Decoder, DecoderError};
@@ -14,7 +15,7 @@ pub struct JsonBodyParser;
 impl Middleware for JsonBodyParser {
     fn invoke(&self, req: &mut Request, _res: &mut Response) -> MiddlewareResult {
         if !req.origin.body.is_empty() {
-            match json::from_str(req.origin.body.as_slice()) {
+            match json::from_str(str::from_utf8(req.origin.body.as_slice()).unwrap()) {
                 Ok(parsed) => {
                     req.map.insert(parsed);
                     return Ok(Continue);
