@@ -2,10 +2,10 @@
 pub use self::http_router::HttpRouter;
 pub use self::request_handler::{RequestHandler, ResponseFinalizer};
 pub use self::router::{Router, Route, RouteResult};
-mod http_router;
-mod request_handler;
+pub mod http_router;
+pub mod request_handler;
 
-mod router;
+pub mod router;
 
 /// The path_utils collects some small helper methods that operate on the path
 mod path_utils {
