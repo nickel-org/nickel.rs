@@ -24,7 +24,8 @@ pub struct Nickel{
 impl HttpRouter for Nickel {
     fn add_route<H: RequestHandler>(&mut self, method: Method, uri: &str, handler: H) {
         let mut router = Router::new();
-        router.add_route(method, uri, handler);
+        // FIXME: Inference failure in nightly 22/10/2014
+        router.add_route::<H>(method, uri, handler);
         self.utilize(router);
     }
 }
