@@ -1,5 +1,3 @@
-extern crate mustache;
-
 use std::io::net::ip::{SocketAddr, IpAddr, Port};
 use std::sync::{Arc, RWLock};
 use std::collections::HashMap;
@@ -10,6 +8,7 @@ use http::server::Server as HttpServer;
 use middleware::MiddlewareStack;
 use request;
 use response;
+use mustache;
 
 pub struct Server {
     middleware_stack: MiddlewareStack,
