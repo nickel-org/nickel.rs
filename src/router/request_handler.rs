@@ -111,7 +111,7 @@ dual_impl!((uint, &'a str),
                         Ok(Halt)
                     }
                     // This is a logic error
-                    None => fail!("Bad status code")
+                    None => panic!("Bad status code")
                 }
             })
 
