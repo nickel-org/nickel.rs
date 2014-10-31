@@ -22,10 +22,17 @@ pub struct Nickel{
 }
 
 impl HttpRouter for Nickel {
-    fn add_route<H: RequestHandler>(&mut self, method: Method, uri: &str, handler: H) {
+    fn add_route<H: RequestHandler<()>>(&mut self, method: Method, uri: &str, handler: H) {
         let mut router = Router::new();
         // FIXME: Inference failure in nightly 22/10/2014
         router.add_route::<H>(method, uri, handler);
+        self.utilize(router);
+    }
+    
+    fn add_route_with_data<T: Send + Sync, H: RequestHandler<T>>(&mut self, method: Method, uri: &str, handler: H, route_data: T) {
+        let mut router = Router::new();
+        // FIXME: Inference failure in nightly 22/10/2014
+        router.add_route_with_data::<T, H>(method, uri, handler, route_data);
         self.utilize(router);
     }
 }

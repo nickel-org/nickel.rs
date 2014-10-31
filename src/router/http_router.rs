@@ -28,7 +28,8 @@ pub trait HttpRouter {
     ///     server.add_route(Delete, "/foo", modify_handler);
     /// }
     /// ```
-    fn add_route<H: RequestHandler>(&mut self, Method, &str, H);
+    fn add_route<H: RequestHandler<()>>(&mut self, Method, &str, H);
+    fn add_route_with_data<T: Send + Sync, H: RequestHandler<T>>(&mut self, Method, &str, H, T);
 
     /// Registers a handler to be used for a specific GET request.
     /// Handlers are assigned to paths and paths are allowed to contain
@@ -105,8 +106,11 @@ pub trait HttpRouter {
     ///     server.utilize(router);
     /// }
     /// ```
-    fn get<H: RequestHandler>(&mut self, uri: &str, handler: H) {
+    fn get<H: RequestHandler<()>>(&mut self, uri: &str, handler: H) {
         self.add_route(Get, uri, handler);
+    }
+    fn get_with_data<T: Send + Sync, H: RequestHandler<T>>(&mut self, uri: &str, handler: H, route_data: T) {
+        self.add_route_with_data(Get, uri, handler, route_data);
     }
 
     /// Registers a handler to be used for a specific POST request.
@@ -125,8 +129,11 @@ pub trait HttpRouter {
     /// let mut server = Nickel::new();
     /// server.post("/a/post/request", handler);
     /// ```
-    fn post<H: RequestHandler>(&mut self, uri: &str, handler: H) {
+    fn post<H: RequestHandler<()>>(&mut self, uri: &str, handler: H) {
         self.add_route(Post, uri, handler);
+    }
+    fn post_with_data<T: Send + Sync, H: RequestHandler<T>>(&mut self, uri: &str, handler: H, route_data: T) {
+        self.add_route_with_data(Post, uri, handler, route_data);
     }
 
     /// Registers a handler to be used for a specific PUT request.
@@ -145,8 +152,11 @@ pub trait HttpRouter {
     /// let mut server = Nickel::new();
     /// server.put("/a/put/request", handler);
     /// ```
-    fn put<H: RequestHandler>(&mut self, uri: &str, handler: H) {
+    fn put<H: RequestHandler<()>>(&mut self, uri: &str, handler: H) {
         self.add_route(Put, uri, handler);
+    }
+    fn put_with_data<T: Send + Sync, H: RequestHandler<T>>(&mut self, uri: &str, handler: H, route_data: T) {
+        self.add_route_with_data(Put, uri, handler, route_data);
     }
 
     /// Registers a handler to be used for a specific DELETE request.
@@ -165,7 +175,10 @@ pub trait HttpRouter {
     /// let mut server = Nickel::new();
     /// server.delete("/a/delete/request", handler);
     /// ```
-    fn delete<H: RequestHandler>(&mut self, uri: &str, handler: H) {
+    fn delete<H: RequestHandler<()>>(&mut self, uri: &str, handler: H) {
         self.add_route(Delete, uri, handler);
+    }
+    fn delete_with_data<T: Send + Sync, H: RequestHandler<T>>(&mut self, uri: &str, handler: H, route_data: T) {
+        self.add_route_with_data(Delete, uri, handler, route_data);
     }
 }

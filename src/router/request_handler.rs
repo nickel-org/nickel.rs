@@ -13,16 +13,25 @@ use mimes::get_media_type;
 /// implementing the `ResponseFinalizer` trait.
 ///
 /// Please see the examples for usage.
-pub trait RequestHandler : Sync + Send {
-    fn handle(&self, &Request, &mut Response) -> MiddlewareResult;
+pub trait RequestHandler<T: Send + Sync> : Sync + Send {
+    fn handle(&self, &Request, &mut Response, &T) -> MiddlewareResult;
 }
 
-impl<R> RequestHandler for fn(request: &Request, response: &mut Response) -> R
+impl<R, T: Send + Sync> RequestHandler<T> for fn(request: &Request, response: &mut Response) -> R
         where R: ResponseFinalizer {
-    fn handle(&self, req: &Request, res: &mut Response) -> MiddlewareResult {
+    fn handle(&self, req: &Request, res: &mut Response, _: &T) -> MiddlewareResult {
         let r = (*self)(req, res);
         r.respond(res)
     }
+}
+
+impl<R, T: Send + Sync> RequestHandler<T> for fn(request: &Request, response: &mut Response, route_data: &T) -> R
+        where R: ResponseFinalizer {
+    fn handle(&self, req: &Request, res: &mut Response, route_data: &T) -> MiddlewareResult {
+        let r = (*self)(req, res, route_data);
+        r.respond(res)
+    }
+
 }
 
 /// This trait provides convenience for translating a number
