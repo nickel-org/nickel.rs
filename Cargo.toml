@@ -23,7 +23,7 @@ git = "https://github.com/servo/rust-url.git"
 
 [dependencies.rust-mustache]
 
-git = "https://github.com/Ryman/rust-mustache.git"
+git = "https://github.com/SimonPersson/rust-mustache.git"
 
 [dependencies.groupable]
 
