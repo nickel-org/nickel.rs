@@ -14,7 +14,7 @@ macro_rules! router (
 
             $(
                 {
-                    #[allow(unused_variable)]
+                    #[allow(unused_variables)]
                     fn f($req: &nickel::Request, $res: &mut nickel::Response) -> MiddlewareResult {
                         restrict($b, $res)
                     }

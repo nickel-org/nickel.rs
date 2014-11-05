@@ -1,4 +1,4 @@
-use std::collections::hashmap::HashMap;
+use std::collections::HashMap;
 use url::form_urlencoded;
 use groupable::Groupable;
 

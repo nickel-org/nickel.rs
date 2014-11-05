@@ -6,7 +6,7 @@ use response::Response;
 use router::{HttpRouter, RequestHandler};
 use http::method::Method;
 use regex::Regex;
-use std::collections::hashmap::HashMap;
+use std::collections::HashMap;
 
 /// A Route is the basic data structure that stores both the path
 /// and the handler that gets executed for the route.

@@ -1,4 +1,4 @@
-use std::collections::hashmap::HashMap;
+use std::collections::HashMap;
 use request::Request;
 use middleware::{Continue, Middleware, MiddlewareResult};
 use request;
