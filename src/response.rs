@@ -1,6 +1,6 @@
 use std::sync::RWLock;
 use std::collections::HashMap;
-use std::collections::hashmap::{Occupied, Vacant};
+use std::collections::hash_map::{Occupied, Vacant};
 use std::io::{IoResult, File};
 use std::io::util::copy;
 use std::path::BytesContainer;
@@ -114,7 +114,7 @@ impl<'a, 'b> Response<'a, 'b> {
     /// # Example
     /// ```{rust}
     /// # use nickel::{Request, Response};
-    /// # use std::collections::hashmap::HashMap;
+    /// # use std::collections::HashMap;
     /// fn handler(request: &Request, response: &mut Response) {
     ///     let mut data = HashMap::new();
     ///     data.insert("name", "user");
