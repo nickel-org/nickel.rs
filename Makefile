@@ -17,7 +17,7 @@ clean:
 	cargo clean
 
 run: 
-	./target/example
+	./target/examples/example
 
 buildrun: examples run
 

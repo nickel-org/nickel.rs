@@ -8,7 +8,7 @@ use nickel::{
     QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter
 };
 use std::io::net::ip::Ipv4Addr;
-use std::collections::treemap::TreeMap;
+use std::collections::TreeMap;
 use serialize::json::{Json, Object, ToJson};
 
 #[deriving(Decodable, Encodable)]

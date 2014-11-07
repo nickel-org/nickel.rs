@@ -10,7 +10,7 @@ pub mod router;
 /// The path_utils collects some small helper methods that operate on the path
 mod path_utils {
     use regex::Regex;
-    use std::collections::hashmap::HashMap;
+    use std::collections::HashMap;
 
     // matches named variables (e.g. :userid)
     static REGEX_VAR_SEQ: Regex                 = regex!(r":([,a-zA-Z0-9_-]*)");
