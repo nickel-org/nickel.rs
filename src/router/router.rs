@@ -8,13 +8,38 @@ use http::method::Method;
 use regex::Regex;
 use std::collections::HashMap;
 
+pub trait RouteHandler {
+    fn handle(&self, &Request, &mut Response) -> MiddlewareResult;
+}
+
+struct RouteHandlerWithData<T: Send + Sync> {
+    handler: Box<RequestHandler<T> + Send + Sync>,
+    data: T
+}
+
+struct RouteHandlerWithoutData {
+    handler: Box<RequestHandler<()> + Send + Sync>,
+}
+
+impl<T: Send + Sync> RouteHandler for RouteHandlerWithData<T> {
+    fn handle(&self, req: &Request, res: &mut Response) -> MiddlewareResult {
+        self.handler.handle(req, res, &self.data)
+    }
+}
+
+impl RouteHandler for RouteHandlerWithoutData {
+    fn handle(&self, req: &Request, res: &mut Response) -> MiddlewareResult {
+        self.handler.handle(req, res, &{})
+    }
+}
+
 /// A Route is the basic data structure that stores both the path
 /// and the handler that gets executed for the route.
 /// The path can contain variable pattern such as `user/:userid/invoices`
 pub struct Route {
     pub path: String,
     pub method: Method,
-    pub handler: Box<RequestHandler + Send + Sync + 'static>,
+    pub handler: Box<RouteHandler + Sized + Sync + Send + 'static>,
     pub variables: HashMap<String, uint>,
     matcher: Regex
 }
@@ -39,6 +64,9 @@ impl<'a> RouteResult<'a> {
 /// concrete URLs. The router is also a regular middleware and needs to be
 /// added to the middleware stack with `server.utilize(router)`.
 pub struct Router{
+    //for some reason we have to give the compiler some help
+    //with the traits here, even though RouteTrait should imply
+    //Sned + Sync. Looks like https://github.com/rust-lang/rust/issues/15155
     routes: Vec<Route>,
 }
 
@@ -69,14 +97,27 @@ impl<'a> Router {
 }
 
 impl HttpRouter for Router {
-    fn add_route<H: RequestHandler>(&mut self, method: Method, path: &str, handler: H) {
+    fn add_route<H: RequestHandler<()>>(&mut self, method: Method, path: &str, handler: H) {
         let matcher = path_utils::create_regex(path);
         let variable_infos = path_utils::get_variable_info(path);
         let route = Route {
             path: path.to_string(),
             method: method,
             matcher: matcher,
-            handler: box handler,
+            handler: box RouteHandlerWithoutData{handler: box handler},
+            variables: variable_infos
+        };
+        self.routes.push(route);
+    }
+  
+    fn add_route_with_data<T: Send + Sync, H: RequestHandler<T>>(&mut self, method: Method, path: &str, handler: H, route_data: T) {
+        let matcher = path_utils::create_regex(path);
+        let variable_infos = path_utils::get_variable_info(path);
+        let route = Route {
+            path: path.to_string(),
+            method: method,
+            matcher: matcher,
+            handler: box RouteHandlerWithData{handler: box handler, data: route_data},
             variables: variable_infos
         };
         self.routes.push(route);
@@ -91,9 +132,9 @@ impl Middleware for Router {
                 match self.match_route(&req.origin.method, url.as_slice()) {
                     Some(route_result) => {
                         res.origin.status = ::http::status::Ok;
-                        let handler = &route_result.route.handler;
+                        let route = route_result.route;
                         req.route_result = Some(route_result);
-                        handler.handle(req, res)
+                        route.handler.handle(req, res)
                     },
                     None => Ok(Continue)
                 }
