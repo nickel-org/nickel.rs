@@ -41,7 +41,7 @@ impl<'a, 'b> JsonBody for request::Request<'a, 'b> {
         // DecodeResult<T> to not swallow valuable debugging information.
         // I couldn't figure out how to properly do that
 
-        self.map.find::<Json>()
+        self.map.get::<Json>()
                 .and_then(| parsed | {
                     match ::serialize::json::decode::<T>(parsed.to_string().as_slice()) {
                         Ok(e) => Some(e),

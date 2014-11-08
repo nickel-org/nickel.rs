@@ -127,7 +127,7 @@ impl<'a, 'b> Response<'a, 'b> {
     pub fn render<'a, T: Encodable<Encoder<'a>, Error>>
         (&mut self, path: &'static str, data: &T) {
             // Fast path doesn't need writer lock
-            match self.templates.read().find(&path) {
+            match self.templates.read().get(&path) {
                 Some(t) => {
                     let _ = t.render(self.origin, data);
                     return
