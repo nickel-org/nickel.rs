@@ -1,5 +1,5 @@
 use http::headers::content_type;
-use std::from_str::FromStr;
+use std::str::FromStr;
 
 macro_rules! mimes(
     ($($t:expr { $($name:ident, $as_s:pat, $subt:expr,)+ })+) => (
@@ -17,7 +17,7 @@ macro_rules! mimes(
             let (ty, subty) = match ty {
                 $(
                     $(
-                        $name => ($t, $subt)
+                        MediaType::$name => ($t, $subt)
                     ),*
                 ),*
             };
@@ -34,7 +34,7 @@ macro_rules! mimes(
                 match s {
                     $(
                         $(
-                            $as_s => Some($name)
+                            $as_s => Some(MediaType::$name)
                         ),*
                     ),*,
                     _ => None

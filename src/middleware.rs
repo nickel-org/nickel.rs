@@ -2,6 +2,8 @@ use request::Request;
 use response::Response;
 use nickel_error::NickelError;
 
+pub use self::Action::{Continue, Halt};
+
 pub type MiddlewareResult = Result<Action, NickelError>;
 
 #[deriving(PartialEq)]

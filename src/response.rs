@@ -161,7 +161,7 @@ fn matches_content_type () {
     let path = &Path::new("test.txt");
     let content_type = path.extension_str().and_then(from_str);
 
-    assert_eq!(content_type, Some(mimes::Txt));
+    assert_eq!(content_type, Some(mimes::MediaType::Txt));
     let content_type = content_type.map(mimes::get_media_type).unwrap();
 
     assert_eq!(content_type.type_.as_slice(), "text");
