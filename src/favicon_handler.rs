@@ -8,7 +8,7 @@ use request;
 use response;
 use middleware::{Action, Halt, Continue, Middleware};
 use nickel_error::NickelError;
-use mimes::Ico;
+use mimes::MediaType;
 
 pub struct FaviconHandler {
     icon: Vec<u8>,
@@ -75,7 +75,7 @@ impl FaviconHandler {
 
     pub fn send_favicon (&self, req: &request::Request, res: &mut response::Response) {
         debug!("{} {}", req.origin.method, self.icon_path.display());
-        res.content_type(Ico);
+        res.content_type(MediaType::Ico);
         res.send(self.icon.as_slice());
     }
 }

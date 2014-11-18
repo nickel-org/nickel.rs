@@ -33,6 +33,10 @@ git = "https://github.com/nickel-org/groupable-rs"
 
 path = "nickel_macros"
 
+[dependencies.time]
+
+git = "https://github.com/rust-lang/time"
+
 [[example]]
 
 name = "example"

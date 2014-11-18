@@ -1,6 +1,8 @@
 use std::str::SendStr;
 use http::status::Status;
 
+pub use self::NickelErrorKind::{ErrorWithStatusCode, UserDefinedError, Other};
+
 /// NickelError is the basic error type for HTTP errors as well as user defined errors.
 /// One can pattern match against the `kind` property to handle the different cases.
 
