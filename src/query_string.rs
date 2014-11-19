@@ -54,7 +54,7 @@ pub trait QueryString {
 impl<'a, 'b> QueryString for request::Request<'a, 'b> {
     fn query(&self, key: &str, default: &str) -> Vec<String> {
         self.map.get::<QueryStore>().and_then(| store | {
-            match store.find_copy(&key.to_string()) {
+            match store.get(key).cloned() {
                 Some(result) => Some(result),
                 _ => Some(vec![default.to_string().clone()])
             }

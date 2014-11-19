@@ -30,7 +30,7 @@ pub struct RouteResult<'a> {
 
 impl<'a> RouteResult<'a> {
     pub fn param(&self, key: &str) -> &str {
-        let idx = self.route.variables.find_equiv(key).unwrap();
+        let idx = self.route.variables.get(key).unwrap();
         self.params[*idx].as_slice()
     }
 }
