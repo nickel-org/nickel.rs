@@ -10,7 +10,12 @@ use mimes::MediaType;
 /// Handles a HTTP request
 /// This is pre-implemented for any function which takes a
 /// `Request` and `Response` parameter and returns anything
-/// implementing the `ResponseFinalizer` trait.
+/// implementing the `ResponseFinalizer` trait. It is also 
+/// implemented for a tuple of a function and a type `T`.
+/// The function must take a `Request`, a `Response` and a 
+/// `T`, returning anything that implements `ResponseFinalizer`.
+/// The data of type `T` will then be shared and available
+/// in any request.
 ///
 /// Please see the examples for usage.
 pub trait RequestHandler : Sync + Send {
@@ -21,6 +26,14 @@ impl<R> RequestHandler for fn(request: &Request, response: &mut Response) -> R
         where R: ResponseFinalizer {
     fn handle(&self, req: &Request, res: &mut Response) -> MiddlewareResult {
         let r = (*self)(req, res);
+        r.respond(res)
+    }
+}
+
+impl<T: Send + Sync, R: ResponseFinalizer + 'static> RequestHandler for (fn(&Request, &mut Response, &T) -> R, T) {
+    fn handle(&self, req: &Request, res: &mut Response) -> MiddlewareResult {
+        let (f, ref data) = *self;
+        let r = f(req, res, data);
         r.respond(res)
     }
 }
