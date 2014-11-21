@@ -1,9 +1,6 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 use request::Request;
-use middleware::{Continue, Middleware, MiddlewareResult};
-use request;
-use response;
 use urlencoded;
 use http::server::request::RequestUri;
 use http::server::request::RequestUri::{Star, AbsoluteUri, AbsolutePath, Authority};
