@@ -47,12 +47,6 @@ fn main() {
     // middleware is optional and can be registered with `utilize`
     server.utilize(logger);
 
-    // this will cause json bodies automatically being parsed
-    server.utilize(Nickel::json_body_parser());
-
-    // this will cause the query string to be parsed on each request
-    server.utilize(Nickel::query_string());
-
     // go to http://localhost:6767/thoughtram_logo_brain.png to see static file serving in action
     server.utilize(StaticFilesHandler::new("examples/assets/"));
 

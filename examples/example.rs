@@ -45,12 +45,6 @@ fn main() {
     // middleware is optional and can be registered with `utilize`
     server.utilize(logger);
 
-    // this will cause json bodies automatically being parsed
-    server.utilize(Nickel::json_body_parser());
-
-    // this will cause the query string to be parsed on each request
-    server.utilize(Nickel::query_string());
-
     let mut router = Nickel::router();
 
     fn user_handler(request: &Request, _response: &mut Response) -> String {
@@ -83,7 +77,7 @@ fn main() {
 
     // try it with curl
     // curl 'http://localhost:6767/a/post/request' -H 'Content-Type: application/json;charset=UTF-8'  --data-binary $'{ "firstname": "John","lastname": "Connor" }'
-    fn post_handler(request: &Request, _response: &mut Response) -> String {
+    fn post_handler(request: &mut Request, _response: &mut Response) -> String {
         let person = request.json_as::<Person>().unwrap();
         format!("Hello {} {}", person.firstname, person.lastname)
     }
@@ -103,7 +97,7 @@ fn main() {
     router.get("/api/person/1", json_response);
 
     // try calling http://localhost:6767/query?foo=bar
-    fn query_handler(request: &Request, _response: &mut Response) -> String {
+    fn query_handler(request: &mut Request, _response: &mut Response) -> String {
         format!("Your foo values in the query string are: {}", request.query("foo", "This is only a default value!"))
     }
 
@@ -111,7 +105,7 @@ fn main() {
 
     // try calling http://localhost:6767/strict?state=valid
     // then try calling http://localhost:6767/strict?state=invalid
-    fn strict_handler(request: &Request, response: &mut Response) -> MiddlewareResult {
+    fn strict_handler(request: &mut Request, response: &mut Response) -> MiddlewareResult {
         if request.query("state", "invalid")[0].as_slice() != "valid" {
             Err(NickelError::new("Error Parsing JSON", ErrorWithStatusCode(BadRequest)))
         } else {

@@ -7,11 +7,34 @@ use urlencoded;
 use http::server::request::RequestUri;
 use http::server::request::RequestUri::{Star, AbsoluteUri, AbsolutePath, Authority};
 use url::UrlParser;
+use plugin::{Phantom, PluginFor, GetCached};
+use typemap::Assoc;
 
 type QueryStore = HashMap<String, Vec<String>>;
 
-#[deriving(Clone)]
-pub struct QueryStringParser;
+// Plugin boilerplate
+struct QueryStringParser;
+impl Assoc<QueryStore> for QueryStringParser {}
+impl<'a, 'b> PluginFor<Request<'a, 'b>, QueryStore> for QueryStringParser {
+    fn eval(req: &mut Request, _: Phantom<QueryStringParser>) -> Option<QueryStore> {
+        Some(QueryStringParser::parse(&req.origin.request_uri))
+    }
+}
+
+pub trait QueryString {
+    fn query(&mut self, key: &str, default: &str) -> Vec<String>;
+}
+
+impl<'a, 'b> QueryString for Request<'a, 'b> {
+    fn query(&mut self, key: &str, default: &str) -> Vec<String> {
+        self.get_ref::<QueryStringParser>().and_then(|store| {
+            match store.get(key).cloned() {
+                Some(result) => Some(result),
+                _ => Some(vec![default.to_string().clone()])
+            }
+        }).expect("Bug: QueryStringParser returned None")
+    }
+}
 
 impl QueryStringParser {
     fn parse(origin: &RequestUri) -> QueryStore {
@@ -36,31 +59,6 @@ impl QueryStringParser {
         }
 
         HashMap::new()
-    }
-}
-
-impl Middleware for QueryStringParser {
-    fn invoke(&self, req: &mut request::Request, _: &mut response::Response)
-                -> MiddlewareResult {
-        let parsed = QueryStringParser::parse(&req.origin.request_uri);
-        req.map.insert(parsed);
-        Ok(Continue)
-    }
-}
-
-pub trait QueryString {
-    fn query(&self, key: &str, default: &str) -> Vec<String>;
-}
-
-impl<'a, 'b> QueryString for request::Request<'a, 'b> {
-    fn query(&self, key: &str, default: &str) -> Vec<String> {
-        self.map.get::<QueryStore>().and_then(| store | {
-            match store.get(key).cloned() {
-                Some(result) => Some(result),
-                _ => Some(vec![default.to_string().clone()])
-            }
-        }).expect("QueryStore not available. Ensure the middleware \
-                  is added before the route that depends on it.")
     }
 }
 

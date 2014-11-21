@@ -37,6 +37,14 @@ path = "nickel_macros"
 
 git = "https://github.com/rust-lang/time"
 
+[dependencies.typemap]
+
+version = "*"
+
+[dependencies.plugin]
+
+git = "https://github.com/reem/rust-plugin"
+
 [[example]]
 
 name = "example"
