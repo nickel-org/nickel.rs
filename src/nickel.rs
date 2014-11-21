@@ -1,6 +1,6 @@
 use std::io::net::ip::{Port, IpAddr};
 
-use router::{Router, RequestHandler, HttpRouter};
+use router::{Router, HttpRouter};
 use middleware::{MiddlewareStack, Middleware, ErrorHandler, MiddlewareResult};
 use nickel_error::{ NickelError, ErrorWithStatusCode };
 use server::Server;
@@ -22,7 +22,7 @@ pub struct Nickel{
 }
 
 impl HttpRouter for Nickel {
-    fn add_route<H: RequestHandler>(&mut self, method: Method, uri: &str, handler: H) {
+    fn add_route<H: Middleware>(&mut self, method: Method, uri: &str, handler: H) {
         let mut router = Router::new();
         // FIXME: Inference failure in nightly 22/10/2014
         router.add_route::<H>(method, uri, handler);

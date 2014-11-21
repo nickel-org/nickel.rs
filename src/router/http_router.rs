@@ -1,5 +1,5 @@
-use http::method::{ Method, Get, Post, Put, Delete };
-use router::RequestHandler;
+use http::method::{Method, Get, Post, Put, Delete};
+use middleware::Middleware;
 
 pub trait HttpRouter {
     /// Registers a handler to be used for a specified method.
@@ -28,7 +28,7 @@ pub trait HttpRouter {
     ///     server.add_route(Delete, "/foo", modify_handler);
     /// }
     /// ```
-    fn add_route<H: RequestHandler>(&mut self, Method, &str, H);
+    fn add_route<H: Middleware>(&mut self, Method, &str, H);
 
     /// Registers a handler to be used for a specific GET request.
     /// Handlers are assigned to paths and paths are allowed to contain
@@ -105,7 +105,7 @@ pub trait HttpRouter {
     ///     server.utilize(router);
     /// }
     /// ```
-    fn get<H: RequestHandler>(&mut self, uri: &str, handler: H) {
+    fn get<H: Middleware>(&mut self, uri: &str, handler: H) {
         self.add_route(Get, uri, handler);
     }
 
@@ -125,7 +125,7 @@ pub trait HttpRouter {
     /// let mut server = Nickel::new();
     /// server.post("/a/post/request", handler);
     /// ```
-    fn post<H: RequestHandler>(&mut self, uri: &str, handler: H) {
+    fn post<H: Middleware>(&mut self, uri: &str, handler: H) {
         self.add_route(Post, uri, handler);
     }
 
@@ -145,7 +145,7 @@ pub trait HttpRouter {
     /// let mut server = Nickel::new();
     /// server.put("/a/put/request", handler);
     /// ```
-    fn put<H: RequestHandler>(&mut self, uri: &str, handler: H) {
+    fn put<H: Middleware>(&mut self, uri: &str, handler: H) {
         self.add_route(Put, uri, handler);
     }
 
@@ -165,7 +165,7 @@ pub trait HttpRouter {
     /// let mut server = Nickel::new();
     /// server.delete("/a/delete/request", handler);
     /// ```
-    fn delete<H: RequestHandler>(&mut self, uri: &str, handler: H) {
+    fn delete<H: Middleware>(&mut self, uri: &str, handler: H) {
         self.add_route(Delete, uri, handler);
     }
 }

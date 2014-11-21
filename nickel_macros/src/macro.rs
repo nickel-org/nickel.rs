@@ -5,7 +5,7 @@ macro_rules! router (
     ($($method:ident $path:expr => |$req:ident, $res:ident| $b:block)+) => (
         {
             use nickel::{HttpRouter, MiddlewareResult};
-            use nickel::router::ResponseFinalizer;
+            use nickel::ResponseFinalizer;
             let mut router = nickel::Router::new();
             #[inline(always)]
             fn restrict<R: ResponseFinalizer>(r: R, res: &mut nickel::Response) -> MiddlewareResult {

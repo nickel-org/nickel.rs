@@ -3,7 +3,7 @@ use super::path_utils;
 use http::server::request::RequestUri::AbsolutePath;
 use request::Request;
 use response::Response;
-use router::{HttpRouter, RequestHandler};
+use router::HttpRouter;
 use http::method::Method;
 use regex::Regex;
 use std::collections::HashMap;
@@ -14,7 +14,7 @@ use std::collections::HashMap;
 pub struct Route {
     pub path: String,
     pub method: Method,
-    pub handler: Box<RequestHandler + Send + Sync + 'static>,
+    pub handler: Box<Middleware + Send + Sync + 'static>,
     pub variables: HashMap<String, uint>,
     matcher: Regex
 }
@@ -69,7 +69,7 @@ impl<'a> Router {
 }
 
 impl HttpRouter for Router {
-    fn add_route<H: RequestHandler>(&mut self, method: Method, path: &str, handler: H) {
+    fn add_route<H: Middleware>(&mut self, method: Method, path: &str, handler: H) {
         let matcher = path_utils::create_regex(path);
         let variable_infos = path_utils::get_variable_info(path);
         let route = Route {
@@ -93,7 +93,7 @@ impl Middleware for Router {
                         res.origin.status = ::http::status::Ok;
                         let handler = &route_result.route.handler;
                         req.route_result = Some(route_result);
-                        handler.handle(req, res)
+                        handler.invoke(req, res)
                     },
                     None => Ok(Continue)
                 }

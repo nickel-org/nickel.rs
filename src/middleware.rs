@@ -1,7 +1,6 @@
 use request::Request;
 use response::Response;
 use nickel_error::NickelError;
-
 pub use self::Action::{Continue, Halt};
 
 pub type MiddlewareResult = Result<Action, NickelError>;
@@ -23,12 +22,6 @@ pub trait Middleware: Send + Sync {
 pub trait ErrorHandler: Send + Sync {
     fn invoke(&self, _err: &NickelError, _req: &mut Request, _res: &mut Response) -> MiddlewareResult {
         Ok(Continue)
-    }
-}
-
-impl Middleware for fn(&Request, &mut Response) -> MiddlewareResult {
-    fn invoke(&self, req: &mut Request, res: &mut Response) -> MiddlewareResult {
-        (*self)(req, res)
     }
 }
 
@@ -55,8 +48,7 @@ impl MiddlewareStack {
     pub fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: &mut Response) {
         for handler in self.handlers.iter() {
             match handler.invoke(req, res) {
-                Ok(Halt) => 
-                {
+                Ok(Halt) => {
                     debug!("{} {} {} {}", req.origin.method, req.origin.remote_addr, req.origin.request_uri, res.origin.status);
                     return
                 }
