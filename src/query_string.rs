@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::HashMap;
 use request::Request;
 use middleware::{Continue, Middleware, MiddlewareResult};
@@ -22,17 +23,20 @@ impl<'a, 'b> PluginFor<Request<'a, 'b>, QueryStore> for QueryStringParser {
 }
 
 pub trait QueryString {
-    fn query(&mut self, key: &str, default: &str) -> Vec<String>;
+    // FIXME: This would probably be better to return Cow<Vec<String>, [String]>
+    // but ToOwned isn't implemented for that combination yet.
+    fn query(&mut self, key: &str, default: &str) -> Cow<Vec<String>, Vec<String>>;
 }
 
 impl<'a, 'b> QueryString for Request<'a, 'b> {
-    fn query(&mut self, key: &str, default: &str) -> Vec<String> {
-        self.get_ref::<QueryStringParser>().and_then(|store| {
-            match store.get(key).cloned() {
-                Some(result) => Some(result),
-                _ => Some(vec![default.to_string().clone()])
-            }
-        }).expect("Bug: QueryStringParser returned None")
+    fn query(&mut self, key: &str, default: &str) -> Cow<Vec<String>, Vec<String>> {
+        let store = self.get_ref::<QueryStringParser>()
+                        .expect("Bug: QueryStringParser returned None");
+
+        match store.get(key) {
+            Some(result) => Cow::Borrowed(result),
+            _ => Cow::Owned(vec![default.to_string()])
+        }
     }
 }
 

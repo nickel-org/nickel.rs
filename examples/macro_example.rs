@@ -106,7 +106,7 @@ fn main() {
 
         // try calling http://localhost:6767/query?foo=bar
         get "/query" => |request, response| {
-            let text = format!("Your foo values in the query string are: {}", request.query("foo", "This is only a default value!"));
+            let text = format!("Your foo values in the query string are: {}", *request.query("foo", "This is only a default value!"));
             response.send(text.as_slice());
             // a 'regular' handler with no return, handling everything via the response object
         }
