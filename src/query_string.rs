@@ -15,7 +15,7 @@ struct QueryStringParser;
 impl Assoc<QueryStore> for QueryStringParser {}
 impl<'a, 'b> PluginFor<Request<'a, 'b>, QueryStore> for QueryStringParser {
     fn eval(req: &mut Request, _: Phantom<QueryStringParser>) -> Option<QueryStore> {
-        Some(QueryStringParser::parse(&req.origin.request_uri))
+        Some(parse(&req.origin.request_uri))
     }
 }
 
@@ -37,37 +37,28 @@ impl<'a, 'b> QueryString for Request<'a, 'b> {
     }
 }
 
-impl QueryStringParser {
-    fn parse(origin: &RequestUri) -> QueryStore {
-        match *origin {
-            AbsoluteUri(ref url) => {
-                for query in url.query.iter() {
-                    return urlencoded::parse(query.as_slice())
-                }
-            },
-            AbsolutePath(ref s) => {
-                match UrlParser::new().parse_path(s.as_slice()) {
-                    Ok((_, Some(query), _)) => {
-                        return urlencoded::parse(query.as_slice())
-                    }
-                    Ok(..) => {}
-                    // FIXME: If this fails to parse, then it really shouldn't
-                    // have reached here.
-                    Err(..) => {}
-                }
-            },
-            Star | Authority(..) => {}
-        }
+fn parse(origin: &RequestUri) -> QueryStore {
+    let f = |query: Option<&String>| query.map(|q| urlencoded::parse(q.as_slice()));
 
-        HashMap::new()
-    }
+    let result = match *origin {
+        AbsoluteUri(ref url) => f(url.query.as_ref()),
+        AbsolutePath(ref s) => UrlParser::new().parse_path(s.as_slice())
+                                                // FIXME: If this fails to parse,
+                                                // then it really shouldn't have
+                                                // reached here.
+                                               .ok()
+                                               .and_then(|(_, query, _)| f(query.as_ref())),
+        Star | Authority(..) => None
+    };
+
+    result.unwrap_or_else(|| HashMap::new())
 }
 
 #[test]
 fn splits_and_parses_an_url() {
     use url::Url;
     let t = |url|{
-        let store = QueryStringParser::parse(&url);
+        let store = parse(&url);
         assert_eq!(store["foo".to_string()], vec!["bar".to_string()]);
         assert_eq!(store["message".to_string()],
                         vec!["hello".to_string(), "world".to_string()]);
@@ -78,8 +69,8 @@ fn splits_and_parses_an_url() {
 
     t(AbsolutePath("/query/test?foo=bar&message=hello&message=world".to_string()));
 
-    assert_eq!(QueryStringParser::parse(&Star), HashMap::new());
+    assert_eq!(parse(&Star), HashMap::new());
 
-    let store = QueryStringParser::parse(&Authority("host.com".to_string()));
+    let store = parse(&Authority("host.com".to_string()));
     assert_eq!(store, HashMap::new());
 }
