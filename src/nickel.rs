@@ -129,7 +129,10 @@ impl Nickel {
     /// Bind and listen for connections on the given host and port
     ///
     /// # Example
-    /// ```{rust,ignore}
+    /// ```{rust,no_run}
+    /// use nickel::Nickel;
+    /// use std::io::net::ip::IpAddr::Ipv4Addr;
+    ///
     /// let mut server = Nickel::new();
     /// server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
     /// ```
