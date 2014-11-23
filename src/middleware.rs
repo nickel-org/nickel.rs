@@ -1,6 +1,7 @@
 use request::Request;
 use response::Response;
 use nickel_error::NickelError;
+use middleware_handler::ResponseFinalizer;
 pub use self::Action::{Continue, Halt};
 
 pub type MiddlewareResult = Result<Action, NickelError>;
@@ -25,9 +26,11 @@ pub trait ErrorHandler: Send + Sync {
     }
 }
 
-impl ErrorHandler for fn(&NickelError, &Request, &mut Response) -> MiddlewareResult {
+impl<R> ErrorHandler for fn(&NickelError, &Request, &mut Response) -> R
+        where R: ResponseFinalizer {
     fn invoke(&self, err: &NickelError, req: &mut Request, res: &mut Response) -> MiddlewareResult {
-        (*self)(err, req, res)
+        let r = (*self)(err, req, res);
+        r.respond(res)
     }
 }
 
