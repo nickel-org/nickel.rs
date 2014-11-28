@@ -208,6 +208,13 @@ impl Nickel {
         }
 
         self.middleware_stack.add_middleware(not_found_handler);
+
+        match port {
+            80u16 =>  println!("Listening on http://{}", ip),
+            _ =>  println!("Listening on http://{}:{}", ip, port),
+        }
+        println!("Ctrl-C to shutdown server");
+
         Server::new(self.middleware_stack, ip, port).serve();
     }
 }
