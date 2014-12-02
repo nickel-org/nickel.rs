@@ -4,7 +4,8 @@ use middleware::{Continue, Middleware, MiddlewareResult};
 use request;
 use response;
 use urlencoded;
-use http::server::request::{RequestUri, Star, AbsoluteUri, AbsolutePath, Authority};
+use http::server::request::RequestUri;
+use http::server::request::RequestUri::{Star, AbsoluteUri, AbsolutePath, Authority};
 use url::UrlParser;
 
 type QueryStore = HashMap<String, Vec<String>>;

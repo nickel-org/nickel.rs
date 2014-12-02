@@ -1,6 +1,6 @@
 use std::io::File;
 
-use http::server::request::AbsolutePath;
+use http::server::request::RequestUri::AbsolutePath;
 use http::method::{Get, Head, Options};
 use http::status;
 
