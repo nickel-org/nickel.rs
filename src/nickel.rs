@@ -84,7 +84,7 @@ impl Nickel {
     /// use nickel::{Nickel, Request, Response, Continue, Halt, MiddlewareResult};
     /// use nickel::{NickelError, ErrorWithStatusCode};
     /// use http::status::NotFound;
-    /// use nickel::mimes::Html;
+    /// use nickel::mimes::MediaType::Html;
     ///
     /// fn error_handler(err: &NickelError, req: &Request, response: &mut Response)
     ///                  -> MiddlewareResult {

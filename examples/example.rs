@@ -7,10 +7,10 @@ use nickel::{
     Nickel, NickelError, ErrorWithStatusCode, Continue, Halt, Request, Response,
     QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter
 };
-use nickel::mimes;
+use nickel::mimes::MediaType;
 use std::io::net::ip::Ipv4Addr;
 use std::collections::TreeMap;
-use serialize::json::{Json, Object, ToJson};
+use serialize::json::{Json, ToJson};
 
 #[deriving(Decodable, Encodable)]
 struct Person {
@@ -23,7 +23,7 @@ impl ToJson for Person {
         let mut map = TreeMap::new();
         map.insert("first_name".to_string(), self.firstname.to_json());
         map.insert("last_name".to_string(), self.lastname.to_json());
-        Object(map)
+        Json::Object(map)
     }
 }
 
@@ -131,7 +131,7 @@ fn main() {
     fn custom_404(err: &NickelError, _req: &Request, response: &mut Response) -> MiddlewareResult {
         match err.kind {
             ErrorWithStatusCode(NotFound) => {
-                response.content_type(mimes::Html)
+                response.content_type(MediaType::Html)
                         .status_code(NotFound)
                         .send("<h1>Call the police!<h1>");
                 Ok(Halt)

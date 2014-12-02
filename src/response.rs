@@ -37,9 +37,9 @@ impl<'a, 'b> Response<'a, 'b> {
     /// # Example
     /// ```{rust}
     /// # use nickel::{Request, Response};
-    /// use nickel::mimes;
+    /// use nickel::mimes::MediaType;
     /// fn handler(request: &Request, response: &mut Response) {
-    ///     response.content_type(mimes::Html);
+    ///     response.content_type(MediaType::Html);
     /// }
     /// ```
     pub fn content_type(&mut self, mt: mimes::MediaType) -> &mut Response<'a,'b> {

@@ -10,7 +10,7 @@ use nickel::{
     Nickel, NickelError, ErrorWithStatusCode, Continue, Halt, Request, Response,
     QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter
 };
-use nickel::mimes;
+use nickel::mimes::MediaType;
 use std::io::net::ip::Ipv4Addr;
 
 #[deriving(Decodable, Encodable)]
@@ -32,7 +32,7 @@ fn logger(request: &Request, _response: &mut Response) -> MiddlewareResult {
 fn custom_404(err: &NickelError, _req: &Request, response: &mut Response) -> MiddlewareResult {
     match err.kind {
         ErrorWithStatusCode(status::NotFound) => {
-            response.content_type(mimes::Html)
+            response.content_type(MediaType::Html)
                     .status_code(status::NotFound)
                     .send("<h1>Call the police!<h1>");
             Ok(Halt)
@@ -78,7 +78,7 @@ fn main() {
 
         // go to http://localhost:6767/redirect to see this route in action
         get "/redirect" => |request, response| {
-            use http::headers::response::Location;
+            use http::headers::response::Header::Location;
             let root = url::Url::parse("http://www.rust-lang.org/").unwrap();
             // returning a typed http status, a response body and some additional headers
             (status::TemporaryRedirect, "Redirecting you to 'rust-lang.org'", vec![Location(root)])
