@@ -1,4 +1,4 @@
-use std::str::SendStr;
+use std::str::CowString;
 use http::status::Status;
 
 pub use self::NickelErrorKind::{ErrorWithStatusCode, UserDefinedError, Other};
@@ -9,7 +9,7 @@ pub use self::NickelErrorKind::{ErrorWithStatusCode, UserDefinedError, Other};
 #[deriving(Show)]
 pub struct NickelError {
     pub kind: NickelErrorKind,
-    pub message: SendStr
+    pub message: CowString<'static>
 }
 
 impl NickelError {
@@ -19,9 +19,9 @@ impl NickelError {
     /// ```{rust,ignore}
     /// NickelError::new("Error Parsing JSON", ErrorWithStatusCode(BadRequest));
     /// ```
-    pub fn new<T: IntoMaybeOwned<'static>>(message: T, kind: NickelErrorKind) -> NickelError {
+    pub fn new<T: IntoCow<'static, String, str>>(message: T, kind: NickelErrorKind) -> NickelError {
         NickelError {
-            message: message.into_maybe_owned(),
+            message: message.into_cow(),
             kind: kind
         }
     }
