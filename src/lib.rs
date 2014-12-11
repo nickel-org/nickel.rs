@@ -2,7 +2,7 @@
 #![comment = "A expressjs inspired web framework for Rust"]
 #![license = "MIT"]
 #![crate_type = "rlib"]
-#![feature(macro_rules, phase, slicing_syntax)]
+#![feature(macro_rules, phase, slicing_syntax, default_type_params)]
 
 //!Nickel is supposed to be a simple and lightweight foundation for web applications written in Rust. Its API is inspired by the popular express framework for JavaScript.
 //!
@@ -19,7 +19,8 @@ extern crate time;
 extern crate http;
 extern crate serialize;
 extern crate regex;
-extern crate anymap;
+extern crate typemap;
+extern crate plugin;
 extern crate url;
 extern crate mustache;
 extern crate groupable;
@@ -28,7 +29,6 @@ extern crate regex_macros;
 #[phase(plugin, link)]
 extern crate log;
 
-
 pub use nickel::Nickel;
 pub use request::Request;
 pub use response::Response;
@@ -36,11 +36,12 @@ pub use middleware::{Action, Continue, Halt, Middleware, ErrorHandler, Middlewar
 pub use static_files_handler::StaticFilesHandler;
 pub use favicon_handler::FaviconHandler;
 pub use default_error_handler::DefaultErrorHandler;
-pub use json_body_parser::{JsonBodyParser, JsonBody};
-pub use query_string::{QueryStringParser, QueryString};
-pub use router::{Router, Route, RouteResult, RequestHandler, HttpRouter};
+pub use json_body_parser::JsonBody;
+pub use query_string::QueryString;
+pub use router::{Router, Route, RouteResult, HttpRouter};
 pub use nickel_error::{ NickelError, NickelErrorKind, ErrorWithStatusCode, UserDefinedError, Other };
 pub use mimes::get_media_type;
+pub use middleware_handler::ResponseFinalizer;
 
 pub mod router;
 mod server;
@@ -48,6 +49,7 @@ mod nickel;
 mod request;
 mod response;
 mod middleware;
+mod middleware_handler;
 mod favicon_handler;
 mod static_files_handler;
 mod json_body_parser;

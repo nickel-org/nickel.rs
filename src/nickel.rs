@@ -1,6 +1,6 @@
 use std::io::net::ip::{Port, IpAddr};
 
-use router::{Router, RequestHandler, HttpRouter};
+use router::{Router, HttpRouter};
 use middleware::{MiddlewareStack, Middleware, ErrorHandler, MiddlewareResult};
 use nickel_error::{ NickelError, ErrorWithStatusCode };
 use server::Server;
@@ -11,8 +11,6 @@ use request::Request;
 use response::Response;
 
 //pre defined middleware
-use json_body_parser::JsonBodyParser;
-use query_string::QueryStringParser;
 use default_error_handler::DefaultErrorHandler;
 
 /// Nickel is the application object. It's the surface that
@@ -22,7 +20,7 @@ pub struct Nickel{
 }
 
 impl HttpRouter for Nickel {
-    fn add_route<H: RequestHandler>(&mut self, method: Method, uri: &str, handler: H) {
+    fn add_route<H: Middleware>(&mut self, method: Method, uri: &str, handler: H) {
         let mut router = Router::new();
         // FIXME: Inference failure in nightly 22/10/2014
         router.add_route::<H>(method, uri, handler);
@@ -128,77 +126,13 @@ impl Nickel {
         Router::new()
     }
 
-    /// Create a new middleware to parse JSON bodies.
-    ///
-    ///
-    /// # Example
-    /// ```{rust}
-    /// # #![feature(phase)]
-    /// # #[phase(plugin)] extern crate nickel_macros;
-    /// # extern crate nickel;
-    /// # extern crate serialize;
-    /// # use nickel::{Nickel, Request, Response};
-    /// use nickel::JsonBody;
-    ///
-    /// # fn main() {
-    /// #[deriving(Decodable, Encodable)]
-    /// struct Person {
-    ///     first_name: String,
-    ///     last_name:  String,
-    /// }
-    ///
-    /// let router = router! {
-    ///     post "/a/post/request" => |request, response| {
-    ///         let person = request.json_as::<Person>().unwrap();
-    ///         let text = format!("Hello {} {}", person.first_name, person.last_name);
-    ///         response.send(text);
-    ///     }
-    /// };
-    ///
-    /// let mut server = Nickel::new();
-    /// // It is currently a requirement that the json_body_parser middleware
-    /// // is added before any routes that require it.
-    /// server.utilize(Nickel::json_body_parser());
-    /// server.utilize(router);
-    /// # }
-    /// ```
-    pub fn json_body_parser() -> JsonBodyParser {
-        JsonBodyParser
-    }
-
-    /// Create a new middleware to parse the query string.
-    ///
-    ///
-    /// # Example
-    /// ```{rust}
-    /// # #![feature(phase)]
-    /// # #[phase(plugin)] extern crate nickel_macros;
-    /// # extern crate nickel;
-    /// # use nickel::{Nickel, Request, Response};
-    /// use nickel::QueryString;
-    /// # fn main() {
-    /// let router = router! {
-    ///     get "/a/get/request" => |request, response| {
-    ///         let foo = request.query("foo", "this is the default value, if foo is not present!");
-    ///         response.send(foo[0].as_slice());
-    ///     }
-    /// };
-    ///
-    /// let mut server = Nickel::new();
-    /// // It is currently a requirement that the query_string middleware
-    /// // is added before any routes that require it.
-    /// server.utilize(Nickel::query_string());
-    /// server.utilize(router);
-    /// # }
-    /// ```
-    pub fn query_string() -> QueryStringParser {
-        QueryStringParser
-    }
-
     /// Bind and listen for connections on the given host and port
     ///
     /// # Example
-    /// ```{rust,ignore}
+    /// ```{rust,no_run}
+    /// use nickel::Nickel;
+    /// use std::io::net::ip::IpAddr::Ipv4Addr;
+    ///
     /// let mut server = Nickel::new();
     /// server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
     /// ```

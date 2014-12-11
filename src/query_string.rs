@@ -1,74 +1,64 @@
+use std::borrow::Cow;
 use std::collections::HashMap;
 use request::Request;
-use middleware::{Continue, Middleware, MiddlewareResult};
-use request;
-use response;
 use urlencoded;
 use http::server::request::RequestUri;
 use http::server::request::RequestUri::{Star, AbsoluteUri, AbsolutePath, Authority};
 use url::UrlParser;
+use plugin::{Phantom, PluginFor, GetCached};
+use typemap::Assoc;
 
 type QueryStore = HashMap<String, Vec<String>>;
 
-#[deriving(Clone)]
-pub struct QueryStringParser;
-
-impl QueryStringParser {
-    fn parse(origin: &RequestUri) -> QueryStore {
-        match *origin {
-            AbsoluteUri(ref url) => {
-                for query in url.query.iter() {
-                    return urlencoded::parse(query.as_slice())
-                }
-            },
-            AbsolutePath(ref s) => {
-                match UrlParser::new().parse_path(s.as_slice()) {
-                    Ok((_, Some(query), _)) => {
-                        return urlencoded::parse(query.as_slice())
-                    }
-                    Ok(..) => {}
-                    // FIXME: If this fails to parse, then it really shouldn't
-                    // have reached here.
-                    Err(..) => {}
-                }
-            },
-            Star | Authority(..) => {}
-        }
-
-        HashMap::new()
-    }
-}
-
-impl Middleware for QueryStringParser {
-    fn invoke(&self, req: &mut request::Request, _: &mut response::Response)
-                -> MiddlewareResult {
-        let parsed = QueryStringParser::parse(&req.origin.request_uri);
-        req.map.insert(parsed);
-        Ok(Continue)
+// Plugin boilerplate
+struct QueryStringParser;
+impl Assoc<QueryStore> for QueryStringParser {}
+impl<'a, 'b> PluginFor<Request<'a, 'b>, QueryStore> for QueryStringParser {
+    fn eval(req: &mut Request, _: Phantom<QueryStringParser>) -> Option<QueryStore> {
+        Some(parse(&req.origin.request_uri))
     }
 }
 
 pub trait QueryString {
-    fn query(&self, key: &str, default: &str) -> Vec<String>;
+    // FIXME: This would probably be better to return Cow<Vec<String>, [String]>
+    // but ToOwned isn't implemented for that combination yet.
+    fn query(&mut self, key: &str, default: &str) -> Cow<Vec<String>, Vec<String>>;
 }
 
-impl<'a, 'b> QueryString for request::Request<'a, 'b> {
-    fn query(&self, key: &str, default: &str) -> Vec<String> {
-        self.map.get::<QueryStore>().and_then(| store | {
-            match store.get(key).cloned() {
-                Some(result) => Some(result),
-                _ => Some(vec![default.to_string().clone()])
-            }
-        }).expect("QueryStore not available. Ensure the middleware \
-                  is added before the route that depends on it.")
+impl<'a, 'b> QueryString for Request<'a, 'b> {
+    fn query(&mut self, key: &str, default: &str) -> Cow<Vec<String>, Vec<String>> {
+        let store = self.get_ref::<QueryStringParser>()
+                        .expect("Bug: QueryStringParser returned None");
+
+        match store.get(key) {
+            Some(result) => Cow::Borrowed(result),
+            _ => Cow::Owned(vec![default.to_string()])
+        }
     }
+}
+
+fn parse(origin: &RequestUri) -> QueryStore {
+    let f = |query: Option<&String>| query.map(|q| urlencoded::parse(q.as_slice()));
+
+    let result = match *origin {
+        AbsoluteUri(ref url) => f(url.query.as_ref()),
+        AbsolutePath(ref s) => UrlParser::new().parse_path(s.as_slice())
+                                                // FIXME: If this fails to parse,
+                                                // then it really shouldn't have
+                                                // reached here.
+                                               .ok()
+                                               .and_then(|(_, query, _)| f(query.as_ref())),
+        Star | Authority(..) => None
+    };
+
+    result.unwrap_or_else(|| HashMap::new())
 }
 
 #[test]
 fn splits_and_parses_an_url() {
     use url::Url;
     let t = |url|{
-        let store = QueryStringParser::parse(&url);
+        let store = parse(&url);
         assert_eq!(store["foo".to_string()], vec!["bar".to_string()]);
         assert_eq!(store["message".to_string()],
                         vec!["hello".to_string(), "world".to_string()]);
@@ -79,8 +69,8 @@ fn splits_and_parses_an_url() {
 
     t(AbsolutePath("/query/test?foo=bar&message=hello&message=world".to_string()));
 
-    assert_eq!(QueryStringParser::parse(&Star), HashMap::new());
+    assert_eq!(parse(&Star), HashMap::new());
 
-    let store = QueryStringParser::parse(&Authority("host.com".to_string()));
+    let store = parse(&Authority("host.com".to_string()));
     assert_eq!(store, HashMap::new());
 }

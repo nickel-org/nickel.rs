@@ -47,12 +47,6 @@ fn main() {
     // middleware is optional and can be registered with `utilize`
     server.utilize(logger);
 
-    // this will cause json bodies automatically being parsed
-    server.utilize(Nickel::json_body_parser());
-
-    // this will cause the query string to be parsed on each request
-    server.utilize(Nickel::query_string());
-
     // go to http://localhost:6767/thoughtram_logo_brain.png to see static file serving in action
     server.utilize(StaticFilesHandler::new("examples/assets/"));
 
@@ -112,7 +106,7 @@ fn main() {
 
         // try calling http://localhost:6767/query?foo=bar
         get "/query" => |request, response| {
-            let text = format!("Your foo values in the query string are: {}", request.query("foo", "This is only a default value!"));
+            let text = format!("Your foo values in the query string are: {}", *request.query("foo", "This is only a default value!"));
             response.send(text.as_slice());
             // a 'regular' handler with no return, handling everything via the response object
         }

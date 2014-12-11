@@ -1,52 +1,35 @@
 use std::str;
-use serialize::json;
 use serialize::Decodable;
-use serialize::json::{ Json, Decoder, DecoderError};
-use http::status::BadRequest;
-use request;
+use serialize::json::{Decoder, DecoderError};
 use request::Request;
-use response::Response;
-use middleware::{Continue, Middleware, MiddlewareResult};
-use nickel_error::{ NickelError, ErrorWithStatusCode };
+use typemap::Assoc;
+use plugin::{Phantom, PluginFor, GetCached};
 
-#[deriving(Clone)]
-pub struct JsonBodyParser;
-
-impl Middleware for JsonBodyParser {
-    fn invoke(&self, req: &mut Request, _res: &mut Response) -> MiddlewareResult {
+// Plugin boilerplate
+struct JsonBodyParser;
+impl Assoc<String> for JsonBodyParser {}
+impl<'a, 'b> PluginFor<Request<'a, 'b>, String> for JsonBodyParser {
+    fn eval(req: &mut Request, _: Phantom<JsonBodyParser>) -> Option<String> {
         if !req.origin.body.is_empty() {
-            match json::from_str(str::from_utf8(req.origin.body.as_slice()).unwrap()) {
-                Ok(parsed) => {
-                    req.map.insert(parsed);
-                    return Ok(Continue);
-                },
-                Err(_) => {
-                    return Err(NickelError::new("Error Parsing JSON", ErrorWithStatusCode(BadRequest)));
-                }
-            }
+            str::from_utf8(req.origin.body.as_slice()).map(|s| s.to_string())
+        } else {
+            None
         }
-        Ok(Continue)
     }
 }
 
 pub trait JsonBody {
-    fn json_as<T: Decodable<Decoder,DecoderError>>(& self) -> Option<T>;
+    fn json_as<T: Decodable<Decoder,DecoderError>>(&mut self) -> Option<T>;
 }
 
-impl<'a, 'b> JsonBody for request::Request<'a, 'b> {
-    fn json_as<T: Decodable<Decoder, DecoderError>>(& self) -> Option<T> {
-
+impl<'a, 'b> JsonBody for Request<'a, 'b> {
+    fn json_as<T: Decodable<Decoder, DecoderError>>(&mut self) -> Option<T> {
         // FIXME:
         // I think it would be smarter to not return Option<T> but rather
         // DecodeResult<T> to not swallow valuable debugging information.
         // I couldn't figure out how to properly do that
-
-        self.map.get::<Json>()
-                .and_then(| parsed | {
-                    match ::serialize::json::decode::<T>(parsed.to_string().as_slice()) {
-                        Ok(e) => Some(e),
-                        _ => None
-                    }
-                })
+        self.get::<JsonBodyParser>().and_then(|parsed| {
+            ::serialize::json::decode::<T>(parsed.as_slice()).ok()
+        })
     }
 }
