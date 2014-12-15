@@ -3,7 +3,7 @@ use url::form_urlencoded;
 use groupable::Groupable;
 
 pub fn parse (encoded_string : &str) -> HashMap<String, Vec<String>> {
-    form_urlencoded::parse_str(encoded_string).into_iter().group()
+    form_urlencoded::parse(encoded_string.as_bytes()).into_iter().group()
 }
 
 #[test]
