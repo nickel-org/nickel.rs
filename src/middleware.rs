@@ -6,7 +6,7 @@ pub use self::Action::{Continue, Halt};
 
 pub type MiddlewareResult = Result<Action, NickelError>;
 
-#[deriving(PartialEq)]
+#[deriving(PartialEq, Copy)]
 pub enum Action {
   Continue,
   Halt
