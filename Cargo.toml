@@ -3,6 +3,8 @@
 name = "nickel"
 version = "0.1.0"
 authors = [ "christoph@thoughtram.io" ]
+description = "An express.js inspired web framework"
+license = "MIT"
 
 [lib]
 

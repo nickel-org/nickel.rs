@@ -1,6 +1,4 @@
 #![crate_name = "nickel"]
-#![comment = "A expressjs inspired web framework for Rust"]
-#![license = "MIT"]
 #![crate_type = "rlib"]
 #![feature(macro_rules, phase, slicing_syntax, default_type_params)]
 
