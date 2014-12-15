@@ -4,7 +4,7 @@ use std::str::FromStr;
 macro_rules! mimes(
     ($($t:expr { $($name:ident, $as_s:pat, $subt:expr,)+ })+) => (
         #[allow(non_camel_case_types)]
-        #[deriving(Show, PartialEq, Eq, Hash)]
+        #[deriving(Show, PartialEq, Eq, Hash, Copy)]
         pub enum MediaType {
             $(
                 $(
