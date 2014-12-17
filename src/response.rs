@@ -124,7 +124,7 @@ impl<'a, 'b> Response<'a, 'b> {
     ///     response.render("examples/assets/template.tpl", &data);
     /// }
     /// ```
-    pub fn render<'a, T: Encodable<Encoder<'a>, Error>>
+    pub fn render<'c, T: Encodable<Encoder<'c>, Error>>
         (&mut self, path: &'static str, data: &T) {
             // Fast path doesn't need writer lock
             match self.templates.read().get(&path) {
