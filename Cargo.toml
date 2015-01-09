@@ -11,10 +11,6 @@ license = "MIT"
 name = "nickel"
 path = "src/lib.rs"
 
-[dependencies.http]
-
-git = "https://github.com/nickel-org/rust-http.git"
-
 [dependencies.rust-mustache]
 
 git = "https://github.com/nickel-org/rust-mustache.git"
@@ -36,6 +32,7 @@ regex = "*"
 regex_macros = "*"
 rustc-serialize = "*"
 log = "*"
+hyper = "*"
 
 [[example]]
 
