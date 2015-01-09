@@ -1,5 +1,5 @@
 use std::borrow::{IntoCow, Cow};
-use http::status::Status;
+use hyper::status::StatusCode;
 
 pub use self::NickelErrorKind::{ErrorWithStatusCode, UserDefinedError, Other};
 
@@ -29,8 +29,8 @@ impl NickelError {
 
 #[derive(Debug)]
 pub enum NickelErrorKind {
-    // FIXME: Should probably re-export http::status::Status
-    ErrorWithStatusCode(Status),
+    // FIXME: Should probably re-export hyper::status::StatusCode
+    ErrorWithStatusCode(StatusCode),
     UserDefinedError(usize, String),
     Other
 }

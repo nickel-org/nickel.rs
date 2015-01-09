@@ -8,7 +8,9 @@ use nickel_error::{ErrorWithStatusCode, NickelError};
 use server::Server;
 
 use http::method::Method;
-use http::status::NotFound;
+use hyper::status::StatusCode::NotFound;
+use request::Request;
+use response::Response;
 
 //pre defined middleware
 use default_error_handler::DefaultErrorHandler;
@@ -82,7 +84,7 @@ impl Nickel {
     /// # fn main() {
     /// use nickel::{Nickel, Request, Response, Continue, Halt, MiddlewareResult};
     /// use nickel::{NickelError, ErrorWithStatusCode};
-    /// use http::status::NotFound;
+    /// use hyper::status::StatusCode::NotFound;
     /// use nickel::mimes::MediaType::Html;
     ///
     /// fn error_handler(err: &NickelError, req: &Request, response: &mut Response)

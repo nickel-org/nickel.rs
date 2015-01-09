@@ -1,4 +1,4 @@
-use http::status::{NotFound, BadRequest, InternalServerError};
+use hyper::status::StatusCode::{NotFound, BadRequest, InternalServerError};
 use request::Request;
 use response::Response;
 use ResponseFinalizer;

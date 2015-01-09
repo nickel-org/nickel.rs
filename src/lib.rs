@@ -15,16 +15,16 @@
 //!* middleware
 
 extern crate time;
-extern crate http;
 extern crate "rustc-serialize" as serialize;
+extern crate hyper;
 extern crate regex;
 extern crate typemap;
 extern crate plugin;
 extern crate url;
 extern crate mustache;
 extern crate groupable;
-#[macro_use]
-extern crate log;
+
+#[macro_use] extern crate log;
 
 pub use nickel::Nickel;
 pub use request::Request;

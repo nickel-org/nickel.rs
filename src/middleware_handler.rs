@@ -12,7 +12,7 @@
 
 use request::Request;
 use response::Response;
-use http::status;
+use hyper::status::StatusCode;
 use http::headers;
 use std::fmt::Display;
 use std::num::FromPrimitive;
@@ -89,7 +89,7 @@ impl ResponseFinalizer for json::Json {
 impl<'a, S: Display> ResponseFinalizer for &'a [S] {
     fn respond(self, res: &mut Response) -> MiddlewareResult {
         maybe_set_type(res, MediaType::Html);
-        res.origin.status = status::Ok;
+        res.origin.status = StatusCode::Ok;
         for ref s in self.iter() {
             // FIXME : failure unhandled
             let _ = write!(res.origin, "{}", s);
@@ -114,13 +114,13 @@ dual_impl!(&'a str,
            String,
             |self, res| {
                 maybe_set_type(res, MediaType::Html);
-                res.origin.status = status::Ok;
+                res.origin.status = StatusCode::Ok;
                 res.send(self);
                 Ok(Halt)
             });
 
-dual_impl!((status::Status, &'a str),
-           (status::Status, String),
+dual_impl!((StatusCode, &'a str),
+           (StatusCode, String),
             |self, res| {
                 maybe_set_type(res, MediaType::Html);
                 let (status, data) = self;
@@ -145,8 +145,8 @@ dual_impl!((usize, &'a str),
                 }
             });
 
-dual_impl!((status::Status, &'a str, Vec<headers::response::Header>),
-           (status::Status, String, Vec<headers::response::Header>),
+dual_impl!((StatusCode, &'a str, Vec<headers::response::Header>),
+           (StatusCode, String, Vec<headers::response::Header>),
            |self, res| {
                 let (status, data, headers) = self;
 

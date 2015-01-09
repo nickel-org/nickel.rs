@@ -5,6 +5,7 @@ use request::Request;
 use response::Response;
 use router::HttpRouter;
 use http::method::Method;
+use hyper::status::StatusCode;
 use regex::Regex;
 use std::collections::HashMap;
 
@@ -94,7 +95,7 @@ impl Middleware for Router {
             AbsolutePath(ref url) => {
                 match self.match_route(&req.origin.method, &*url) {
                     Some(route_result) => {
-                        res.origin.status = ::http::status::Ok;
+                        res.origin.status = StatusCode::Ok;
                         let handler = &route_result.route.handler;
                         req.route_result = Some(route_result);
                         handler.invoke(req, res)

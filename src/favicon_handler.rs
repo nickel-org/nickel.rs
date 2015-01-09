@@ -2,7 +2,7 @@ use std::old_io::File;
 
 use http::server::request::RequestUri::AbsolutePath;
 use http::method::{Get, Head, Options};
-use http::status;
+use hyper::status::StatusCode;
 
 use request;
 use response;
@@ -62,11 +62,11 @@ impl FaviconHandler {
                 self.send_favicon(req, res);
             },
             Options => {
-                res.status_code(status::Ok);
+                res.status_code(StatusCode::Ok);
                 res.origin.headers.allow = Some(vec!(Get, Head, Options));
             },
             _ => {
-                res.status_code(status::MethodNotAllowed);
+                res.status_code(StatusCode::MethodNotAllowed);
                 res.origin.headers.allow = Some(vec!(Get, Head, Options));
             }
         }

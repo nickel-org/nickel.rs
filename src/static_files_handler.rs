@@ -3,7 +3,7 @@ use std::old_path::BytesContainer;
 
 use http::server::request::RequestUri::AbsolutePath;
 use http::method::{Get, Head};
-use http::status::{ InternalServerError };
+use hyper::status::StatusCode::InternalServerError;
 
 use request;
 use response;

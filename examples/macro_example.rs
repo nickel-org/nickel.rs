@@ -6,7 +6,7 @@ extern crate nickel;
 extern crate "rustc-serialize" as rustc_serialize;
 #[macro_use] extern crate nickel_macros;
 
-use http::status;
+use hyper::status;
 use nickel::{
     Nickel, NickelError, ErrorWithStatusCode, Continue, Halt, Request, Response,
     QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter

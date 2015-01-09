@@ -6,6 +6,7 @@ use std::old_io::util::copy;
 use std::old_path::BytesContainer;
 use serialize::Encodable;
 use http;
+use hyper::status::StatusCode;
 use http::server::ResponseWriter;
 use time;
 use mimes;
@@ -51,16 +52,16 @@ impl<'a, 'b> Response<'a, 'b> {
     ///
     /// # Example
     /// ```{rust}
-    /// # extern crate http;
+    /// # extern crate hyper;
     /// # extern crate nickel;
     /// # use nickel::{Request, Response};
     /// # fn main() {
     /// fn handler(request: &Request, response: &mut Response) {
-    ///     response.status_code(http::status::NotFound);
+    ///     response.status_code(hyper::status::StatusCode::NotFound);
     /// }
     /// # }
     /// ```
-    pub fn status_code(&mut self, status: http::status::Status) -> &mut Response<'a,'b> {
+    pub fn status_code(&mut self, status: StatusCode) -> &mut Response<'a,'b> {
         self.origin.status = status;
         self
     }
