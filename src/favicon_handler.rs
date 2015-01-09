@@ -1,6 +1,6 @@
 use std::old_io::File;
 
-use http::server::request::RequestUri::AbsolutePath;
+use hyper::uri::RequestUri::AbsolutePath;
 use hyper::method::Method::{Get, Head, Options};
 use hyper::status::StatusCode;
 

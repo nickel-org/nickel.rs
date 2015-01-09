@@ -1,6 +1,6 @@
 use middleware::{Middleware, Continue, MiddlewareResult};
 use super::path_utils;
-use http::server::request::RequestUri::AbsolutePath;
+use hyper::uri::RequestUri::AbsolutePath;
 use request::Request;
 use response::Response;
 use router::HttpRouter;
