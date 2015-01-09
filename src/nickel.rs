@@ -7,7 +7,7 @@ use middleware::{MiddlewareResult, MiddlewareStack, Middleware, ErrorHandler};
 use nickel_error::{ErrorWithStatusCode, NickelError};
 use server::Server;
 
-use http::method::Method;
+use hyper::method::Method;
 use hyper::status::StatusCode::NotFound;
 use request::Request;
 use response::Response;

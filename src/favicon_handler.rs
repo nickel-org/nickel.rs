@@ -1,7 +1,7 @@
 use std::old_io::File;
 
 use http::server::request::RequestUri::AbsolutePath;
-use http::method::{Get, Head, Options};
+use hyper::method::Method::{Get, Head, Options};
 use hyper::status::StatusCode;
 
 use request;

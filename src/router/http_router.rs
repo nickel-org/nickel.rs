@@ -1,4 +1,4 @@
-use http::method::{Method, Get, Post, Put, Delete};
+use hyper::method::Method;
 use middleware::Middleware;
 
 pub trait HttpRouter {
@@ -11,7 +11,7 @@ pub trait HttpRouter {
     /// extern crate nickel;
     /// extern crate http;
     /// use nickel::{Nickel, Request, Response, HttpRouter};
-    /// use http::method::{Get, Post, Put, Delete};
+    /// use hyper::method::Method::{Get, Post, Put, Delete};
     ///
     /// fn main() {
     ///     fn read_handler(request: &Request, response: &mut Response) {
@@ -114,7 +114,7 @@ pub trait HttpRouter {
     /// }
     /// ```
     fn get<H: Middleware>(&mut self, uri: &str, handler: H) {
-        self.add_route(Get, uri, handler);
+        self.add_route(Method::Get, uri, handler);
     }
 
     /// Registers a handler to be used for a specific POST request.
@@ -135,7 +135,7 @@ pub trait HttpRouter {
     /// server.post("/a/post/request", h);
     /// ```
     fn post<H: Middleware>(&mut self, uri: &str, handler: H) {
-        self.add_route(Post, uri, handler);
+        self.add_route(Method::Post, uri, handler);
     }
 
     /// Registers a handler to be used for a specific PUT request.
@@ -156,7 +156,7 @@ pub trait HttpRouter {
     /// server.put("/a/put/request", h);
     /// ```
     fn put<H: Middleware>(&mut self, uri: &str, handler: H) {
-        self.add_route(Put, uri, handler);
+        self.add_route(Method::Put, uri, handler);
     }
 
     /// Registers a handler to be used for a specific DELETE request.
@@ -177,6 +177,6 @@ pub trait HttpRouter {
     /// server.delete("/a/delete/request", h);
     /// ```
     fn delete<H: Middleware>(&mut self, uri: &str, handler: H) {
-        self.add_route(Delete, uri, handler);
+        self.add_route(Method::Delete, uri, handler);
     }
 }
