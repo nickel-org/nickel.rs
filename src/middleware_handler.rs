@@ -13,9 +13,9 @@
 use request::Request;
 use response::Response;
 use hyper::status::StatusCode;
-use http::headers;
 use std::fmt::Display;
 use std::num::FromPrimitive;
+// use hyper::header::{Header, HeaderFormat};
 use middleware::{Middleware, MiddlewareResult, Halt};
 use serialize::json;
 use mimes::MediaType;
@@ -145,19 +145,25 @@ dual_impl!((usize, &'a str),
                 }
             });
 
-dual_impl!((StatusCode, &'a str, Vec<headers::response::Header>),
-           (StatusCode, String, Vec<headers::response::Header>),
-           |self, res| {
-                let (status, data, headers) = self;
+// FIXME: Hyper uses traits for headers, so this needs to be a Vec of
+// trait objects. But, a trait object is unable to have Foo + Bar as a bound.
+//
+// A better/faster solution would be to impl this for tuples,
+// where each tuple element implements the Header trait, which would give a
+// static dispatch.
+// dual_impl!((StatusCode, &'a str, Vec<Box<ResponseHeader>>),
+//            (StatusCode, String, Vec<Box<ResponseHeader>>)
+//            |self, res| {
+//                 let (status, data, headers) = self;
 
-                res.origin.status = status;
-                for header in headers.into_iter() {
-                    res.origin.headers.insert(header);
-                }
-                maybe_set_type(res, MediaType::Html);
-                res.send(data);
-                Ok(Halt)
-            });
+//                 res.origin.status = status;
+//                 for header in headers.into_iter() {
+//                     res.origin.headers_mut().set(header);
+//                 }
+//                 maybe_set_type(res, MediaType::Html);
+//                 res.send(data);
+//                 Ok(Halt)
+//             })
 
 fn maybe_set_type(res: &mut Response, ty: MediaType) {
     if res.origin.headers.content_type.is_none() {
