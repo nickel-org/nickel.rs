@@ -5,9 +5,8 @@ use std::old_io::{IoResult, File};
 use std::old_io::util::copy;
 use std::old_path::BytesContainer;
 use serialize::Encodable;
-use http;
 use hyper::status::StatusCode;
-use http::server::ResponseWriter;
+use hyper::server::Response as HyperResponse;
 use time;
 use mimes;
 use mustache;
@@ -17,13 +16,13 @@ pub type TemplateCache = RwLock<HashMap<&'static str, Template>>;
 
 ///A container for the response
 pub struct Response<'a, 'b: 'a> {
-    ///the original `http::server::ResponseWriter`
-    pub origin: &'a mut ResponseWriter<'b>,
+    ///the original `hyper::server::Response`
+    pub origin: HyperResponse<'b>,
     templates: &'a TemplateCache
 }
 
 impl<'a, 'b> Response<'a, 'b> {
-    pub fn from_internal<'c, 'd>(response: &'c mut ResponseWriter<'d>,
+    pub fn from_internal<'c, 'd>(response: HyperResponse<'d>,
                                  templates: &'c TemplateCache)
                                 -> Response<'c, 'd> {
         Response {
@@ -82,7 +81,7 @@ impl<'a, 'b> Response<'a, 'b> {
         let _ = self.origin.write_all(text.container_as_bytes());
     }
 
-    fn set_headers(response_writer: &mut http::server::ResponseWriter) {
+    fn set_headers(response_writer: &mut HyperResponse) {
         let ref mut headers = response_writer.headers;
         headers.date = Some(time::now_utc());
 

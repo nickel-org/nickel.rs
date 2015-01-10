@@ -1,12 +1,12 @@
-use http;
 use router::RouteResult;
 use plugin::{Extensible, Pluggable};
 use typemap::TypeMap;
+use hyper::server::Request as HyperRequest;
 
 ///A container for all the request data
 pub struct Request<'a, 'b: 'a> {
-    ///the original `http::server::Request`
-    pub origin: &'a http::server::Request,
+    ///the original `hyper::server::Request`
+    pub origin: &'a HyperRequest<'a>,
     ///a `HashMap<String, String>` holding all params with names and values
     pub route_result: Option<RouteResult<'b>>,
 
@@ -14,7 +14,7 @@ pub struct Request<'a, 'b: 'a> {
 }
 
 impl<'a, 'b> Request<'a, 'b> {
-    pub fn from_internal(req: &http::server::Request) -> Request {
+    pub fn from_internal(req: &'a HyperRequest<'a>) -> Request<'a, 'b> {
         Request {
             origin: req,
             route_result: None,

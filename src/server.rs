@@ -1,8 +1,8 @@
 use std::old_io::net::ip::{SocketAddr, IpAddr, Port};
 use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
-
-use http::server::{Config, Request, ResponseWriter};
+use hyper::server::{Request, Response};
+use http::server::Config;
 use http::server::Server as HttpServer;
 
 use middleware::MiddlewareStack;
