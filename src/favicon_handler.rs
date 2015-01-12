@@ -3,6 +3,7 @@ use std::old_io::File;
 use hyper::uri::RequestUri::AbsolutePath;
 use hyper::method::Method::{Get, Head, Options};
 use hyper::status::StatusCode;
+use hyper::header;
 
 use request;
 use response;
@@ -63,11 +64,11 @@ impl FaviconHandler {
             },
             Options => {
                 res.status_code(StatusCode::Ok);
-                res.origin.headers.allow = Some(vec!(Get, Head, Options));
+                res.origin.headers_mut().set(header::Allow(vec!(Get, Head, Options)));
             },
             _ => {
                 res.status_code(StatusCode::MethodNotAllowed);
-                res.origin.headers.allow = Some(vec!(Get, Head, Options));
+                res.origin.headers_mut().set(header::Allow(vec!(Get, Head, Options)));
             }
         }
         Ok(Halt)

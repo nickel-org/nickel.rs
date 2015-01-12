@@ -7,8 +7,9 @@ use std::old_path::BytesContainer;
 use serialize::Encodable;
 use hyper::status::StatusCode;
 use hyper::server::Response as HyperResponse;
+use hyper::header;
 use time;
-use mimes;
+use mimes::{get_media_type, MediaType};
 use mustache;
 use mustache::Template;
 
@@ -42,8 +43,8 @@ impl<'a, 'b> Response<'a, 'b> {
     ///     response.content_type(MediaType::Html);
     /// }
     /// ```
-    pub fn content_type(&mut self, mt: mimes::MediaType) -> &mut Response<'a,'b> {
-        self.origin.headers.content_type = Some(mimes::get_media_type(mt));
+    pub fn content_type(&mut self, mt: MediaType) -> &mut Response<'a,'b> {
+        self.origin.headers_mut().set(header::ContentType(get_media_type(mt)));
         self
     }
 
@@ -61,7 +62,7 @@ impl<'a, 'b> Response<'a, 'b> {
     /// # }
     /// ```
     pub fn status_code(&mut self, status: StatusCode) -> &mut Response<'a,'b> {
-        self.origin.status = status;
+        *self.origin.status_mut() = status;
         self
     }
 
@@ -77,18 +78,14 @@ impl<'a, 'b> Response<'a, 'b> {
     pub fn send<T: BytesContainer> (&mut self, text: T) {
         // TODO: This needs to be more sophisticated to return the correct headers
         // not just "some headers" :)
-        Response::set_headers(self.origin);
+        self.set_common_headers();
         let _ = self.origin.write_all(text.container_as_bytes());
     }
 
-    fn set_headers(response_writer: &mut HyperResponse) {
-        let ref mut headers = response_writer.headers;
-        headers.date = Some(time::now_utc());
-
-        // we don't need to set this https://github.com/Ogeon/rustful/issues/3#issuecomment-44787613
-        headers.content_length = None;
-
-        headers.server = Some(String::from_str("Nickel"));
+    fn set_common_headers(&mut self) {
+        let ref mut headers = self.origin.headers;
+        headers.set(header::Date(time::now_utc()));
+        headers.set(header::Server(String::from_str("Nickel")));
     }
 
     /// Writes a file to the output.
@@ -102,13 +99,16 @@ impl<'a, 'b> Response<'a, 'b> {
     /// }
     /// ```
     pub fn send_file(&mut self, path: &Path) -> IoResult<()> {
-        let mut file = try!(File::open(path));
-        self.origin.headers.content_length = None;
+        self.set_common_headers();
 
-        self.origin.headers.content_type = path.extension_str()
-                                               .and_then(|s| s.parse().ok())
-                                               .map(mimes::get_media_type);
-        self.origin.headers.server = Some(String::from_str("Nickel"));
+        // Chunk the response
+        self.origin.headers_mut().remove::<header::ContentLength>();
+        // Determine content type by file extension or default to binary
+        self.content_type(path.extension_str()
+                              .and_then(from_str)
+                              .unwrap_or(MediaType::Bin));
+
+        let mut file = try!(File::open(path));
         copy(&mut file, self.origin)
     }
 
@@ -127,12 +127,9 @@ impl<'a, 'b> Response<'a, 'b> {
     pub fn render<'c, T: Encodable>
         (&mut self, path: &'static str, data: &T) {
             // Fast path doesn't need writer lock
-            {
-                let templates = self.templates.read().unwrap();
-                if let Some(t) = templates.get(&path) {
-                    let _ = t.render(self.origin, data);
-                    return
-                }
+            if let Some(t) = self.templates.read().get(&path) {
+                let _ = t.render(self.origin, data);
+                return
             }
 
             // We didn't find the template, get writers lock and
@@ -156,12 +153,15 @@ impl<'a, 'b> Response<'a, 'b> {
 
 #[test]
 fn matches_content_type () {
+    use hyper::mime::{Mime, TopLevel, SubLevel};
     let path = &Path::new("test.txt");
     let content_type = path.extension_str().and_then(|s| s.parse().ok());
 
-    assert_eq!(content_type, Some(mimes::MediaType::Txt));
-    let content_type = content_type.map(mimes::get_media_type).unwrap();
+    assert_eq!(content_type, Some(MediaType::Txt));
+    let content_type = content_type.map(get_media_type).unwrap();
 
-    assert_eq!(content_type.type_, "text");
-    assert_eq!(content_type.subtype, "plain");
+    match content_type {
+        Mime(TopLevel::Text, SubLevel::Plain, _) => {}, // OK
+        wrong => panic!("Wrong mime: {}", wrong)
+    }
 }

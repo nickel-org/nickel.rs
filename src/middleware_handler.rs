@@ -15,7 +15,8 @@ use response::Response;
 use hyper::status::StatusCode;
 use std::fmt::Display;
 use std::num::FromPrimitive;
-// use hyper::header::{Header, HeaderFormat};
+use hyper::header;
+
 use middleware::{Middleware, MiddlewareResult, Halt};
 use serialize::json;
 use mimes::MediaType;
@@ -166,7 +167,7 @@ dual_impl!((usize, &'a str),
 //             })
 
 fn maybe_set_type(res: &mut Response, ty: MediaType) {
-    if res.origin.headers.content_type.is_none() {
+    if res.origin.headers().has::<header::ContentType>() {
         res.content_type(ty);
     }
 }
