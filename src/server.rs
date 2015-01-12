@@ -1,9 +1,8 @@
 use std::old_io::net::ip::{SocketAddr, IpAddr, Port};
 use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
-use hyper::server::{Request, Response};
-use http::server::Config;
-use http::server::Server as HttpServer;
+use hyper::server::{Request, Response, Handler};
+use hyper::server::Server as HyperServer;
 
 use middleware::MiddlewareStack;
 use request;
@@ -17,15 +16,10 @@ pub struct Server {
     templates: response::TemplateCache
 }
 
-impl HttpServer for Arc<Server> {
-    fn get_config(&self) -> Config {
-        Config { bind_address: SocketAddr { ip: self.ip, port: self.port } }
-    }
-
-    fn handle_request(&self, req: Request, res: &mut ResponseWriter) {
-
-        let nickel_req = &mut request::Request::from_internal(&req);
-        let nickel_res = &mut response::Response::from_internal(res, &self.templates);
+impl Handler for Arc<Server> {
+    fn handle<'a>(&'a self, req: Request<'a>, res: Response<'a>) {
+        let nickel_req = request::Request::from_internal(&req);
+        let nickel_res = response::Response::from_internal(res, &self.templates);
 
         self.middleware_stack.invoke(nickel_req, nickel_res);
     }
@@ -43,7 +37,9 @@ impl Server {
 
     // why do we need this? Is the http::Server.serve_forever method protected in C# terms?
     pub fn serve(self) {
+        let socket = HyperServer::http(self.ip, self.port);
         let arc = Arc::new(self);
-        arc.serve_forever();
+        socket.listen(arc);
     }
 }
+
