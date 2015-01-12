@@ -18,7 +18,7 @@ impl<'a, 'b> Plugin<Request<'a, 'b>> for QueryStringParser {
     type Error = ();
 
     fn eval(req: &mut Request) -> Result<QueryStore, ()> {
-        Ok(parse(&req.origin.request_uri))
+        Ok(parse(&req.origin.uri))
     }
 }
 

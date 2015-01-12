@@ -91,7 +91,7 @@ impl HttpRouter for Router {
 impl Middleware for Router {
     fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: &mut Response)
                         -> MiddlewareResult {
-        match req.origin.request_uri {
+        match req.origin.uri {
             AbsolutePath(ref url) => {
                 match self.match_route(&req.origin.method, &*url) {
                     Some(route_result) => {

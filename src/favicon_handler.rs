@@ -49,7 +49,7 @@ impl FaviconHandler {
 
     #[inline]
     pub fn is_favicon_request (req: &request::Request) -> bool {
-        match req.origin.request_uri {
+        match req.origin.uri {
             AbsolutePath(ref path) => &**path == "/favicon.ico",
             _                      => false
         }

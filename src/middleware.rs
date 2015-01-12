@@ -55,7 +55,7 @@ impl MiddlewareStack {
                     debug!("{:?} {:?} {:?} {:?}",
                            req.origin.method,
                            req.origin.remote_addr,
-                           req.origin.request_uri,
+                           req.origin.uri,
                            res.origin.status);
                     return
                 }
@@ -64,7 +64,7 @@ impl MiddlewareStack {
                     warn!("{:?} {:?} {:?} {:?}",
                           req.origin.method,
                           req.origin.remote_addr,
-                          req.origin.request_uri,
+                          req.origin.uri,
                           err.kind);
                     for error_handler in self.error_handlers.iter().rev() {
                         match error_handler.invoke(&err, req, res) {

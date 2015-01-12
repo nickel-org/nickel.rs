@@ -37,7 +37,7 @@ fn main() {
 
     //this is an example middleware function that just logs each request
     fn logger(request: &Request, _response: &mut Response) -> MiddlewareResult {
-        println!("logging request: {}", request.origin.request_uri);
+        println!("logging request: {}", request.origin.uri);
 
         // a request is supposed to return a `bool` to indicate whether additional
         // middleware should continue executing or should be stopped.

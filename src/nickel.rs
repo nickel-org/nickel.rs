@@ -58,7 +58,7 @@ impl Nickel {
     /// ```{rust}
     /// use nickel::{Nickel, Request, Response, Continue, MiddlewareResult};
     /// fn logger(req: &Request, res: &mut Response) -> MiddlewareResult {
-    ///     println!("logging request: {}", req.origin.request_uri);
+    ///     println!("logging request: {}", req.origin.uri);
     ///     Ok(Continue)
     /// }
     ///

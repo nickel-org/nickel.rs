@@ -58,7 +58,7 @@ impl StaticFilesHandler {
     }
 
     fn extract_path<'a>(&self, req: &'a mut request::Request) -> Option<&'a str> {
-        match req.origin.request_uri {
+        match req.origin.uri {
             AbsolutePath(ref path) => {
                 debug!("{:?} {:?}{:?}", req.origin.method, self.root_path.display(), path);
 
