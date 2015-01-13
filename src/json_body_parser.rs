@@ -3,22 +3,16 @@ use serialize::{Decodable, json};
 use request::Request;
 use typemap::Key;
 use plugin::{Plugin, Pluggable};
+use std::old_io::{IoError, IoResult};
 
 // Plugin boilerplate
 struct JsonBodyParser;
 impl Key for JsonBodyParser { type Value = String; }
 impl<'a, 'b> Plugin<Request<'a, 'b>> for JsonBodyParser {
-    type Error = &'static str;
+    type Error = IoError;
 
-    fn eval(req: &mut Request) -> Result<String, &'static str> {
-        if !req.origin.body.is_empty() {
-            str::from_utf8(&*req.origin.body)
-                .map(|s| s.to_string())
-                .map_err(|_| "Request body is not utf-8.")
-        }
-        else {
-            Err("Request body is empty.")
-        }
+    fn eval(req: &mut Request) -> IoResult<String> {
+        req.origin.read_to_string()
     }
 }
 
