@@ -8,6 +8,7 @@ use serialize::Encodable;
 use hyper::status::StatusCode;
 use hyper::server::Response as HyperResponse;
 use hyper::header;
+use hyper::net::{Fresh, Streaming};
 use time;
 use mimes::{get_media_type, MediaType};
 use mustache;
@@ -16,16 +17,16 @@ use mustache::Template;
 pub type TemplateCache = RwLock<HashMap<&'static str, Template>>;
 
 ///A container for the response
-pub struct Response<'a, 'b: 'a> {
+pub struct Response<'a, 'b: 'a, T=Fresh> {
     ///the original `hyper::server::Response`
-    pub origin: HyperResponse<'b>,
+    pub origin: HyperResponse<'b, T>,
     templates: &'a TemplateCache
 }
 
-impl<'a, 'b> Response<'a, 'b> {
-    pub fn from_internal<'c, 'd>(response: HyperResponse<'d>,
+impl<'a, 'b> Response<'a, 'b, Fresh> {
+    pub fn from_internal<'c, 'd>(response: HyperResponse<'d, Fresh>,
                                  templates: &'c TemplateCache)
-                                -> Response<'c, 'd> {
+                                -> Response<'c, 'd, Fresh> {
         Response {
             origin: response,
             templates: templates
@@ -75,17 +76,12 @@ impl<'a, 'b> Response<'a, 'b> {
     ///     response.send("hello world");
     /// }
     /// ```
-    pub fn send<T: BytesContainer> (&mut self, text: T) {
-        // TODO: This needs to be more sophisticated to return the correct headers
-        // not just "some headers" :)
+    pub fn send<T: BytesContainer> (self, text: T) -> IoResult<Response<'a, 'b, Streaming>> {
         self.set_common_headers();
-        let _ = self.origin.write_all(text.container_as_bytes());
-    }
 
-    fn set_common_headers(&mut self) {
-        let ref mut headers = self.origin.headers;
-        headers.set(header::Date(time::now_utc()));
-        headers.set(header::Server(String::from_str("Nickel")));
+        let stream = try!(self.start());
+        try!(stream.write_all(text.container_as_bytes()));
+        Ok(stream)
     }
 
     /// Writes a file to the output.
@@ -98,9 +94,7 @@ impl<'a, 'b> Response<'a, 'b> {
     ///     response.send_file(&favicon).ok().expect("Failed to send favicon");
     /// }
     /// ```
-    pub fn send_file(&mut self, path: &Path) -> IoResult<()> {
-        self.set_common_headers();
-
+    pub fn send_file(self, path: &Path) -> IoResult<Response<'a, 'b, Streaming>> {
         // Chunk the response
         self.origin.headers_mut().remove::<header::ContentLength>();
         // Determine content type by file extension or default to binary
@@ -108,8 +102,20 @@ impl<'a, 'b> Response<'a, 'b> {
                               .and_then(from_str)
                               .unwrap_or(MediaType::Bin));
 
+        let stream = try!(self.start());
         let mut file = try!(File::open(path));
-        copy(&mut file, self.origin)
+        try!(copy(&mut file, &mut stream));
+        Ok(stream)
+    }
+
+    // TODO: This needs to be more sophisticated to return the correct headers
+    // not just "some headers" :)
+    //
+    // Also, it should only set them if not already set.
+    fn set_common_headers(&mut self) {
+        let ref mut headers = self.origin.headers;
+        headers.set(header::Date(time::now_utc()));
+        headers.set(header::Server(String::from_str("Nickel")));
     }
 
     /// Renders the given template bound with the given data.
@@ -124,30 +130,63 @@ impl<'a, 'b> Response<'a, 'b> {
     ///     response.render("examples/assets/template.tpl", &data);
     /// }
     /// ```
-    pub fn render<'c, T: Encodable>
-        (&mut self, path: &'static str, data: &T) {
-            // Fast path doesn't need writer lock
-            if let Some(t) = self.templates.read().get(&path) {
-                let _ = t.render(self.origin, data);
-                return
-            }
+    pub fn render<T>(&mut self, path: &'static str, data: &T)
+            -> Result<Response<'a, 'b, Streaming>, Error>
+            where T: Encodable<Encoder<'a>, Error> {
+        let stream = try!(self.start());
 
-            // We didn't find the template, get writers lock and
-            let mut templates = self.templates.write().unwrap();
-            // search again incase there was a race to compile the template
-            let template = match templates.entry(path) {
-                Vacant(entry) => {
-                    let mut file = File::open(&Path::new(path));
-                    let raw_template = file.read_to_string()
-                                           .ok()
-                                           .expect(&*format!("Couldn't open the template file: {}",
-                                                            path));
-                    entry.insert(mustache::compile_str(&*raw_template))
-                },
-                Occupied(entry) => entry.into_mut()
-            };
+        // Fast path doesn't need writer lock
+        if let Some(t) = self.templates.read().get(&path) {
+            try!(t.render(&mut stream, data));
+            return Ok(stream);
+        }
 
-            let _ = template.render(self.origin, data);
+        // We didn't find the template, get writers lock
+        let mut templates = self.templates.write();
+        // Search again incase there was a race to compile the template
+        let template = match templates.entry(path) {
+            Vacant(entry) => {
+                let mut file = File::open(&Path::new(path));
+                let raw_template =
+                    file.read_to_string()
+                        .ok()
+                        .expect(format!("Couldn't open the template file: {}",
+                                        path).as_slice());
+
+                entry.set(mustache::compile_str(raw_template.as_slice()))
+            },
+            Occupied(entry) => entry.into_mut()
+        };
+
+        try!(template.render(&mut stream, data));
+        Ok(stream)
+    }
+
+    pub fn start(self) -> IoResult<Response<'a, 'b, Streaming>> {
+        self.set_common_headers();
+
+        let Response { origin, templates } = self;
+        let origin = try!(origin.start());
+
+        Ok(Response { origin: origin, templates: templates })
+    }
+}
+
+impl<'a, 'b> Writer for Response<'a, 'b, Streaming> {
+    #[inline(always)]
+    fn write(&mut self, msg: &[u8]) -> IoResult<()> {
+        self.origin.write(msg)
+    }
+    #[inline(always)]
+    fn flush(&mut self) -> IoResult<()> {
+        self.origin.flush()
+    }
+}
+
+impl<'a, 'b> Response<'a, 'b, Streaming> {
+    /// Flushes all writing of a response to the client.
+    pub fn end(self) -> IoResult<()> {
+        self.origin.end()
     }
 }
 

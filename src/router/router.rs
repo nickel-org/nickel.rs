@@ -177,8 +177,8 @@ fn can_match_var_routes () {
 
     let route_store = &mut Router::new();
 
-    fn handler (_request: &Request, response: &mut Response) -> () {
-        let _ = response.origin.write_all("hello from foo".as_bytes());
+    fn handler(_request: &Request, response: &mut Response) {
+        response.send("hello from foo".as_bytes()).unwrap();
     };
 
     // issue #20178

@@ -91,9 +91,10 @@ impl<'a, S: Display> ResponseFinalizer for &'a [S] {
     fn respond(self, res: &mut Response) -> MiddlewareResult {
         maybe_set_type(res, MediaType::Html);
         res.origin.status = StatusCode::Ok;
+        let res = res.start();
         for ref s in self.iter() {
             // FIXME : failure unhandled
-            let _ = write!(res.origin, "{}", s);
+            let _ = write!(&mut res, "{}", s);
         }
         Ok(Halt)
     }

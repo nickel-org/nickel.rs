@@ -74,7 +74,7 @@ impl StaticFilesHandler {
     fn with_file<T: BytesContainer>(&self, relative_path: Option<T>, res: &mut response::Response)
                                     -> IoResult<()> {
         match relative_path {
-            Some(path) => res.send_file(&self.root_path.join(path)),
+            Some(path) => res.send_file(&self.root_path.join(path)).and(Ok(())),
             None => Err(IoError::last_error())
         }
     }
