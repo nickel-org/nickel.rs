@@ -9,7 +9,7 @@ use nickel_error::{NickelError, ErrorWithStatusCode};
 pub struct DefaultErrorHandler;
 
 impl ErrorHandler for DefaultErrorHandler {
-    fn invoke(&self, err: &NickelError, _req: &mut Request, res: &mut Response) -> MiddlewareResult {
+    fn invoke<'a, 'b>(&self, err: &NickelError, _req: &mut Request, res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
         let r = match err.kind {
             ErrorWithStatusCode(NotFound) => (NotFound, "Not Found"),
             ErrorWithStatusCode(BadRequest) => (BadRequest, "Bad Request"),

@@ -8,7 +8,7 @@ use nickel_error::{ErrorWithStatusCode, NickelError};
 use server::Server;
 
 use hyper::method::Method;
-use hyper::status::StatusCode::NotFound;
+use hyper::status::StatusCode;
 use request::Request;
 use response::Response;
 
@@ -57,7 +57,7 @@ impl Nickel {
     ///
     /// ```{rust}
     /// use nickel::{Nickel, Request, Response, Continue, MiddlewareResult};
-    /// fn logger(req: &Request, res: &mut Response) -> MiddlewareResult {
+    /// fn logger(req: &Request, res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
     ///     println!("logging request: {}", req.origin.uri);
     ///     Ok(Continue)
     /// }
@@ -146,8 +146,8 @@ impl Nickel {
     /// server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
     /// ```
     pub fn listen(mut self, ip: IpAddr, port: Port) {
-        fn not_found_handler(_: &Request, _: &mut Response) -> MiddlewareResult {
-            Err(NickelError::new("File Not Found", ErrorWithStatusCode(NotFound)))
+        fn not_found_handler<'a, 'b>(_: &Request, _: &mut Response) -> (StatusCode, &'static str) {
+            (StatusCode::NotFound, "File Not Found")
         }
 
         let nfhandler: fn(&Request, &mut Response) -> MiddlewareResult = not_found_handler;

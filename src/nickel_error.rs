@@ -1,5 +1,7 @@
 use std::borrow::{IntoCow, Cow};
 use hyper::status::StatusCode;
+use std::error::FromError;
+use std::io::IoError;
 
 pub use self::NickelErrorKind::{ErrorWithStatusCode, UserDefinedError, Other};
 
@@ -24,6 +26,12 @@ impl NickelError {
             message: message.into_cow(),
             kind: kind
         }
+    }
+}
+
+impl FromError<IoError> for NickelError {
+    fn from_error(err: IoError) -> NickelError {
+        NickelError::new(err.desc, ErrorWithStatusCode(StatusCode::InternalServerError))
     }
 }
 

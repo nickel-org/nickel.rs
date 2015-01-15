@@ -19,13 +19,13 @@ pub type TemplateCache = RwLock<HashMap<&'static str, Template>>;
 ///A container for the response
 pub struct Response<'a, 'b: 'a, T=Fresh> {
     ///the original `hyper::server::Response`
-    pub origin: HyperResponse<'b, T>,
-    templates: &'a TemplateCache
+    pub origin: HyperResponse<'a, T>,
+    templates: &'b TemplateCache
 }
 
 impl<'a, 'b> Response<'a, 'b, Fresh> {
-    pub fn from_internal<'c, 'd>(response: HyperResponse<'d, Fresh>,
-                                 templates: &'c TemplateCache)
+    pub fn from_internal<'c, 'd>(response: HyperResponse<'c, Fresh>,
+                                 templates: &'d TemplateCache)
                                 -> Response<'c, 'd, Fresh> {
         Response {
             origin: response,

@@ -21,7 +21,7 @@ struct Person {
 }
 
 //this is an example middleware function that just logs each request
-fn logger(request: &Request, _response: &mut Response) -> MiddlewareResult {
+fn logger(request: &Request, _response: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
     println!("logging request: {}", request.origin.uri);
 
     // a request is supposed to return a `bool` to indicate whether additional
@@ -30,15 +30,15 @@ fn logger(request: &Request, _response: &mut Response) -> MiddlewareResult {
 }
 
 //this is how to overwrite the default error handler to handle 404 cases with a custom view
-fn custom_404(err: &NickelError, _req: &Request, response: &mut Response) -> MiddlewareResult {
+fn custom_404(err: &NickelError, _req: &Request, response: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
     match err.kind {
         ErrorWithStatusCode(status::NotFound) => {
-            response.content_type(MediaType::Html)
-                    .status_code(status::NotFound)
-                    .send("<h1>Call the police!<h1>");
-            Ok(Halt)
+            let stream = response.content_type(MediaType::Html)
+                                 .status_code(status::NotFound)
+                                 .send("<h1>Call the police!<h1>");
+            Ok(Halt(stream))
         },
-        _ => Ok(Continue)
+        _ => Ok(Continue(response))
     }
 }
 

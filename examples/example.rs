@@ -36,7 +36,7 @@ fn main() {
     // to achieve with the current version of rust.
 
     //this is an example middleware function that just logs each request
-    fn logger(request: &Request, _response: &mut Response) -> MiddlewareResult {
+    fn logger(request: &Request, _response: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
         println!("logging request: {}", request.origin.uri);
 
         // a request is supposed to return a `bool` to indicate whether additional
@@ -130,7 +130,7 @@ fn main() {
 
     // try calling http://localhost:6767/strict?state=valid
     // then try calling http://localhost:6767/strict?state=invalid
-    fn strict_handler(request: &mut Request, response: &mut Response) -> MiddlewareResult {
+    fn strict_handler(request: &mut Request, response: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
         if request.query("state", "invalid")[0].as_slice() != "valid" {
             Err(NickelError::new("Error Parsing JSON", ErrorWithStatusCode(BadRequest)))
         } else {
@@ -150,7 +150,7 @@ fn main() {
     server.utilize(StaticFilesHandler::new("examples/assets/"));
 
     //this is how to overwrite the default error handler to handle 404 cases with a custom view
-    fn custom_404(err: &NickelError, _req: &Request, response: &mut Response) -> MiddlewareResult {
+    fn custom_404(err: &NickelError, _req: &Request, response: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
         match err.kind {
             ErrorWithStatusCode(NotFound) => {
                 response.content_type(MediaType::Html)
