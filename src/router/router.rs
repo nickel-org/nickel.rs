@@ -89,21 +89,21 @@ impl HttpRouter for Router {
 }
 
 impl Middleware for Router {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: Response<'a, 'a>)
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a, 'a>)
                         -> MiddlewareResult<'a, 'a> {
-        match req.origin.uri {
-            AbsolutePath(ref url) => {
-                match self.match_route(&req.origin.method, &*url) {
-                    Some(route_result) => {
-                        res.origin.status = StatusCode::Ok;
-                        let handler = &route_result.route.handler;
-                        req.route_result = Some(route_result);
-                        handler.invoke(req, res)
-                    },
-                    None => Ok(Continue(res))
-                }
+        let route_result = match req.origin.uri {
+            AbsolutePath(ref url) => self.match_route(&req.origin.method, &**url),
+            _ => None
+        };
+
+        match route_result {
+            Some(route_result) => {
+                res.status_code(StatusCode::Ok);
+                let handler = &route_result.route.handler;
+                req.route_result = Some(route_result);
+                handler.invoke(req, res)
             },
-            _ => Ok(Continue(res))
+            None => Ok(Continue(res))
         }
     }
 }
@@ -177,8 +177,8 @@ fn can_match_var_routes () {
 
     let route_store = &mut Router::new();
 
-    fn handler(_request: &Request, response: &mut Response) {
-        response.send("hello from foo".as_bytes()).unwrap();
+    fn handler(_request: &Request, response: &mut Response) -> &'static str {
+        "hello from foo"
     };
 
     // issue #20178

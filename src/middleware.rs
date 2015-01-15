@@ -30,7 +30,7 @@ pub trait ErrorHandler: Send + 'static + Sync {
 
 impl<R> ErrorHandler for fn(&NickelError, &Request, &mut Response) -> R
         where R: ResponseFinalizer {
-    fn invoke<'a, 'b>(&self, err: &NickelError, req: &mut Request, res: Response<'a, 'a, net::Fresh>) -> MiddlewareResult<'a, 'a> {
+    fn invoke<'a, 'b>(&self, err: &NickelError, req: &mut Request, mut res: Response<'a, 'a, net::Fresh>) -> MiddlewareResult<'a, 'a> {
         let r = (*self)(err, req, &mut res);
         r.respond(res)
     }
@@ -50,15 +50,15 @@ impl MiddlewareStack {
         self.error_handlers.push(Box::new(handler));
     }
 
-    pub fn invoke<'a>(&'a self, req: Request<'a, 'a>, mut res: Response<'a, 'a>) {
+    pub fn invoke<'a>(&'a self, mut req: Request<'a, 'a>, mut res: Response<'a, 'a>) {
         for handler in self.handlers.iter() {
             match handler.invoke(&mut req, res) {
-                Ok(Halt(_)) => {
+                Ok(Halt(res)) => {
                     debug!("{:?} {:?} {:?} {:?}",
                            req.origin.method,
                            req.origin.remote_addr,
                            req.origin.uri,
-                           res.origin.status);
+                           res.origin.status());
                     return
                 }
                 Ok(Continue(fresh)) => res = fresh,

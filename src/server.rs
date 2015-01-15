@@ -18,7 +18,7 @@ pub struct Server {
 
 impl Handler for Arc<Server> {
     fn handle<'a>(&'a self, req: Request<'a>, res: Response<'a>) {
-        let nickel_req = request::Request::from_internal(&req);
+        let nickel_req = request::Request::from_internal(req);
         let nickel_res = response::Response::from_internal(res, &self.templates);
 
         self.middleware_stack.invoke(nickel_req, nickel_res);

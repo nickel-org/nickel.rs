@@ -33,7 +33,7 @@ fn logger(request: &Request, _response: Response<'a, 'a>) -> MiddlewareResult<'a
 fn custom_404(err: &NickelError, _req: &Request, response: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
     match err.kind {
         ErrorWithStatusCode(status::NotFound) => {
-            let stream = response.content_type(MediaType::Html)
+            let mut stream = response.content_type(MediaType::Html)
                                  .status_code(status::NotFound)
                                  .send("<h1>Call the police!<h1>");
             Ok(Halt(stream))

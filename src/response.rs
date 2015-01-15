@@ -79,7 +79,7 @@ impl<'a, 'b> Response<'a, 'b, Fresh> {
     pub fn send<T: BytesContainer> (self, text: T) -> IoResult<Response<'a, 'b, Streaming>> {
         self.set_common_headers();
 
-        let stream = try!(self.start());
+        let mut stream = try!(self.start());
         try!(stream.write_all(text.container_as_bytes()));
         Ok(stream)
     }
@@ -94,7 +94,7 @@ impl<'a, 'b> Response<'a, 'b, Fresh> {
     ///     response.send_file(&favicon).ok().expect("Failed to send favicon");
     /// }
     /// ```
-    pub fn send_file(self, path: &Path) -> IoResult<Response<'a, 'b, Streaming>> {
+    pub fn send_file(mut self, path: &Path) -> IoResult<Response<'a, 'b, Streaming>> {
         // Chunk the response
         self.origin.headers_mut().remove::<header::ContentLength>();
         // Determine content type by file extension or default to binary
@@ -102,7 +102,7 @@ impl<'a, 'b> Response<'a, 'b, Fresh> {
                               .and_then(from_str)
                               .unwrap_or(MediaType::Bin));
 
-        let stream = try!(self.start());
+        let mut stream = try!(self.start());
         let mut file = try!(File::open(path));
         try!(copy(&mut file, &mut stream));
         Ok(stream)
@@ -113,7 +113,7 @@ impl<'a, 'b> Response<'a, 'b, Fresh> {
     //
     // Also, it should only set them if not already set.
     fn set_common_headers(&mut self) {
-        let ref mut headers = self.origin.headers;
+        let ref mut headers = self.origin.headers_mut();
         headers.set(header::Date(time::now_utc()));
         headers.set(header::Server(String::from_str("Nickel")));
     }
@@ -130,13 +130,12 @@ impl<'a, 'b> Response<'a, 'b, Fresh> {
     ///     response.render("examples/assets/template.tpl", &data);
     /// }
     /// ```
-    pub fn render<T>(&mut self, path: &'static str, data: &T)
+    pub fn render<T>(self, path: &'static str, data: &T)
             -> Result<Response<'a, 'b, Streaming>, Error>
             where T: Encodable<Encoder<'a>, Error> {
-        let stream = try!(self.start());
-
         // Fast path doesn't need writer lock
         if let Some(t) = self.templates.read().get(&path) {
+            let mut stream = try!(self.start());
             try!(t.render(&mut stream, data));
             return Ok(stream);
         }
@@ -158,11 +157,12 @@ impl<'a, 'b> Response<'a, 'b, Fresh> {
             Occupied(entry) => entry.into_mut()
         };
 
+        let mut stream = try!(self.start());
         try!(template.render(&mut stream, data));
         Ok(stream)
     }
 
-    pub fn start(self) -> IoResult<Response<'a, 'b, Streaming>> {
+    pub fn start(mut self) -> IoResult<Response<'a, 'b, Streaming>> {
         self.set_common_headers();
 
         let Response { origin, templates } = self;

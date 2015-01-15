@@ -23,7 +23,7 @@ use mimes::MediaType;
 
 impl<R> Middleware for fn(&Request, &mut Response) -> R
         where R: ResponseFinalizer {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
         let r = (*self)(req, &mut res);
         r.respond(res)
     }
@@ -31,7 +31,7 @@ impl<R> Middleware for fn(&Request, &mut Response) -> R
 
 impl<T, R> Middleware for (fn(&Request, &mut Response, &T) -> R, T)
         where T: Send + 'static + Sync, R: ResponseFinalizer + 'static {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
         let (f, ref data) = *self;
         let r = f(req, &mut res, data);
         r.respond(res)
@@ -40,7 +40,7 @@ impl<T, R> Middleware for (fn(&Request, &mut Response, &T) -> R, T)
 
 impl<R> Middleware for fn(&mut Request, &mut Response) -> R
         where R: ResponseFinalizer {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
         let r = (*self)(req, &mut res);
         r.respond(res)
     }
@@ -48,7 +48,7 @@ impl<R> Middleware for fn(&mut Request, &mut Response) -> R
 
 impl<T, R> Middleware for (fn(&mut Request, &mut Response, &T) -> R, T)
         where T: Send + Sync + 'static, R: ResponseFinalizer + 'static {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
         let (f, ref data) = *self;
         let r = f(req, &mut res, data);
         r.respond(res)
@@ -65,7 +65,7 @@ pub trait ResponseFinalizer<T=net::Fresh> {
 }
 
 impl ResponseFinalizer for () {
-    fn respond<'a, 'b>(self, res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+    fn respond<'a, 'b>(self, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
         maybe_set_type(&mut res, MediaType::Html);
         Ok(Halt(try!(res.start())))
     }
@@ -80,20 +80,20 @@ impl ResponseFinalizer for () {
 // }
 
 impl ResponseFinalizer for json::Json {
-    fn respond<'a, 'b>(self, res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+    fn respond<'a, 'b>(self, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
         maybe_set_type(&mut res, MediaType::Json);
-        // let stream = try!(res.start());
+        // let mut stream = try!(res.start());
         // try!(stream.write(json::encode(&self).as_bytes()));
-        let stream = try!(res.send(json::encode(&self)));
+        let mut stream = try!(res.send(json::encode(&self)));
         Ok(Halt(stream))
     }
 }
 
 impl<'a, S: Display> ResponseFinalizer for &'a [S] {
-    fn respond<'c, 'b>(self, res: Response<'c, 'c>) -> MiddlewareResult<'c, 'c> {
+    fn respond<'c, 'b>(self, mut res: Response<'c, 'c>) -> MiddlewareResult<'c, 'c> {
         maybe_set_type(&mut res, MediaType::Html);
-        res.origin.status = StatusCode::Ok;
-        let res = try!(res.start());
+        res.status_code(StatusCode::Ok);
+        let mut res = try!(res.start());
         for ref s in self.iter() {
             // FIXME : failure unhandled
             let _ = write!(&mut res, "{}", s);
@@ -105,11 +105,11 @@ impl<'a, S: Display> ResponseFinalizer for &'a [S] {
 macro_rules! dual_impl {
     ($view:ty, $alloc:ty, |$s:ident, $res:ident| $b:block) => (
         impl<'a> ResponseFinalizer for $view {
-            fn respond<'a, 'b>($s, $res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> $b
+            fn respond<'a, 'b>($s, mut $res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> $b
         }
 
         impl ResponseFinalizer for $alloc {
-            fn respond<'a, 'b>($s, $res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> $b
+            fn respond<'a, 'b>($s, mut $res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> $b
         }
     )
 }
@@ -118,8 +118,8 @@ dual_impl!(&'a str,
            String,
             |self, res| {
                 maybe_set_type(&mut res, MediaType::Html);
-                res.origin.status = StatusCode::Ok;
 
+                res.status_code(StatusCode::Ok);
                 let stream = try!(res.send(self));
                 Ok(Halt(stream))
             });
@@ -129,8 +129,8 @@ dual_impl!((StatusCode, &'a str),
             |self, res| {
                 maybe_set_type(&mut res, MediaType::Html);
                 let (status, data) = self;
-                res.origin.status = status;
 
+                res.status_code(status);
                 let stream = try!(res.send(data));
                 Ok(Halt(stream))
             });
@@ -142,7 +142,7 @@ dual_impl!((usize, &'a str),
                 let (status, data) = self;
                 match FromPrimitive::from_uint(status) {
                     Some(status) => {
-                        res.origin.status = status;
+                        res.status_code(status);
                         let stream = try!(res.send(data));
                         Ok(Halt(stream))
                     }
@@ -171,7 +171,7 @@ dual_impl!((usize, &'a str),
 //                 Ok(Halt)
 //             })
 
-fn maybe_set_type(&mut res: &mut Response, ty: MediaType) {
+fn maybe_set_type(res: &mut Response, ty: MediaType) {
     if res.origin.headers().has::<header::ContentType>() {
         res.content_type(ty);
     }
