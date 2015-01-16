@@ -2,9 +2,8 @@
 
 extern crate "rustc-serialize" as rustc_serialize;
 extern crate nickel;
-extern crate http;
 
-use hyper::status::StatusCode::{NotFound, BadRequest};
+use nickel::status::StatusCode::{NotFound, BadRequest};
 use nickel::{
     Nickel, NickelError, ErrorWithStatusCode, Continue, Halt, Request, Response,
     QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter

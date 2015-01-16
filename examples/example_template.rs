@@ -1,7 +1,6 @@
 #![feature(old_io)]
 
 extern crate nickel;
-extern crate http;
 
 use nickel::{Nickel, Request, Response, HttpRouter};
 use std::old_io::net::ip::Ipv4Addr;

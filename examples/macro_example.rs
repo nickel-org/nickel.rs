@@ -1,12 +1,11 @@
 #![feature(plugin, core, old_io)]
 
 extern crate url;
-extern crate http;
 extern crate nickel;
 extern crate "rustc-serialize" as rustc_serialize;
 #[macro_use] extern crate nickel_macros;
 
-use hyper::status;
+use nickel::status::StatusCode;
 use nickel::{
     Nickel, NickelError, ErrorWithStatusCode, Continue, Halt, Request, Response,
     QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter
@@ -32,9 +31,9 @@ fn logger(request: &Request, _response: Response<'a, 'a>) -> MiddlewareResult<'a
 //this is how to overwrite the default error handler to handle 404 cases with a custom view
 fn custom_404(err: &NickelError, _req: &Request, response: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
     match err.kind {
-        ErrorWithStatusCode(status::NotFound) => {
+        ErrorWithStatusCode(StatusCode::NotFound) => {
             let mut stream = response.content_type(MediaType::Html)
-                                 .status_code(status::NotFound)
+                                 .status_code(StatusCode::NotFound)
                                  .send("<h1>Call the police!<h1>");
             Ok(Halt(stream))
         },
@@ -78,13 +77,13 @@ fn main() {
             use http::headers::response::Header::Location;
             let root = url::Url::parse("http://www.rust-lang.org/").unwrap();
             // returning a typed http status, a response body and some additional headers
-            (status::TemporaryRedirect, "Redirecting you to 'rust-lang.org'", vec![Location(root)])
+            (StatusCode::TemporaryRedirect, "Redirecting you to 'rust-lang.org'", vec![Location(root)])
         }
 
         // go to http://localhost:6767/private to see this route in action
         get "/private" => |request, response| {
             // returning a typed http status and a response body
-            (status::Unauthorized, "This is a private place")
+            (StatusCode::Unauthorized, "This is a private place")
         }
 
         // go to http://localhost:6767/some/crazy/route to see this route in action
