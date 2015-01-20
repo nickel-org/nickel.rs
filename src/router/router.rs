@@ -15,7 +15,7 @@ pub struct Route {
     pub path: String,
     pub method: Method,
     pub handler: Box<Middleware + Send + Sync + 'static>,
-    pub variables: HashMap<String, uint>,
+    pub variables: HashMap<String, usize>,
     matcher: Regex
 }
 
@@ -31,7 +31,7 @@ pub struct RouteResult<'a> {
 impl<'a> RouteResult<'a> {
     pub fn param(&self, key: &str) -> &str {
         let idx = self.route.variables.get(key).unwrap();
-        self.params[*idx].as_slice()
+        &self.params[*idx][]
     }
 }
 
@@ -55,7 +55,10 @@ impl<'a> Router {
                 let vec = match route.matcher.captures(path) {
                     Some(captures) => {
                         range(0, route.variables.len()).map(|pos|
-                            captures.at(pos + 1).to_string()
+                           match captures.at(pos + 1) {
+                               Some(c) => c.to_string(),
+                               None => "".to_string() // FIXME
+                           }
                         ).collect()
                     },
                     None => vec![],
@@ -76,7 +79,7 @@ impl HttpRouter for Router {
             path: path.to_string(),
             method: method,
             matcher: matcher,
-            handler: box handler,
+            handler: Box::new(handler),
             variables: variable_infos
         };
         self.routes.push(route);
@@ -88,7 +91,7 @@ impl Middleware for Router {
                         -> MiddlewareResult {
         match req.origin.request_uri {
             AbsolutePath(ref url) => {
-                match self.match_route(&req.origin.method, url.as_slice()) {
+                match self.match_route(&req.origin.method, &url[]) {
                     Some(route_result) => {
                         res.origin.status = ::http::status::Ok;
                         let handler = &route_result.route.handler;
@@ -117,20 +120,20 @@ fn creates_regex_with_captures () {
     let regex = path_utils::create_regex("foo/:uid/bar/:groupid");
     let caps = regex.captures("foo/4711/bar/5490").unwrap();
 
-    assert_eq!(caps.at(1), "4711");
-    assert_eq!(caps.at(2), "5490");
+    assert_eq!(caps.at(1).unwrap(), "4711");
+    assert_eq!(caps.at(2).unwrap(), "5490");
 
     let regex = path_utils::create_regex("foo/*/:uid/bar/:groupid");
     let caps = regex.captures("foo/test/4711/bar/5490").unwrap();
 
-    assert_eq!(caps.at(1), "4711");
-    assert_eq!(caps.at(2), "5490");
+    assert_eq!(caps.at(1).unwrap(), "4711");
+    assert_eq!(caps.at(2).unwrap(), "5490");
 
     let regex = path_utils::create_regex("foo/**/:uid/bar/:groupid");
     let caps = regex.captures("foo/test/another/4711/bar/5490").unwrap();
 
-    assert_eq!(caps.at(1), "4711");
-    assert_eq!(caps.at(2), "5490");
+    assert_eq!(caps.at(1).unwrap(), "4711");
+    assert_eq!(caps.at(2).unwrap(), "5490");
 }
 
 #[test]
@@ -176,8 +179,11 @@ fn can_match_var_routes () {
         let _ = response.origin.write("hello from foo".as_bytes());
     };
 
-    route_store.add_route(method::Get, "/foo/:userid", handler);
-    route_store.add_route(method::Get, "/bar", handler);
+    // issue #20178
+    let handler_cast: fn(&Request, &mut Response) = handler;
+
+    route_store.add_route(method::Get, "/foo/:userid", handler_cast);
+    route_store.add_route(method::Get, "/bar", handler_cast);
 
     let route_result = route_store.match_route(&method::Get, "/foo/4711").unwrap();
     let route = route_result.route;

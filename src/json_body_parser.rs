@@ -1,17 +1,16 @@
 use std::str;
 use serialize::Decodable;
-use serialize::json::{Decoder, DecoderError};
 use request::Request;
-use typemap::Assoc;
-use plugin::{Phantom, PluginFor, GetCached};
+use typemap::Key;
+use plugin::{Phantom, Plugin, Pluggable};
 
 // Plugin boilerplate
 struct JsonBodyParser;
-impl Assoc<String> for JsonBodyParser {}
-impl<'a, 'b> PluginFor<Request<'a, 'b>, String> for JsonBodyParser {
+impl Key for JsonBodyParser { type Value = String; }
+impl<'a, 'b> Plugin<Request<'a, 'b>> for JsonBodyParser {
     fn eval(req: &mut Request, _: Phantom<JsonBodyParser>) -> Option<String> {
         if !req.origin.body.is_empty() {
-            str::from_utf8(req.origin.body.as_slice()).map(|s| s.to_string())
+            str::from_utf8(&*req.origin.body).ok().map(|s| s.to_string())
         } else {
             None
         }
@@ -19,17 +18,17 @@ impl<'a, 'b> PluginFor<Request<'a, 'b>, String> for JsonBodyParser {
 }
 
 pub trait JsonBody {
-    fn json_as<T: Decodable<Decoder,DecoderError>>(&mut self) -> Option<T>;
+    fn json_as<T: Decodable>(&mut self) -> Option<T>;
 }
 
 impl<'a, 'b> JsonBody for Request<'a, 'b> {
-    fn json_as<T: Decodable<Decoder, DecoderError>>(&mut self) -> Option<T> {
+    fn json_as<T: Decodable>(&mut self) -> Option<T> {
         // FIXME:
         // I think it would be smarter to not return Option<T> but rather
         // DecodeResult<T> to not swallow valuable debugging information.
         // I couldn't figure out how to properly do that
         self.get::<JsonBodyParser>().and_then(|parsed| {
-            ::serialize::json::decode::<T>(parsed.as_slice()).ok()
+            ::serialize::json::decode::<T>(&parsed[]).ok()
         })
     }
 }

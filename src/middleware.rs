@@ -6,7 +6,7 @@ pub use self::Action::{Continue, Halt};
 
 pub type MiddlewareResult = Result<Action, NickelError>;
 
-#[deriving(PartialEq, Copy)]
+#[derive(PartialEq, Copy)]
 pub enum Action {
   Continue,
   Halt
@@ -41,23 +41,31 @@ pub struct MiddlewareStack {
 
 impl MiddlewareStack {
     pub fn add_middleware<T: Middleware> (&mut self, handler: T) {
-        self.handlers.push(box handler);
+        self.handlers.push(Box::new(handler));
     }
 
     pub fn add_error_handler<T: ErrorHandler> (&mut self, handler: T) {
-        self.error_handlers.push(box handler);
+        self.error_handlers.push(Box::new(handler));
     }
 
     pub fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: &mut Response) {
         for handler in self.handlers.iter() {
             match handler.invoke(req, res) {
                 Ok(Halt) => {
-                    debug!("{} {} {} {}", req.origin.method, req.origin.remote_addr, req.origin.request_uri, res.origin.status);
+                    debug!("{:?} {:?} {:?} {:?}",
+                           req.origin.method,
+                           req.origin.remote_addr,
+                           req.origin.request_uri,
+                           res.origin.status);
                     return
                 }
                 Ok(Continue) => {},
                 Err(mut err) => {
-                    warn!("{} {} {} {}", req.origin.method, req.origin.remote_addr, req.origin.request_uri, err.kind);
+                    warn!("{:?} {:?} {:?} {:?}",
+                          req.origin.method,
+                          req.origin.remote_addr,
+                          req.origin.request_uri,
+                          err.kind);
                     for error_handler in self.error_handlers.iter().rev() {
                         match error_handler.invoke(&err, req, res) {
                             Ok(Continue) => {},

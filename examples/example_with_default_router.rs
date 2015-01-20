@@ -1,3 +1,5 @@
+#![allow(unstable)]
+
 extern crate serialize;
 extern crate nickel;
 extern crate http;
@@ -12,15 +14,20 @@ fn main() {
         response.send("This is the /bar handler");
     }
 
-    // go to http://localhost:6767/bar to see this route in action
-    server.get("/bar", bar_handler);
+    // issue #20178
+    let bhandler: fn(&Request, &mut Response) = bar_handler;
 
-    fn foo_handler (request: &Request, _response: &mut Response) -> String {
+    // go to http://localhost:6767/bar to see this route in action
+    server.get("/bar", bhandler);
+
+    fn foo_handler (request: &mut Request, _response: &mut Response) -> String {
         format!("Foo is '{}'", request.param("foo"))
     }
 
+    let fhandler: fn(&mut Request, &mut Response) -> String = foo_handler;
+
     // go to http://localhost:6767/foo to see this route in action
-    server.get("/:foo", foo_handler);
+    server.get("/:foo", fhandler);
 
     server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
 }

@@ -1,3 +1,5 @@
+#![allow(unstable)]
+
 extern crate serialize;
 extern crate nickel;
 extern crate http;
@@ -9,10 +11,10 @@ use nickel::{
 };
 use nickel::mimes::MediaType;
 use std::io::net::ip::Ipv4Addr;
-use std::collections::TreeMap;
+use std::collections::BTreeMap;
 use serialize::json::{Json, ToJson};
 
-#[deriving(Decodable, Encodable)]
+#[derive(Decodable, Encodable)]
 struct Person {
     firstname: String,
     lastname:  String,
@@ -20,7 +22,7 @@ struct Person {
 
 impl ToJson for Person {
     fn to_json(&self) -> Json {
-        let mut map = TreeMap::new();
+        let mut map = BTreeMap::new();
         map.insert("first_name".to_string(), self.firstname.to_json());
         map.insert("last_name".to_string(), self.lastname.to_json());
         Json::Object(map)
@@ -43,7 +45,9 @@ fn main() {
     }
 
     // middleware is optional and can be registered with `utilize`
-    server.utilize(logger);
+    // issue #20178
+    let logger_handler: fn(&Request, &mut Response) -> MiddlewareResult = logger;
+    server.utilize(logger_handler);
 
     let mut router = Nickel::router();
 
@@ -51,29 +55,41 @@ fn main() {
         format!("This is user: {}", request.param("userid"))
     }
 
+    // issue #20178
+    let uhandler: fn(&Request, &mut Response) -> String = user_handler;
+
     // go to http://localhost:6767/user/4711 to see this route in action
-    router.get("/user/:userid", user_handler);
+    router.get("/user/:userid", uhandler);
 
     fn bar_handler(_request: &Request, response: &mut Response) {
         response.send("This is the /bar handler");
     }
 
+    // issue #20178
+    let bhandler: fn(&Request, &mut Response) = bar_handler;
+
     // go to http://localhost:6767/bar to see this route in action
-    router.get("/bar", bar_handler);
+    router.get("/bar", bhandler);
 
     fn simple_wildcard(_request: &Request, response: &mut Response) {
         response.send("This matches /some/crazy/route but not /some/super/crazy/route");
     }
 
+    // issue #20178
+    let shandler: fn(&Request, &mut Response) = simple_wildcard;
+
     // go to http://localhost:6767/some/crazy/route to see this route in action
-    router.get("/some/*/route", simple_wildcard);
+    router.get("/some/*/route", shandler);
 
     fn double_wildcard(_request: &Request, _response: &mut Response) -> &'static str {
         "This matches /a/crazy/route and also /a/super/crazy/route"
     }
 
+    // issue #20178
+    let dhandler: fn(&Request, &mut Response) -> &'static str = double_wildcard;
+
     // go to http://localhost:6767/a/nice/route or http://localhost:6767/a/super/nice/route to see this route in action
-    router.get("/a/**/route", double_wildcard);
+    router.get("/a/**/route", dhandler);
 
     // try it with curl
     // curl 'http://localhost:6767/a/post/request' -H 'Content-Type: application/json;charset=UTF-8'  --data-binary $'{ "firstname": "John","lastname": "Connor" }'
@@ -82,8 +98,11 @@ fn main() {
         format!("Hello {} {}", person.firstname, person.lastname)
     }
 
+    // issue #20178
+    let phandler: fn(&mut Request, &mut Response) -> String = post_handler;
+
     // go to http://localhost:6767/a/post/request to see this route in action
-    router.post("/a/post/request", post_handler);
+    router.post("/a/post/request", phandler);
 
     fn json_response(_request: &Request, _response: &mut Response) -> Json {
         let person = Person {
@@ -93,15 +112,21 @@ fn main() {
         person.to_json()
     }
 
+    // issue #20178
+    let jresponse: fn(&Request, &mut Response) -> Json = json_response;
+
     // go to http://localhost:6767/api/person/1 to see this route in action
-    router.get("/api/person/1", json_response);
+    router.get("/api/person/1", jresponse);
 
     // try calling http://localhost:6767/query?foo=bar
     fn query_handler(request: &mut Request, _response: &mut Response) -> String {
-        format!("Your foo values in the query string are: {}", *request.query("foo", "This is only a default value!"))
+        format!("Your foo values in the query string are: {:?}", *request.query("foo", "This is only a default value!"))
     }
 
-    router.get("/query", query_handler);
+    // issue #20178
+    let qhandler: fn(&mut Request, &mut Response) -> String = query_handler;
+
+    router.get("/query", qhandler);
 
     // try calling http://localhost:6767/strict?state=valid
     // then try calling http://localhost:6767/strict?state=invalid
@@ -114,7 +139,10 @@ fn main() {
         }
     }
 
-    router.get("/strict", strict_handler);
+    // issue #20178
+    let sthandler: fn(&mut Request, &mut Response) -> MiddlewareResult = strict_handler;
+
+    router.get("/strict", sthandler);
 
     server.utilize(router);
 
@@ -134,7 +162,10 @@ fn main() {
         }
     }
 
-    server.handle_error(custom_404);
+    // issue #20178
+    let custom_handler: fn(&NickelError, &Request, &mut Response) -> MiddlewareResult = custom_404;
+
+    server.handle_error(custom_handler);
 
     server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
 }

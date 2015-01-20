@@ -14,7 +14,8 @@ use request::Request;
 use response::Response;
 use http::status;
 use http::headers;
-use std::fmt::Show;
+use std::fmt::Display;
+use std::num::FromPrimitive;
 use middleware::{Middleware, MiddlewareResult, Halt};
 use serialize::json;
 use mimes::MediaType;
@@ -84,7 +85,7 @@ impl ResponseFinalizer for json::Json {
     }
 }
 
-impl<'a, S: Show> ResponseFinalizer for &'a [S] {
+impl<'a, S: Display> ResponseFinalizer for &'a [S] {
     fn respond(self, res: &mut Response) -> MiddlewareResult {
         maybe_set_type(res, MediaType::Html);
         res.origin.status = status::Ok;
@@ -97,7 +98,7 @@ impl<'a, S: Show> ResponseFinalizer for &'a [S] {
 }
 
 macro_rules! dual_impl {
-    ($view:ty, $alloc:ty |$s:ident, $res:ident| $b:block) => (
+    ($view:ty, $alloc:ty, |$s:ident, $res:ident| $b:block) => (
         impl<'a> ResponseFinalizer for $view {
             fn respond($s, $res: &mut Response) -> MiddlewareResult $b
         }
@@ -109,7 +110,7 @@ macro_rules! dual_impl {
 }
 
 dual_impl!(&'a str,
-           String
+           String,
             |self, res| {
                 maybe_set_type(res, MediaType::Html);
                 res.origin.status = status::Ok;
@@ -118,7 +119,7 @@ dual_impl!(&'a str,
             });
 
 dual_impl!((status::Status, &'a str),
-           (status::Status, String)
+           (status::Status, String),
             |self, res| {
                 maybe_set_type(res, MediaType::Html);
                 let (status, data) = self;
@@ -127,8 +128,8 @@ dual_impl!((status::Status, &'a str),
                 Ok(Halt)
             });
 
-dual_impl!((uint, &'a str),
-           (uint, String)
+dual_impl!((usize, &'a str),
+           (usize, String),
            |self, res| {
                 maybe_set_type(res, MediaType::Html);
                 let (status, data) = self;
@@ -144,7 +145,7 @@ dual_impl!((uint, &'a str),
             });
 
 dual_impl!((status::Status, &'a str, Vec<headers::response::Header>),
-           (status::Status, String, Vec<headers::response::Header>)
+           (status::Status, String, Vec<headers::response::Header>),
            |self, res| {
                 let (status, data, headers) = self;
 
