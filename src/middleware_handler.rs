@@ -96,7 +96,7 @@ impl<'a, S: Show> ResponseFinalizer for &'a [S] {
     }
 }
 
-macro_rules! dual_impl(
+macro_rules! dual_impl {
     ($view:ty, $alloc:ty |$s:ident, $res:ident| $b:block) => (
         impl<'a> ResponseFinalizer for $view {
             fn respond($s, $res: &mut Response) -> MiddlewareResult $b
@@ -106,7 +106,7 @@ macro_rules! dual_impl(
             fn respond($s, $res: &mut Response) -> MiddlewareResult $b
         }
     )
-)
+}
 
 dual_impl!(&'a str,
            String
@@ -115,7 +115,7 @@ dual_impl!(&'a str,
                 res.origin.status = status::Ok;
                 res.send(self);
                 Ok(Halt)
-            })
+            });
 
 dual_impl!((status::Status, &'a str),
            (status::Status, String)
@@ -125,7 +125,7 @@ dual_impl!((status::Status, &'a str),
                 res.origin.status = status;
                 res.send(data);
                 Ok(Halt)
-            })
+            });
 
 dual_impl!((uint, &'a str),
            (uint, String)
@@ -141,7 +141,7 @@ dual_impl!((uint, &'a str),
                     // This is a logic error
                     None => panic!("Bad status code")
                 }
-            })
+            });
 
 dual_impl!((status::Status, &'a str, Vec<headers::response::Header>),
            (status::Status, String, Vec<headers::response::Header>)
@@ -155,7 +155,7 @@ dual_impl!((status::Status, &'a str, Vec<headers::response::Header>),
                 maybe_set_type(res, MediaType::Html);
                 res.send(data);
                 Ok(Halt)
-            })
+            });
 
 fn maybe_set_type(res: &mut Response, ty: MediaType) {
     if res.origin.headers.content_type.is_none() {

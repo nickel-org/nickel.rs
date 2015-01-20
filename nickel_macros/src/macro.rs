@@ -1,7 +1,6 @@
-#![feature(macro_rules)]
 
 #[macro_export]
-macro_rules! router (
+macro_rules! router {
     ($($method:ident $path:expr => |$req:ident, $res:ident| $b:block)+) => (
         {
             use nickel::{HttpRouter, MiddlewareResult};
@@ -25,4 +24,4 @@ macro_rules! router (
             router
         }
     )
-)
+}
