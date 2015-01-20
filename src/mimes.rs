@@ -1,7 +1,7 @@
 use http::headers::content_type;
 use std::str::FromStr;
 
-macro_rules! mimes(
+macro_rules! mimes {
     ($($t:expr { $($name:ident, $as_s:pat, $subt:expr,)+ })+) => (
         #[allow(non_camel_case_types)]
         #[deriving(Show, PartialEq, Eq, Hash, Copy)]
@@ -42,7 +42,7 @@ macro_rules! mimes(
             }
         }
     )
-)
+}
 
 mimes!(
 
@@ -856,4 +856,4 @@ mimes!(
         Ice, "ice", "x-cooltalk",
 
     }
-)
+);
