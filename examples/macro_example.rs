@@ -1,9 +1,11 @@
-#![feature(phase)]
+#![allow(unstable)]
+#![feature(plugin)]
+
 extern crate url;
 extern crate http;
 extern crate nickel;
 extern crate serialize;
-#[phase(plugin)] extern crate nickel_macros;
+#[plugin] #[macro_use] extern crate nickel_macros;
 
 use http::status;
 use nickel::{
@@ -13,7 +15,7 @@ use nickel::{
 use nickel::mimes::MediaType;
 use std::io::net::ip::Ipv4Addr;
 
-#[deriving(Decodable, Encodable)]
+#[derive(Decodable, Encodable)]
 struct Person {
     firstname: String,
     lastname:  String,
@@ -45,13 +47,15 @@ fn main() {
     let mut server = Nickel::new();
 
     // middleware is optional and can be registered with `utilize`
-    server.utilize(logger);
+    // issue #20178
+    let logger_handler: fn(&Request, &mut Response) -> MiddlewareResult = logger;
+    server.utilize(logger_handler);
 
     // go to http://localhost:6767/thoughtram_logo_brain.png to see static file serving in action
     server.utilize(StaticFilesHandler::new("examples/assets/"));
 
     // The return type for a route can be anything that implements `ResponseFinalizer`
-    server.utilize(router! {
+    server.utilize(router!(
         // go to http://localhost:6767/user/4711 to see this route in action
         get "/user/:userid" => |request, response| {
             // returning a String
@@ -60,14 +64,14 @@ fn main() {
 
         // go to http://localhost:6767/no_alloc/4711 to see this route in action
         get "/no_alloc/:userid" => |request, response| {
-            // returning a slice of T where T: Show
-            ["This is user: ", request.param("userid")][]
+            // returning a slice of T where T: Display
+            ["This is user: ", request.param("userid")].as_slice()
         }
 
         // go to http://localhost:6767/bar to see this route in action
         get "/bar" => |request, response| {
             // returning a http status code and a static string
-            (200u, "This is the /bar handler")
+            (200us, "This is the /bar handler")
         }
 
         // go to http://localhost:6767/redirect to see this route in action
@@ -106,13 +110,17 @@ fn main() {
 
         // try calling http://localhost:6767/query?foo=bar
         get "/query" => |request, response| {
-            let text = format!("Your foo values in the query string are: {}", *request.query("foo", "This is only a default value!"));
+            let text = format!("Your foo values in the query string are: {:?}",
+                               *request.query("foo", "This is only a default value!"));
             response.send(text.as_slice());
             // a 'regular' handler with no return, handling everything via the response object
         }
-    });
+    ));
 
-    server.handle_error(custom_404);
+    // issue #20178
+    let custom_handler: fn(&NickelError, &Request, &mut Response) -> MiddlewareResult = custom_404;
+
+    server.handle_error(custom_handler);
 
     println!("Running server!");
     server.listen(Ipv4Addr(127, 0, 0, 1), 6767);

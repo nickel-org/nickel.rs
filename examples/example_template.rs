@@ -1,3 +1,5 @@
+#![allow(unstable)]
+
 extern crate serialize;
 extern crate nickel;
 extern crate http;
@@ -15,7 +17,10 @@ fn main() {
         response.render("examples/assets/template.tpl", &data);
     }
 
-    server.get("/", root_handler);
+    // issue #20178
+    let handler: fn(&Request, &mut Response) = root_handler;
+
+    server.get("/", handler);
 
     server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
 }

@@ -1,6 +1,6 @@
 use http;
 use router::RouteResult;
-use plugin::Extensible;
+use plugin::{Extensible, Pluggable};
 use typemap::TypeMap;
 
 ///A container for all the request data
@@ -36,3 +36,5 @@ impl<'a, 'b> Extensible for Request<'a, 'b> {
         &mut self.map
     }
 }
+
+impl<'a, 'b> Pluggable for Request<'a, 'b> {}

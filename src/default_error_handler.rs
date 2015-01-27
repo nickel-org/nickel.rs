@@ -5,7 +5,7 @@ use ResponseFinalizer;
 use middleware::{ErrorHandler, MiddlewareResult};
 use nickel_error::{NickelError, ErrorWithStatusCode};
 
-#[deriving(Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct DefaultErrorHandler;
 
 impl ErrorHandler for DefaultErrorHandler {

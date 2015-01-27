@@ -22,10 +22,14 @@ pub trait HttpRouter {
     ///     };
     ///
     ///     let mut server = Nickel::new();
-    ///     server.add_route(Get, "/foo", read_handler);
-    ///     server.add_route(Post, "/foo", modify_handler);
-    ///     server.add_route(Put, "/foo", modify_handler);
-    ///     server.add_route(Delete, "/foo", modify_handler);
+    ///
+    ///     let rhandler: fn(&Request, &mut Response) = read_handler;
+    ///     server.add_route(Get, "/foo", rhandler);
+    ///
+    ///     let mhandler: fn(&Request, &mut Response) = modify_handler;
+    ///     server.add_route(Post, "/foo", mhandler);
+    ///     server.add_route(Put, "/foo", mhandler);
+    ///     server.add_route(Delete, "/foo", mhandler);
     /// }
     /// ```
     fn add_route<H: Middleware>(&mut self, Method, &str, H);
@@ -48,33 +52,37 @@ pub trait HttpRouter {
     /// fn bare_handler(request: &Request, response: &mut Response) {
     ///     response.send("This matches /user");
     /// };
-    /// server.get("/user", bare_handler);
+    /// let bhandler: fn(&Request, &mut Response) = bare_handler;
+    /// server.get("/user", bhandler);
     ///
     /// // with variables
     /// fn var_handler(request: &Request, response: &mut Response) {
     ///     let text = format!("This is user: {}", request.param("userid"));
     ///     response.send(text.as_slice());
     /// };
-    /// server.get("/user/:userid", var_handler);
+    /// let vhandler: fn(&Request, &mut Response) = var_handler;
+    /// server.get("/user/:userid", vhandler);
     ///
     /// // with simple wildcard
     /// fn wild_handler(request: &Request, response: &mut Response) {
     ///     response.send("This matches /user/list/4711 but not /user/extended/list/4711");
     /// };
-    /// server.get("/user/*/:userid", wild_handler);
+    /// let whandler: fn(&Request, &mut Response) = wild_handler;
+    /// server.get("/user/*/:userid", whandler);
     ///
     /// // with double wildcard
     /// fn very_wild_handler(request: &Request, response: &mut Response) {
     ///     response.send("This matches /user/list/4711 and also /user/extended/list/4711");
     /// };
-    /// server.get("/user/**/:userid", very_wild_handler);
+    /// let vwhandler: fn(&Request, &mut Response) = very_wild_handler;
+    /// server.get("/user/**/:userid", vwhandler);
     /// ```
     ///
     /// # Macro example
     ///
     /// ```{rust}
-    /// # #![feature(phase)]
-    /// #[phase(plugin)] extern crate nickel_macros;
+    /// #![feature(plugin)]
+    /// #[plugin] #[macro_use] extern crate nickel_macros;
     /// extern crate nickel;
     /// use nickel::Nickel;
     ///
@@ -123,7 +131,8 @@ pub trait HttpRouter {
     /// };
     ///
     /// let mut server = Nickel::new();
-    /// server.post("/a/post/request", handler);
+    /// let h: fn(&Request, &mut Response) = handler;
+    /// server.post("/a/post/request", h);
     /// ```
     fn post<H: Middleware>(&mut self, uri: &str, handler: H) {
         self.add_route(Post, uri, handler);
@@ -143,7 +152,8 @@ pub trait HttpRouter {
     /// };
     ///
     /// let mut server = Nickel::new();
-    /// server.put("/a/put/request", handler);
+    /// let h: fn(&Request, &mut Response) = handler;
+    /// server.put("/a/put/request", h);
     /// ```
     fn put<H: Middleware>(&mut self, uri: &str, handler: H) {
         self.add_route(Put, uri, handler);
@@ -163,7 +173,8 @@ pub trait HttpRouter {
     /// };
     ///
     /// let mut server = Nickel::new();
-    /// server.delete("/a/delete/request", handler);
+    /// let h: fn(&Request, &mut Response) = handler;
+    /// server.delete("/a/delete/request", h);
     /// ```
     fn delete<H: Middleware>(&mut self, uri: &str, handler: H) {
         self.add_route(Delete, uri, handler);

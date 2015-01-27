@@ -59,7 +59,7 @@ use nickel::{
 use nickel::mimes;
 use std::io::net::ip::Ipv4Addr;
 
-#[deriving(Decodable, Encodable)]
+#[derive(Decodable, Encodable)]
 struct Person {
     firstname: String,
     lastname:  String,

@@ -1,5 +1,5 @@
 use std::io::net::ip::{SocketAddr, IpAddr, Port};
-use std::sync::{Arc, RWLock};
+use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
 
 use http::server::{Config, Request, ResponseWriter};
@@ -37,7 +37,7 @@ impl Server {
             middleware_stack: middleware_stack,
             ip: ip,
             port: port,
-            templates: RWLock::new(HashMap::<&'static str, mustache::Template>::new())
+            templates: RwLock::new(HashMap::<&'static str, mustache::Template>::new())
         }
     }
 

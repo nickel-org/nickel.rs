@@ -1,14 +1,14 @@
 use std::io::net::ip::{Port, IpAddr};
 
+use request::Request;
+use response::Response;
 use router::{Router, HttpRouter};
-use middleware::{MiddlewareStack, Middleware, ErrorHandler, MiddlewareResult};
-use nickel_error::{ NickelError, ErrorWithStatusCode };
+use middleware::{MiddlewareResult, MiddlewareStack, Middleware, ErrorHandler};
+use nickel_error::{ErrorWithStatusCode, NickelError};
 use server::Server;
 
 use http::method::Method;
 use http::status::NotFound;
-use request::Request;
-use response::Response;
 
 //pre defined middleware
 use default_error_handler::DefaultErrorHandler;
@@ -61,7 +61,8 @@ impl Nickel {
     /// }
     ///
     /// let mut server = Nickel::new();
-    /// server.utilize(logger);
+    /// let l: fn(&Request, &mut Response) -> MiddlewareResult = logger;
+    /// server.utilize(l);
     /// ```
     pub fn utilize<T: Middleware>(&mut self, handler: T){
         self.middleware_stack.add_middleware(handler);
@@ -98,7 +99,10 @@ impl Nickel {
     /// }
     ///
     /// let mut server = Nickel::new();
-    /// server.handle_error(error_handler)
+    ///
+    /// let ehandler: fn(&NickelError, &Request, &mut Response) -> MiddlewareResult = error_handler;
+    ///
+    /// server.handle_error(ehandler)
     /// # }
     /// ```
     pub fn handle_error<T: ErrorHandler>(&mut self, handler: T){
@@ -119,7 +123,10 @@ impl Nickel {
     ///     response.send("Hi from /foo");
     /// };
     ///
-    /// router.get("/foo", foo_handler);
+    /// let fhandler: fn(&Request, &mut Response) = foo_handler;
+    ///
+    /// router.get("/foo", fhandler);
+    ///
     /// server.utilize(router);
     /// ```
     pub fn router() -> Router {
@@ -141,7 +148,8 @@ impl Nickel {
             Err(NickelError::new("File Not Found", ErrorWithStatusCode(NotFound)))
         }
 
-        self.middleware_stack.add_middleware(not_found_handler);
+        let nfhandler: fn(&Request, &mut Response) -> MiddlewareResult = not_found_handler;
+        self.middleware_stack.add_middleware(nfhandler);
 
         match port {
             80u16 =>  println!("Listening on http://{}", ip),

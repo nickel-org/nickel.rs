@@ -47,6 +47,14 @@ version = "*"
 
 git = "https://github.com/reem/rust-plugin"
 
+[dependencies.regex]
+
+version = "0.1.8"
+
+[dependencies.regex_macros]
+
+version = "0.1.5"
+
 [[example]]
 
 name = "example"

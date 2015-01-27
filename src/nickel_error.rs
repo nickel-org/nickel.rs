@@ -1,4 +1,5 @@
-use std::str::CowString;
+use std::borrow::IntoCow;
+use std::string::CowString;
 use http::status::Status;
 
 pub use self::NickelErrorKind::{ErrorWithStatusCode, UserDefinedError, Other};
@@ -6,7 +7,7 @@ pub use self::NickelErrorKind::{ErrorWithStatusCode, UserDefinedError, Other};
 /// NickelError is the basic error type for HTTP errors as well as user defined errors.
 /// One can pattern match against the `kind` property to handle the different cases.
 
-#[deriving(Show)]
+#[derive(Show)]
 pub struct NickelError {
     pub kind: NickelErrorKind,
     pub message: CowString<'static>
@@ -27,10 +28,10 @@ impl NickelError {
     }
 }
 
-#[deriving(Show)]
+#[derive(Show)]
 pub enum NickelErrorKind {
     // FIXME: Should probably re-export http::status::Status
     ErrorWithStatusCode(Status),
-    UserDefinedError(int, String),
+    UserDefinedError(usize, String),
     Other
 }

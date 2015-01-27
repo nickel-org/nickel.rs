@@ -12,7 +12,7 @@ use nickel_error::{ NickelError, ErrorWithStatusCode };
 
 // this should be much simpler after unboxed closures land in Rust.
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct StaticFilesHandler {
     root_path: Path
 }
@@ -60,11 +60,11 @@ impl StaticFilesHandler {
     fn extract_path<'a>(&self, req: &'a mut request::Request) -> Option<&'a str> {
         match req.origin.request_uri {
             AbsolutePath(ref path) => {
-                debug!("{} {}{}", req.origin.method, self.root_path.display(), path);
+                debug!("{:?} {:?}{:?}", req.origin.method, self.root_path.display(), path);
 
-                match path.as_slice() {
+                match &path[] {
                     "/" => Some("index.html"),
-                    path => Some(path.slice_from(1)),
+                    path => Some(&path[1..]),
                 }
             }
             _ => None

@@ -1,6 +1,6 @@
-use std::sync::RWLock;
+use std::sync::RwLock;
 use std::collections::HashMap;
-use std::collections::hash_map::{Occupied, Vacant};
+use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::io::{IoResult, File};
 use std::io::util::copy;
 use std::path::BytesContainer;
@@ -10,9 +10,9 @@ use http::server::ResponseWriter;
 use time;
 use mimes;
 use mustache;
-use mustache::{Template, Encoder, Error};
+use mustache::Template;
 
-pub type TemplateCache = RWLock<HashMap<&'static str, Template>>;
+pub type TemplateCache = RwLock<HashMap<&'static str, Template>>;
 
 ///A container for the response
 pub struct Response<'a, 'b: 'a> {
@@ -106,7 +106,7 @@ impl<'a, 'b> Response<'a, 'b> {
         self.origin.headers.content_length = None;
 
         self.origin.headers.content_type = path.extension_str()
-                                               .and_then(from_str)
+                                               .and_then(|s| s.parse())
                                                .map(mimes::get_media_type);
         self.origin.headers.server = Some(String::from_str("Nickel"));
         copy(&mut file, self.origin)
@@ -124,30 +124,28 @@ impl<'a, 'b> Response<'a, 'b> {
     ///     response.render("examples/assets/template.tpl", &data);
     /// }
     /// ```
-    pub fn render<'c, T: Encodable<Encoder<'c>, Error>>
+    pub fn render<'c, T: Encodable>
         (&mut self, path: &'static str, data: &T) {
             // Fast path doesn't need writer lock
-            match self.templates.read().get(&path) {
-                Some(t) => {
+            {
+                let templates = self.templates.read().unwrap();
+                if let Some(t) = templates.get(&path) {
                     let _ = t.render(self.origin, data);
                     return
-                },
-                None => {}
+                }
             }
 
-            // We didn't find the template, get writers lock
-            let mut templates = self.templates.write();
-            // Search again incase there was a race to compile the template
+            // We didn't find the template, get writers lock and
+            let mut templates = self.templates.write().unwrap();
+            // search again incase there was a race to compile the template
             let template = match templates.entry(path) {
                 Vacant(entry) => {
                     let mut file = File::open(&Path::new(path));
-                    let raw_template =
-                        file.read_to_string()
-                            .ok()
-                            .expect(format!("Couldn't open the template file: {}",
-                                            path).as_slice());
-
-                    entry.set(mustache::compile_str(raw_template.as_slice()))
+                    let raw_template = file.read_to_string()
+                                           .ok()
+                                           .expect(&format!("Couldn't open the template file: {}",
+                                                            path)[]);
+                    entry.insert(mustache::compile_str(&raw_template[]))
                 },
                 Occupied(entry) => entry.into_mut()
             };
@@ -159,11 +157,11 @@ impl<'a, 'b> Response<'a, 'b> {
 #[test]
 fn matches_content_type () {
     let path = &Path::new("test.txt");
-    let content_type = path.extension_str().and_then(from_str);
+    let content_type = path.extension_str().and_then(|s| s.parse());
 
     assert_eq!(content_type, Some(mimes::MediaType::Txt));
     let content_type = content_type.map(mimes::get_media_type).unwrap();
 
-    assert_eq!(content_type.type_.as_slice(), "text");
-    assert_eq!(content_type.subtype.as_slice(), "plain");
+    assert_eq!(&content_type.type_[], "text");
+    assert_eq!(&content_type.subtype[], "plain");
 }

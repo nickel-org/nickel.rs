@@ -5,15 +5,16 @@ use urlencoded;
 use http::server::request::RequestUri;
 use http::server::request::RequestUri::{Star, AbsoluteUri, AbsolutePath, Authority};
 use url::UrlParser;
-use plugin::{Phantom, PluginFor, GetCached};
-use typemap::Assoc;
+use plugin::{Phantom, Plugin, Pluggable};
+use typemap::Key;
 
 type QueryStore = HashMap<String, Vec<String>>;
 
 // Plugin boilerplate
 struct QueryStringParser;
-impl Assoc<QueryStore> for QueryStringParser {}
-impl<'a, 'b> PluginFor<Request<'a, 'b>, QueryStore> for QueryStringParser {
+impl Key for QueryStringParser { type Value = QueryStore; }
+
+impl<'a, 'b> Plugin<Request<'a, 'b>> for QueryStringParser {
     fn eval(req: &mut Request, _: Phantom<QueryStringParser>) -> Option<QueryStore> {
         Some(parse(&req.origin.request_uri))
     }
@@ -38,11 +39,11 @@ impl<'a, 'b> QueryString for Request<'a, 'b> {
 }
 
 fn parse(origin: &RequestUri) -> QueryStore {
-    let f = |query: Option<&String>| query.map(|q| urlencoded::parse(q.as_slice()));
+    let f = |&: query: Option<&String>| query.map(|q| urlencoded::parse(&q[]));
 
     let result = match *origin {
         AbsoluteUri(ref url) => f(url.query.as_ref()),
-        AbsolutePath(ref s) => UrlParser::new().parse_path(s.as_slice())
+        AbsolutePath(ref s) => UrlParser::new().parse_path(&s[])
                                                 // FIXME: If this fails to parse,
                                                 // then it really shouldn't have
                                                 // reached here.
@@ -57,7 +58,7 @@ fn parse(origin: &RequestUri) -> QueryStore {
 #[test]
 fn splits_and_parses_an_url() {
     use url::Url;
-    let t = |url|{
+    let t = |&: url|{
         let store = parse(&url);
         assert_eq!(store["foo".to_string()], vec!["bar".to_string()]);
         assert_eq!(store["message".to_string()],

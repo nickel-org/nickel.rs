@@ -1,6 +1,7 @@
-#![feature(phase)]
+#![allow(unstable)]
+#![feature(plugin)]
 
-#[phase(plugin)] extern crate nickel_macros;
+#[plugin] #[macro_use] extern crate nickel_macros;
 extern crate nickel;
 
 use nickel::Nickel;
