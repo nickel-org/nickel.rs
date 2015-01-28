@@ -1,4 +1,4 @@
-use std::io::net::ip::{Port, IpAddr};
+use std::old_io::net::ip::{Port, IpAddr};
 
 use request::Request;
 use response::Response;
@@ -138,7 +138,7 @@ impl Nickel {
     /// # Example
     /// ```{rust,no_run}
     /// use nickel::Nickel;
-    /// use std::io::net::ip::IpAddr::Ipv4Addr;
+    /// use std::old_io::net::ip::IpAddr::Ipv4Addr;
     ///
     /// let mut server = Nickel::new();
     /// server.listen(Ipv4Addr(127, 0, 0, 1), 6767);

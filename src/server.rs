@@ -1,4 +1,4 @@
-use std::io::net::ip::{SocketAddr, IpAddr, Port};
+use std::old_io::net::ip::{SocketAddr, IpAddr, Port};
 use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
 

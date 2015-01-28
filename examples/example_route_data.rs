@@ -7,7 +7,7 @@ extern crate http;
 use nickel::{
     Nickel, Request, Response, HttpRouter
 };
-use std::io::net::ip::Ipv4Addr;
+use std::old_io::net::ip::Ipv4Addr;
 use std::sync::atomic::AtomicUint;
 use std::sync::atomic::Ordering::Relaxed;
 
