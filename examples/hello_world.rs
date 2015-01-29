@@ -5,7 +5,7 @@
 extern crate nickel;
 
 use nickel::Nickel;
-use std::io::net::ip::Ipv4Addr;
+use std::old_io::net::ip::Ipv4Addr;
 
 fn main() {
     let mut server = Nickel::new();

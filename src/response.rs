@@ -1,8 +1,8 @@
 use std::sync::RwLock;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
-use std::io::{IoResult, File};
-use std::io::util::copy;
+use std::old_io::{IoResult, File};
+use std::old_io::util::copy;
 use std::path::BytesContainer;
 use serialize::Encodable;
 use http;
@@ -78,7 +78,7 @@ impl<'a, 'b> Response<'a, 'b> {
         // TODO: This needs to be more sophisticated to return the correct headers
         // not just "some headers" :)
         Response::set_headers(self.origin);
-        let _ = self.origin.write(text.container_as_bytes());
+        let _ = self.origin.write_all(text.container_as_bytes());
     }
 
     fn set_headers(response_writer: &mut http::server::ResponseWriter) {

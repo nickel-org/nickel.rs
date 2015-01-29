@@ -1,4 +1,4 @@
-use std::io::File;
+use std::old_io::File;
 
 use http::server::request::RequestUri::AbsolutePath;
 use http::method::{Get, Head, Options};

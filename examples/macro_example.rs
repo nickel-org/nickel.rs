@@ -13,7 +13,7 @@ use nickel::{
     QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter
 };
 use nickel::mimes::MediaType;
-use std::io::net::ip::Ipv4Addr;
+use std::old_io::net::ip::Ipv4Addr;
 
 #[derive(Decodable, Encodable)]
 struct Person {
