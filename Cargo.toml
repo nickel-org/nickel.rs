@@ -35,29 +35,13 @@ path = "nickel_macros"
 
 git = "https://github.com/rust-lang/time"
 
-[dependencies.typemap]
-
-version = "*"
-
-[dependencies.plugin]
-
-git = "https://github.com/reem/rust-plugin"
-
-[dependencies.regex]
-
-version = "0.1.8"
-
-[dependencies.regex_macros]
-
-version = "0.1.5"
-
-[dependencies.rustc-serialize]
-
-version = "*"
-
-[dependencies.log]
-
-version = "*"
+[dependencies]
+typemap = "*"
+plugin = "*"
+regex = "*"
+regex_macros = "*"
+rustc-serialize = "*"
+log = "*"
 
 [[example]]
 
