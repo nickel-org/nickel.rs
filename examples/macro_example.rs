@@ -1,10 +1,9 @@
-#![allow(unstable)]
-#![feature(plugin)]
+#![feature(plugin, core, io)]
 
 extern crate url;
 extern crate http;
 extern crate nickel;
-extern crate serialize;
+extern crate "rustc-serialize" as rustc_serialize;
 #[plugin] #[macro_use] extern crate nickel_macros;
 
 use http::status;
@@ -15,7 +14,7 @@ use nickel::{
 use nickel::mimes::MediaType;
 use std::old_io::net::ip::Ipv4Addr;
 
-#[derive(Decodable, Encodable)]
+#[derive(RustcDecodable, RustcEncodable)]
 struct Person {
     firstname: String,
     lastname:  String,

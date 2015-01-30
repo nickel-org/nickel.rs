@@ -80,7 +80,8 @@ impl ResponseFinalizer for MiddlewareResult {
 impl ResponseFinalizer for json::Json {
     fn respond(self, res: &mut Response) -> MiddlewareResult {
         maybe_set_type(res, MediaType::Json);
-        res.send(json::encode(&self));
+        // FIXME: remove unwrap
+        res.send(json::encode(&self).unwrap());
         Ok(Halt)
     }
 }

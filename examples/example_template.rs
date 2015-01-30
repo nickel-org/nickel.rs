@@ -1,6 +1,5 @@
-#![allow(unstable)]
+#![feature(io)]
 
-extern crate serialize;
 extern crate nickel;
 extern crate http;
 
