@@ -1,5 +1,4 @@
-#![allow(unstable)]
-#![feature(plugin)]
+#![feature(plugin, io)]
 
 #[plugin] #[macro_use] extern crate nickel_macros;
 extern crate nickel;

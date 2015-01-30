@@ -1,4 +1,4 @@
-#![allow(unstable)]
+#![feature(collections, core, io)]
 
 extern crate serialize;
 extern crate nickel;

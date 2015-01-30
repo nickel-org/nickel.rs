@@ -1,5 +1,4 @@
-#![allow(unstable)]
-#![feature(plugin)]
+#![feature(plugin, core, io)]
 
 extern crate url;
 extern crate http;
