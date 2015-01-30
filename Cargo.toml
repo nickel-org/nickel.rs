@@ -15,10 +15,6 @@ path = "src/lib.rs"
 
 git = "https://github.com/nickel-org/rust-http.git"
 
-[dependencies.anymap]
-
-git = "https://github.com/nickel-org/anymap.git"
-
 [dependencies.url]
 
 git = "https://github.com/nickel-org/rust-url.git"
