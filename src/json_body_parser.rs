@@ -1,5 +1,5 @@
 use std::str;
-use serialize::Decodable;
+use serialize::{Decodable, json};
 use request::Request;
 use typemap::Key;
 use plugin::{Phantom, Plugin, Pluggable};
@@ -28,7 +28,7 @@ impl<'a, 'b> JsonBody for Request<'a, 'b> {
         // DecodeResult<T> to not swallow valuable debugging information.
         // I couldn't figure out how to properly do that
         self.get::<JsonBodyParser>().and_then(|parsed| {
-            ::serialize::json::decode::<T>(&parsed[]).ok()
+            json::decode::<T>(&parsed[]).ok()
         })
     }
 }

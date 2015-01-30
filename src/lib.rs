@@ -15,7 +15,7 @@
 
 extern crate time;
 extern crate http;
-extern crate serialize;
+extern crate "rustc-serialize" as serialize;
 extern crate regex;
 #[plugin] #[no_link] extern crate regex_macros;
 extern crate typemap;

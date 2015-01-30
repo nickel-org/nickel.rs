@@ -1,6 +1,5 @@
 #![feature(core, io)]
 
-extern crate serialize;
 extern crate nickel;
 extern crate http;
 

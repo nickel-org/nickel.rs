@@ -51,6 +51,14 @@ version = "0.1.8"
 
 version = "0.1.5"
 
+[dependencies.rustc-serialize]
+
+version = "*"
+
+[dependencies.log]
+
+version = "*"
+
 [[example]]
 
 name = "example"

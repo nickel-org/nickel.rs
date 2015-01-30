@@ -1,6 +1,6 @@
 #![feature(collections, core, io)]
 
-extern crate serialize;
+extern crate "rustc-serialize" as rustc_serialize;
 extern crate nickel;
 extern crate http;
 
@@ -12,9 +12,9 @@ use nickel::{
 use nickel::mimes::MediaType;
 use std::old_io::net::ip::Ipv4Addr;
 use std::collections::BTreeMap;
-use serialize::json::{Json, ToJson};
+use rustc_serialize::json::{Json, ToJson};
 
-#[derive(Decodable, Encodable)]
+#[derive(RustcDecodable, RustcEncodable)]
 struct Person {
     firstname: String,
     lastname:  String,
