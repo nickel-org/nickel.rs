@@ -106,7 +106,7 @@ impl<'a, 'b> Response<'a, 'b> {
         self.origin.headers.content_length = None;
 
         self.origin.headers.content_type = path.extension_str()
-                                               .and_then(|s| s.parse())
+                                               .and_then(|s| s.parse().ok())
                                                .map(mimes::get_media_type);
         self.origin.headers.server = Some(String::from_str("Nickel"));
         copy(&mut file, self.origin)
@@ -157,7 +157,7 @@ impl<'a, 'b> Response<'a, 'b> {
 #[test]
 fn matches_content_type () {
     let path = &Path::new("test.txt");
-    let content_type = path.extension_str().and_then(|s| s.parse());
+    let content_type = path.extension_str().and_then(|s| s.parse().ok());
 
     assert_eq!(content_type, Some(mimes::MediaType::Txt));
     let content_type = content_type.map(mimes::get_media_type).unwrap();
