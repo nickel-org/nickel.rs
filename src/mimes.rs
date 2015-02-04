@@ -30,14 +30,15 @@ macro_rules! mimes {
         }
 
         impl FromStr for MediaType {
-            fn from_str(s: &str) -> Option<MediaType> {
+            type Err = &'static str;
+            fn from_str(s: &str) -> Result<MediaType, &'static str> {
                 match s {
                     $(
                         $(
-                            $as_s => Some(MediaType::$name)
+                            $as_s => Ok(MediaType::$name)
                         ),*
                     ),*,
-                    _ => None
+                    _ => Err("Not a valid MediaType.")
                 }
             }
         }
