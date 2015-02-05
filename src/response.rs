@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::old_io::{IoResult, File};
 use std::old_io::util::copy;
-use std::path::BytesContainer;
+use std::old_path::BytesContainer;
 use serialize::Encodable;
 use http;
 use http::server::ResponseWriter;
