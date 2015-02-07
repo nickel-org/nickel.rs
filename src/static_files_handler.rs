@@ -1,4 +1,4 @@
-use std::path::BytesContainer;
+use std::old_path::BytesContainer;
 use std::old_io::{IoError, IoResult, FileNotFound};
 
 use http::server::request::RequestUri::AbsolutePath;
