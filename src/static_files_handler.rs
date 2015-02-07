@@ -1,5 +1,5 @@
-use std::path::BytesContainer;
 use std::old_io::{IoError, IoResult, FileNotFound};
+use std::old_path::BytesContainer;
 
 use http::server::request::RequestUri::AbsolutePath;
 use http::method::{Get, Head};
