@@ -31,13 +31,19 @@ git clone --recursive https://github.com/nickel-org/nickel.git
 ##Build nickel
 
 ```shell
-make all
+cargo build --release
+```
+
+##Run the tests
+
+```shell
+cargo test
 ```
 
 ##Run the example
 
 ```shell
-make run
+cargo run --example example
 ```
 
 Then try `localhost:6767/user/4711` and `localhost:6767/bar`
