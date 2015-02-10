@@ -5,7 +5,7 @@ use urlencoded;
 use http::server::request::RequestUri;
 use http::server::request::RequestUri::{Star, AbsoluteUri, AbsolutePath, Authority};
 use url::UrlParser;
-use plugin::{Phantom, Plugin, Pluggable};
+use plugin::{Plugin, Pluggable};
 use typemap::Key;
 
 type QueryStore = HashMap<String, Vec<String>>;
@@ -15,8 +15,10 @@ struct QueryStringParser;
 impl Key for QueryStringParser { type Value = QueryStore; }
 
 impl<'a, 'b> Plugin<Request<'a, 'b>> for QueryStringParser {
-    fn eval(req: &mut Request, _: Phantom<QueryStringParser>) -> Option<QueryStore> {
-        Some(parse(&req.origin.request_uri))
+    type Error = ();
+
+    fn eval(req: &mut Request) -> Result<QueryStore, ()> {
+        Ok(parse(&req.origin.request_uri))
     }
 }
 
@@ -29,6 +31,7 @@ pub trait QueryString {
 impl<'a, 'b> QueryString for Request<'a, 'b> {
     fn query(&mut self, key: &str, default: &str) -> Cow<Vec<String>, Vec<String>> {
         let store = self.get_ref::<QueryStringParser>()
+                        .ok()
                         .expect("Bug: QueryStringParser returned None");
 
         match store.get(key) {
