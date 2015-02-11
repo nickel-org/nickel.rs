@@ -1,6 +1,5 @@
 #![feature(plugin, io)]
-
-#[plugin] #[macro_use] extern crate nickel_macros;
+#[macro_use] extern crate nickel_macros;
 extern crate nickel;
 
 use nickel::Nickel;
