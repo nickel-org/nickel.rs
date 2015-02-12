@@ -38,7 +38,7 @@ impl<'a> RouteResult<'a> {
 /// The Router's job is it to hold routes and to resolve them later against
 /// concrete URLs. The router is also a regular middleware and needs to be
 /// added to the middleware stack with `server.utilize(router)`.
-pub struct Router{
+pub struct Router {
     routes: Vec<Route>,
 }
 
@@ -50,16 +50,17 @@ impl<'a> Router {
     }
 
     pub fn match_route(&'a self, method: &Method, path: &str) -> Option<RouteResult<'a>> {
-        self.routes.iter().find(|item| item.method == *method && item.matcher.is_match(path))
+        self.routes
+            .iter()
+            .find(|item| item.method == *method && item.matcher.is_match(path))
             .map(|route| {
                 let vec = match route.matcher.captures(path) {
                     Some(captures) => {
-                        range(0, route.variables.len()).map(|pos|
-                           match captures.at(pos + 1) {
-                               Some(c) => c.to_string(),
-                               None => "".to_string() // FIXME
-                           }
-                        ).collect()
+                        range(0, route.variables.len())
+                            .filter_map(|pos| {
+                                captures.at(pos + 1).map(|c| c.to_string())
+                            })
+                            .collect()
                     },
                     None => vec![],
                 };
