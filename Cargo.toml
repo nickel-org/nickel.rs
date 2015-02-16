@@ -36,6 +36,8 @@ regex = "*"
 regex_macros = "*"
 rustc-serialize = "*"
 log = "*"
+time = "*"
+url = "*"
 
 [[example]]
 
