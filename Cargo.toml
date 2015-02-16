@@ -15,10 +15,6 @@ path = "src/lib.rs"
 
 git = "https://github.com/nickel-org/rust-http.git"
 
-[dependencies.url]
-
-git = "https://github.com/nickel-org/rust-url.git"
-
 [dependencies.rust-mustache]
 
 git = "https://github.com/nickel-org/rust-mustache.git"
@@ -31,10 +27,6 @@ git = "https://github.com/nickel-org/groupable-rs"
 
 path = "nickel_macros"
 
-[dependencies.time]
-
-git = "https://github.com/rust-lang/time"
-
 [dependencies]
 typemap = "*"
 plugin = "*"
@@ -42,6 +34,8 @@ regex = "*"
 regex_macros = "*"
 rustc-serialize = "*"
 log = "*"
+time = "*"
+url = "*"
 
 [[example]]
 
