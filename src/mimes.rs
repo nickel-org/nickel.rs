@@ -20,7 +20,7 @@ macro_rules! mimes {
             match ty {
                 $(
                     $(
-                        MediaType::$name => from_str(concat!($t, "/", $subt)).unwrap()
+                        MediaType::$name => (concat!($t, "/", $subt)).parse().unwrap()
                     ),*
                 ),*
             }

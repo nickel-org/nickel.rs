@@ -1,9 +1,10 @@
 use std::sync::RwLock;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
-use std::old_io::{IoResult, File};
+use std::old_io::{IoResult, File, IoError, IoErrorKind};
 use std::old_io::util::copy;
 use std::old_path::BytesContainer;
+use std::fmt::Debug;
 use serialize::Encodable;
 use hyper::status::StatusCode;
 use hyper::server::Response as HyperResponse;
@@ -76,7 +77,7 @@ impl<'a, 'b> Response<'a, 'b, Fresh> {
     ///     response.send("hello world");
     /// }
     /// ```
-    pub fn send<T: BytesContainer> (self, text: T) -> IoResult<Response<'a, 'b, Streaming>> {
+    pub fn send<T: BytesContainer> (mut self, text: T) -> IoResult<Response<'a, 'b, Streaming>> {
         self.set_common_headers();
 
         let mut stream = try!(self.start());
@@ -99,7 +100,7 @@ impl<'a, 'b> Response<'a, 'b, Fresh> {
         self.origin.headers_mut().remove::<header::ContentLength>();
         // Determine content type by file extension or default to binary
         self.content_type(path.extension_str()
-                              .and_then(from_str)
+                              .and_then(|s| s.parse().ok())
                               .unwrap_or(MediaType::Bin));
 
         let mut stream = try!(self.start());
@@ -131,17 +132,25 @@ impl<'a, 'b> Response<'a, 'b, Fresh> {
     /// }
     /// ```
     pub fn render<T>(self, path: &'static str, data: &T)
-            -> Result<Response<'a, 'b, Streaming>, Error>
-            where T: Encodable<Encoder<'a>, Error> {
+            -> IoResult<Response<'a, 'b, Streaming>>
+            where T: Encodable {
+        fn to_ioerr<U: Debug>(r: Result<(), U>) -> IoResult<()> {
+            r.map_err(|e| IoError {
+                kind: IoErrorKind::OtherIoError,
+                desc: "Problem rendering template",
+                detail: Some(format!("{:?}", e))
+            })
+        }
+
         // Fast path doesn't need writer lock
-        if let Some(t) = self.templates.read().get(&path) {
+        if let Some(t) = self.templates.read().unwrap().get(&path) {
             let mut stream = try!(self.start());
-            try!(t.render(&mut stream, data));
+            try!(to_ioerr(t.render(&mut stream, data)));
             return Ok(stream);
         }
 
         // We didn't find the template, get writers lock
-        let mut templates = self.templates.write();
+        let mut templates = self.templates.write().unwrap();
         // Search again incase there was a race to compile the template
         let template = match templates.entry(path) {
             Vacant(entry) => {
@@ -152,13 +161,13 @@ impl<'a, 'b> Response<'a, 'b, Fresh> {
                         .expect(format!("Couldn't open the template file: {}",
                                         path).as_slice());
 
-                entry.set(mustache::compile_str(raw_template.as_slice()))
+                entry.insert(mustache::compile_str(raw_template.as_slice()))
             },
             Occupied(entry) => entry.into_mut()
         };
 
         let mut stream = try!(self.start());
-        try!(template.render(&mut stream, data));
+        try!(to_ioerr(template.render(&mut stream, data)));
         Ok(stream)
     }
 
@@ -174,7 +183,7 @@ impl<'a, 'b> Response<'a, 'b, Fresh> {
 
 impl<'a, 'b> Writer for Response<'a, 'b, Streaming> {
     #[inline(always)]
-    fn write(&mut self, msg: &[u8]) -> IoResult<()> {
+    fn write_all(&mut self, msg: &[u8]) -> IoResult<()> {
         self.origin.write(msg)
     }
     #[inline(always)]

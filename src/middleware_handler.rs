@@ -84,7 +84,7 @@ impl ResponseFinalizer for json::Json {
         maybe_set_type(&mut res, MediaType::Json);
         // let mut stream = try!(res.start());
         // try!(stream.write(json::encode(&self).as_bytes()));
-        let mut stream = try!(res.send(json::encode(&self)));
+        let mut stream = try!(res.send(json::encode(&self).unwrap()));
         Ok(Halt(stream))
     }
 }

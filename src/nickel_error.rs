@@ -1,7 +1,7 @@
 use std::borrow::{IntoCow, Cow};
 use hyper::status::StatusCode;
 use std::error::FromError;
-use std::io::IoError;
+use std::old_io::IoError;
 
 pub use self::NickelErrorKind::{ErrorWithStatusCode, UserDefinedError, Other};
 

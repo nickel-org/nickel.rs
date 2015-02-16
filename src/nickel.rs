@@ -9,8 +9,6 @@ use server::Server;
 
 use hyper::method::Method;
 use hyper::status::StatusCode;
-use request::Request;
-use response::Response;
 
 //pre defined middleware
 use default_error_handler::DefaultErrorHandler;
@@ -150,7 +148,7 @@ impl Nickel {
             (StatusCode::NotFound, "File Not Found")
         }
 
-        let nfhandler: fn(&Request, &mut Response) -> MiddlewareResult = not_found_handler;
+        let nfhandler: fn(&Request, &mut Response) -> (StatusCode, &'static str) = not_found_handler;
         self.middleware_stack.add_middleware(nfhandler);
 
         match port {

@@ -182,7 +182,7 @@ fn can_match_var_routes () {
     };
 
     // issue #20178
-    let handler_cast: fn(&Request, &mut Response) = handler;
+    let handler_cast: fn(&Request, &mut Response) -> &'static str = handler;
 
     route_store.add_route(Method::Get, "/foo/:userid", handler_cast);
     route_store.add_route(Method::Get, "/bar", handler_cast);

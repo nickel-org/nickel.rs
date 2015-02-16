@@ -3,7 +3,7 @@ use serialize::{Decodable, json};
 use request::Request;
 use typemap::Key;
 use plugin::{Plugin, Pluggable};
-use std::old_io::{IoError, IoResult};
+use std::old_io::{IoError, IoResult, OtherIoError};
 
 // Plugin boilerplate
 struct JsonBodyParser;
@@ -27,7 +27,12 @@ impl<'a, 'b> JsonBody for Request<'a, 'b> {
         // DecodeResult<T> to not swallow valuable debugging information.
         // I couldn't figure out how to properly do that
         self.get::<JsonBodyParser>().and_then(|parsed| {
-            json::decode::<T>(&*parsed).map_err(|_| "Couldn't parse JSON.")
+            json::decode::<T>(&*parsed).map_err(|err|
+                IoError {
+                    kind: OtherIoError,
+                    desc: "Failed to parse JSON",
+                    detail: Some(format!("{}", err))
+                })
         }).ok()
     }
 }

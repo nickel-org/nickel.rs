@@ -62,7 +62,7 @@ impl MiddlewareStack {
                     return
                 }
                 Ok(Continue(fresh)) => res = fresh,
-                Err(err) => panic!("ERROR: {}", err),
+                Err(err) => panic!("ERROR: {:?}", err),
                 // Err(mut err) => {
                 //     warn!("{:?} {:?} {:?} {:?}",
                 //           req.origin.method,
