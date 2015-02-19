@@ -29,7 +29,7 @@ impl<R> Middleware for fn(&Request, &mut Response) -> R
 }
 
 impl<T, R> Middleware for (fn(&Request, &mut Response, &T) -> R, T)
-        where T: Send + Sync, R: ResponseFinalizer + 'static {
+        where T: Send + Sync + 'static, R: ResponseFinalizer + 'static {
     fn invoke<'a, 'b>(&self, req: &mut Request<'a, 'b>, res: &mut Response) -> MiddlewareResult {
         let (f, ref data) = *self;
         let r = f(req, res, data);
@@ -46,7 +46,7 @@ impl<R> Middleware for fn(&mut Request, &mut Response) -> R
 }
 
 impl<T, R> Middleware for (fn(&mut Request, &mut Response, &T) -> R, T)
-        where T: Send + Sync, R: ResponseFinalizer + 'static {
+        where T: Send + Sync + 'static, R: ResponseFinalizer + 'static {
     fn invoke<'a, 'b>(&self, req: &mut Request<'a, 'b>, res: &mut Response) -> MiddlewareResult {
         let (f, ref data) = *self;
         let r = f(req, res, data);
