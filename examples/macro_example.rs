@@ -1,4 +1,4 @@
-#![feature(plugin, core, io)]
+#![feature(plugin, core, old_io)]
 
 extern crate url;
 extern crate http;
