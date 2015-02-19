@@ -1,4 +1,4 @@
-#![feature(plugin, io)]
+#![feature(plugin, old_io)]
 #[macro_use] extern crate nickel_macros;
 extern crate nickel;
 

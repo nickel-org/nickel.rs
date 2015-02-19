@@ -1,4 +1,4 @@
-#![feature(io)]
+#![feature(old_io)]
 
 extern crate nickel;
 extern crate http;

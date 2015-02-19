@@ -1,4 +1,4 @@
-#![feature(core, io)]
+#![feature(core, old_io)]
 
 extern crate "rustc-serialize" as rustc_serialize;
 extern crate nickel;

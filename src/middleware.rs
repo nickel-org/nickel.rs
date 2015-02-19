@@ -14,13 +14,13 @@ pub enum Action {
 
 // the usage of + Send is weird here because what we really want is + Static
 // but that's not possible as of today. We have to use + Send for now.
-pub trait Middleware: Send + Sync {
+pub trait Middleware: Send + 'static + Sync {
     fn invoke<'a, 'b>(&'a self, _req: &mut Request<'b, 'a>, _res: &mut Response) -> MiddlewareResult {
         Ok(Continue)
     }
 }
 
-pub trait ErrorHandler: Send + Sync {
+pub trait ErrorHandler: Send + 'static + Sync {
     fn invoke(&self, _err: &NickelError, _req: &mut Request, _res: &mut Response) -> MiddlewareResult {
         Ok(Continue)
     }
