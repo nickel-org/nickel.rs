@@ -143,9 +143,9 @@ impl<'a, 'b> Response<'a, 'b> {
                     let mut file = File::open(&Path::new(path));
                     let raw_template = file.read_to_string()
                                            .ok()
-                                           .expect(&format!("Couldn't open the template file: {}",
-                                                            path)[]);
-                    entry.insert(mustache::compile_str(&raw_template[]))
+                                           .expect(&*format!("Couldn't open the template file: {}",
+                                                            path));
+                    entry.insert(mustache::compile_str(&*raw_template))
                 },
                 Occupied(entry) => entry.into_mut()
             };
@@ -162,6 +162,6 @@ fn matches_content_type () {
     assert_eq!(content_type, Some(mimes::MediaType::Txt));
     let content_type = content_type.map(mimes::get_media_type).unwrap();
 
-    assert_eq!(&content_type.type_[], "text");
-    assert_eq!(&content_type.subtype[], "plain");
+    assert_eq!(content_type.type_, "text");
+    assert_eq!(content_type.subtype, "plain");
 }

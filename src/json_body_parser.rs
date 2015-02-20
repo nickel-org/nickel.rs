@@ -33,7 +33,7 @@ impl<'a, 'b> JsonBody for Request<'a, 'b> {
         // DecodeResult<T> to not swallow valuable debugging information.
         // I couldn't figure out how to properly do that
         self.get::<JsonBodyParser>().and_then(|parsed| {
-            json::decode::<T>(&parsed[]).map_err(|_| "Couldn't parse JSON.")
+            json::decode::<T>(&*parsed).map_err(|_| "Couldn't parse JSON.")
         }).ok()
     }
 }

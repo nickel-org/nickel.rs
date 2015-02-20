@@ -23,13 +23,11 @@ impl<'a, 'b> Plugin<Request<'a, 'b>> for QueryStringParser {
 }
 
 pub trait QueryString {
-    // FIXME: This would probably be better to return Cow<Vec<String>, [String]>
-    // but ToOwned isn't implemented for that combination yet.
-    fn query(&mut self, key: &str, default: &str) -> Cow<Vec<String>, Vec<String>>;
+    fn query(&mut self, key: &str, default: &str) -> Cow<[String]>;
 }
 
 impl<'a, 'b> QueryString for Request<'a, 'b> {
-    fn query(&mut self, key: &str, default: &str) -> Cow<Vec<String>, Vec<String>> {
+    fn query(&mut self, key: &str, default: &str) -> Cow<[String]> {
         let store = self.get_ref::<QueryStringParser>()
                         .ok()
                         .expect("Bug: QueryStringParser returned None");
@@ -42,11 +40,11 @@ impl<'a, 'b> QueryString for Request<'a, 'b> {
 }
 
 fn parse(origin: &RequestUri) -> QueryStore {
-    let f = |&: query: Option<&String>| query.map(|q| urlencoded::parse(&q[]));
+    let f = |&: query: Option<&String>| query.map(|q| urlencoded::parse(&*q));
 
     let result = match *origin {
         AbsoluteUri(ref url) => f(url.query.as_ref()),
-        AbsolutePath(ref s) => UrlParser::new().parse_path(&s[])
+        AbsolutePath(ref s) => UrlParser::new().parse_path(&*s)
                                                 // FIXME: If this fails to parse,
                                                 // then it really shouldn't have
                                                 // reached here.
