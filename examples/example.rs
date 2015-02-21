@@ -120,7 +120,7 @@ fn main() {
 
     // try calling http://localhost:6767/query?foo=bar
     fn query_handler(request: &mut Request, _response: &mut Response) -> String {
-        format!("Your foo values in the query string are: {:?}", *request.query("foo", "This is only a default value!"))
+        format!("Your foo values in the query string are: {:?}", request.query("foo", "This is only a default value!"))
     }
 
     // issue #20178

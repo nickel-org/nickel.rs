@@ -70,7 +70,7 @@ fn main() {
         // go to http://localhost:6767/bar to see this route in action
         get "/bar" => |request, response| {
             // returning a http status code and a static string
-            (200us, "This is the /bar handler")
+            (200usize, "This is the /bar handler")
         }
 
         // go to http://localhost:6767/redirect to see this route in action
@@ -110,7 +110,7 @@ fn main() {
         // try calling http://localhost:6767/query?foo=bar
         get "/query" => |request, response| {
             let text = format!("Your foo values in the query string are: {:?}",
-                               *request.query("foo", "This is only a default value!"));
+                               request.query("foo", "This is only a default value!"));
             response.send(text.as_slice());
             // a 'regular' handler with no return, handling everything via the response object
         }

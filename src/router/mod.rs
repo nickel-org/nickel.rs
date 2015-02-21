@@ -34,14 +34,14 @@ mod path_utils {
                       .replace("___DOUBLE_WILDCARD___", VAR_SEQ_WITH_SLASH);
 
         // then replace the variable symbols (:variable) with the appropriate regex
-        let r2 = REGEX_VAR_SEQ.replace_all(&updated_path[], VAR_SEQ_WITH_CAPTURE);
+        let r2 = REGEX_VAR_SEQ.replace_all(&*updated_path, VAR_SEQ_WITH_CAPTURE);
         let resultv = vec![REGEX_START,
-                           &r2[],
+                           &*r2,
                            REGEX_PARAM_SEQ,
                            REGEX_END];
 
         let result: String = resultv.into_iter().collect();
-        Regex::new(&result[]).ok().unwrap()
+        Regex::new(&*result).ok().unwrap()
     }
 
     pub fn get_variable_info (route_path: &str) -> HashMap<String, usize> {

@@ -50,7 +50,7 @@ impl FaviconHandler {
     #[inline]
     pub fn is_favicon_request (req: &request::Request) -> bool {
         match req.origin.request_uri {
-            AbsolutePath(ref path) => &path[] == "/favicon.ico",
+            AbsolutePath(ref path) => &**path == "/favicon.ico",
             _                      => false
         }
     }
@@ -76,6 +76,6 @@ impl FaviconHandler {
     pub fn send_favicon (&self, req: &request::Request, res: &mut response::Response) {
         debug!("{:?} {:?}", req.origin.method, self.icon_path.display());
         res.content_type(MediaType::Ico);
-        res.send(&self.icon[]);
+        res.send(&*self.icon);
     }
 }

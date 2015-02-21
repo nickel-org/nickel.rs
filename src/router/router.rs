@@ -31,7 +31,7 @@ pub struct RouteResult<'a> {
 impl<'a> RouteResult<'a> {
     pub fn param(&self, key: &str) -> &str {
         let idx = self.route.variables.get(key).unwrap();
-        &self.params[*idx][]
+        &*self.params[*idx]
     }
 }
 
@@ -92,7 +92,7 @@ impl Middleware for Router {
                         -> MiddlewareResult {
         match req.origin.request_uri {
             AbsolutePath(ref url) => {
-                match self.match_route(&req.origin.method, &url[]) {
+                match self.match_route(&req.origin.method, &*url) {
                     Some(route_result) => {
                         res.origin.status = ::http::status::Ok;
                         let handler = &route_result.route.handler;

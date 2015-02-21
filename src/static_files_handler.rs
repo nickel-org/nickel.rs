@@ -62,7 +62,7 @@ impl StaticFilesHandler {
             AbsolutePath(ref path) => {
                 debug!("{:?} {:?}{:?}", req.origin.method, self.root_path.display(), path);
 
-                match &path[] {
+                match &**path {
                     "/" => Some("index.html"),
                     path => Some(&path[1..]),
                 }
