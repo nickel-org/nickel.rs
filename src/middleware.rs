@@ -6,12 +6,13 @@ use hyper::net;
 
 pub use self::Action::{Continue, Halt};
 
-pub type MiddlewareResult<'a, 'b> = Result<Action<'a, 'b>, NickelError>;
+pub type MiddlewareResult<'a, 'b> = Result<Action<Response<'a, 'b, net::Fresh>,
+                                                  Response<'a, 'b, net::Streaming>>,
+                                           NickelError<'a, 'b>>;
 
-pub enum Action<'a, 'b: 'a> {
-    Continue(Response<'a, 'b, net::Fresh>),
-    Halt(Response<'a, 'b, net::Streaming>)
-    // TODO: Possibly add a Finished/Handled state here
+pub enum Action<T=(), U=()> {
+    Continue(T),
+    Halt(U)
 }
 
 // the usage of + Send is weird here because what we really want is + Static
@@ -23,18 +24,17 @@ pub trait Middleware: Send + 'static + Sync {
 }
 
 pub trait ErrorHandler: Send + 'static + Sync {
-    fn invoke<'a, 'b>(&self, _err: &NickelError, _req: &mut Request, res: Response<'a, 'a, net::Fresh>) -> MiddlewareResult<'a, 'a> {
-        Ok(Continue(res))
-    }
+    fn handle_error(&self, &mut NickelError, &mut Request) -> Action;
 }
 
-impl<R> ErrorHandler for fn(&NickelError, &Request, &mut Response) -> R
-        where R: ResponseFinalizer {
-    fn invoke<'a, 'b>(&self, err: &NickelError, req: &mut Request, mut res: Response<'a, 'a, net::Fresh>) -> MiddlewareResult<'a, 'a> {
-        let r = (*self)(err, req, &mut res);
-        r.respond(res)
-    }
-}
+// FIXME: Re-add appropriate blanket impl
+// impl<R> ErrorHandler for fn(&NickelError, &Request, &mut Response) -> R
+//         where R: ResponseFinalizer {
+//     fn invoke<'a, 'b>(&self, err: &NickelError, req: &mut Request, mut res: Response<'a, 'a, net::Fresh>) -> MiddlewareResult<'a, 'a> {
+//         let r = (*self)(err, req, &mut res);
+//         r.respond(res)
+//     }
+// }
 
 pub struct MiddlewareStack {
     handlers: Vec<Box<Middleware + Send + Sync>>,
@@ -62,23 +62,30 @@ impl MiddlewareStack {
                     return
                 }
                 Ok(Continue(fresh)) => res = fresh,
-                Err(err) => panic!("ERROR: {:?}", err),
-                // Err(mut err) => {
-                //     warn!("{:?} {:?} {:?} {:?}",
-                //           req.origin.method,
-                //           req.origin.remote_addr,
-                //           req.origin.uri,
-                //           err.kind);
-                //     for error_handler in self.error_handlers.iter().rev() {
-                //         match error_handler.invoke(&err, req, res) {
-                //             Ok(Continue(fresh)) => res = fresh,
-                //             Ok(Halt(_)) => return,
-                //             // change the error so that other ErrorHandler
-                //             // down the stack receive the new error.
-                //             Err(new_err) => err = new_err,
-                //         }
-                //     }
-                // }
+                Err(mut err) => {
+                    warn!("{:?} {:?} {:?} {:?} {:?} {:?}",
+                          req.origin.method,
+                          req.origin.remote_addr,
+                          req.origin.uri,
+                          err.kind,
+                          err.message,
+                          err.stream.as_ref().map(|s| s.origin.status()));
+
+                    for error_handler in self.error_handlers.iter().rev() {
+                        if let Halt(()) = error_handler.handle_error(&mut err, &mut req) {
+                            return
+                        }
+                    }
+
+                    warn!("Unhandled error: {:?} {:?} {:?} {:?} {:?} {:?}",
+                          req.origin.method,
+                          req.origin.remote_addr,
+                          req.origin.uri,
+                          err.kind,
+                          err.message,
+                          err.stream.map(|s| s.origin.status()));
+                    return
+                }
             }
         }
     }

@@ -2,20 +2,25 @@ use hyper::status::StatusCode::{NotFound, BadRequest, InternalServerError};
 use request::Request;
 use response::Response;
 use ResponseFinalizer;
-use middleware::{ErrorHandler, MiddlewareResult};
+use middleware::{ErrorHandler, Action, Halt};
 use nickel_error::{NickelError, ErrorWithStatusCode};
+use std::old_io::Writer;
 
 #[derive(Clone, Copy)]
 pub struct DefaultErrorHandler;
 
 impl ErrorHandler for DefaultErrorHandler {
-    fn invoke<'a, 'b>(&self, err: &NickelError, _req: &mut Request, res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
-        let r = match err.kind {
-            ErrorWithStatusCode(NotFound) => (NotFound, "Not Found"),
-            ErrorWithStatusCode(BadRequest) => (BadRequest, "Bad Request"),
-            _ => (InternalServerError, "Internal Server Error")
-        };
+    fn handle_error(&self, err: &mut NickelError, _req: &mut Request) -> Action {
+        if let Some(ref mut res) = err.stream {
+            let msg = match err.kind {
+                ErrorWithStatusCode(NotFound) => b"Not Found",
+                ErrorWithStatusCode(BadRequest) => b"Bad Request",
+                _ => b"Internal Server Error"
+            };
 
-        r.respond(res)
+            res.write_all(msg);
+        }
+
+        Halt(())
     }
 }

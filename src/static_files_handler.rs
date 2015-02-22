@@ -1,9 +1,11 @@
 use std::old_io::{IoError, IoResult, FileNotFound};
+use std::old_io::fs::PathExtensions;
 use std::old_path::BytesContainer;
+use std::error::FromError;
 
 use hyper::uri::RequestUri::AbsolutePath;
 use hyper::method::Method::{Get, Head};
-use hyper::status::StatusCode::InternalServerError;
+use hyper::status::StatusCode::{InternalServerError, BadRequest};
 use hyper::net;
 
 use request::Request;
@@ -22,19 +24,7 @@ impl Middleware for StaticFilesHandler {
     fn invoke<'a, 'b>(&self, req: &mut Request, res: Response<'a, 'b>)
                -> MiddlewareResult<'a, 'b> {
         match req.origin.method {
-            Get | Head => {
-                match self.with_file(self.extract_path(req), res) {
-                    Ok(stream) => Ok(Halt(stream)),
-                    Err(_) => panic!(),
-                    // Err(err) => match err.kind {
-                    //     // We shouldn't assume the StaticFileHandler to be the last middleware in the stack.
-                    //     // Therefore it's important to continue in case of FileNotFound errors.
-                    //     FileNotFound => Ok(Continue),
-                    //     _ => Err(NickelError::new(format!("Unknown Error ({})", err),
-                    //                               ErrorWithStatusCode(InternalServerError)))
-                    // }
-                }
-            },
+            Get | Head => self.with_file(self.extract_path(req), res),
             _ => Ok(Continue(res))
         }
     }
@@ -73,11 +63,17 @@ impl StaticFilesHandler {
         }
     }
 
-    fn with_file<'a, 'b, T: BytesContainer>(&self, relative_path: Option<T>, res: Response<'a, 'b>)
-                                    -> IoResult<Response<'a, 'b, net::Streaming>> {
-        match relative_path {
-            Some(path) => res.send_file(&self.root_path.join(path)),
-            None => Err(IoError::last_error())
-        }
+    fn with_file<'a, 'b, T>(&self,
+                            relative_path: Option<T>,
+                            res: Response<'a, 'b>)
+            -> MiddlewareResult<'a, 'b> where T: BytesContainer {
+        if let Some(path) = relative_path {
+            let path = self.root_path.join(path);
+            if path.exists() {
+                return Ok(Halt(try!(res.send_file(&path))));
+            }
+        };
+
+        Ok(Continue(res))
     }
 }
