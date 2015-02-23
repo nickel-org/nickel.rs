@@ -20,6 +20,51 @@ use hyper::net;
 use middleware::{Middleware, MiddlewareResult, Halt, Continue};
 use serialize::json;
 use mimes::MediaType;
+use nickel_error::NickelError;
+
+impl Middleware for for<'a> fn(&mut Request, Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+        (*self)(req, res)
+    }
+}
+
+impl Middleware for for<'a> fn(&Request, Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+        (*self)(req, res)
+    }
+}
+
+impl Middleware for for<'a> fn(&mut Request) {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+        (*self)(req);
+        Ok(Continue(res))
+    }
+}
+
+impl Middleware for for<'a> fn(&Request) {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+        (*self)(req);
+        Ok(Continue(res))
+    }
+}
+
+impl Middleware for for<'a> fn(&Request, Response<'a, 'a>) -> Response<'a, 'a, net::Fresh> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+        Ok(Continue((*self)(req, res)))
+    }
+}
+
+impl Middleware for for<'a> fn(&Request, Response<'a, 'a>) -> Response<'a, 'a, net::Streaming> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+        Ok(Halt((*self)(req, res)))
+    }
+}
+
+impl Middleware for for<'a> fn(&Request, Response<'a, 'a>) -> NickelError<'a, 'a> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+        Err((*self)(req, res))
+    }
+}
 
 impl<R> Middleware for fn(&Request, &mut Response) -> R
         where R: ResponseFinalizer {

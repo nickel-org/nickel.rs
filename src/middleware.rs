@@ -27,14 +27,11 @@ pub trait ErrorHandler: Send + 'static + Sync {
     fn handle_error(&self, &mut NickelError, &mut Request) -> Action;
 }
 
-// FIXME: Re-add appropriate blanket impl
-// impl<R> ErrorHandler for fn(&NickelError, &Request, &mut Response) -> R
-//         where R: ResponseFinalizer {
-//     fn invoke<'a, 'b>(&self, err: &NickelError, req: &mut Request, mut res: Response<'a, 'a, net::Fresh>) -> MiddlewareResult<'a, 'a> {
-//         let r = (*self)(err, req, &mut res);
-//         r.respond(res)
-//     }
-// }
+impl ErrorHandler for fn(&mut NickelError, &mut Request) -> Action {
+    fn handle_error(&self, err: &mut NickelError, req: &mut Request) -> Action {
+        (*self)(err, req)
+    }
+}
 
 pub struct MiddlewareStack {
     handlers: Vec<Box<Middleware + Send + Sync>>,

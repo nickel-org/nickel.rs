@@ -8,12 +8,12 @@ use std::old_io::net::ip::Ipv4Addr;
 fn main() {
     let mut server = Nickel::new();
 
-    fn bar_handler (_request: &Request, response: &mut Response) {
-        response.send("This is the /bar handler");
+    fn bar_handler (_request: &Request, _response: &mut Response) -> &'static str {
+        "This is the /bar handler"
     }
 
     // issue #20178
-    let bhandler: fn(&Request, &mut Response) = bar_handler;
+    let bhandler: fn(&Request, &mut Response) -> &'static str = bar_handler;
 
     // go to http://localhost:6767/bar to see this route in action
     server.get("/bar", bhandler);
