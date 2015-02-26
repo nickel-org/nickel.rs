@@ -21,8 +21,7 @@ pub struct StaticFilesHandler {
 }
 
 impl Middleware for StaticFilesHandler {
-    fn invoke<'a, 'b>(&self, req: &mut Request, res: Response<'a, 'b>)
-               -> MiddlewareResult<'a, 'b> {
+    fn invoke<'a>(&self, req: &mut Request, res: Response<'a>) -> MiddlewareResult<'a> {
         match req.origin.method {
             Get | Head => self.with_file(self.extract_path(req), res),
             _ => Ok(Continue(res))
@@ -65,8 +64,8 @@ impl StaticFilesHandler {
 
     fn with_file<'a, 'b, T>(&self,
                             relative_path: Option<T>,
-                            res: Response<'a, 'b>)
-            -> MiddlewareResult<'a, 'b> where T: BytesContainer {
+                            res: Response<'a>)
+            -> MiddlewareResult<'a> where T: BytesContainer {
         if let Some(path) = relative_path {
             let path = self.root_path.join(path);
             if path.exists() {

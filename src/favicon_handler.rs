@@ -18,8 +18,8 @@ pub struct FaviconHandler {
 }
 
 impl Middleware for FaviconHandler {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: Response<'a, 'a, net::Fresh>)
-            -> MiddlewareResult<'a, 'a> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: Response<'a, net::Fresh>)
+            -> MiddlewareResult<'a> {
         if FaviconHandler::is_favicon_request(req) {
             self.handle_request(req, res)
         } else {
@@ -57,7 +57,7 @@ impl FaviconHandler {
         }
     }
 
-    pub fn handle_request<'a, 'b>(&self, req: &Request, mut res: Response<'a, 'b>) -> MiddlewareResult<'a, 'b> {
+    pub fn handle_request<'a>(&self, req: &Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
         match req.origin.method {
             Get | Head => {
                 self.send_favicon(req, res)
@@ -77,7 +77,7 @@ impl FaviconHandler {
         }
     }
 
-    pub fn send_favicon<'a, 'b>(&self, req: &Request, mut res: Response<'a, 'b>) -> MiddlewareResult<'a, 'b> {
+    pub fn send_favicon<'a, 'b>(&self, req: &Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
         debug!("{:?} {:?}", req.origin.method, self.icon_path.display());
         res.content_type(MediaType::Ico);
         let stream = try!(res.send(&self.icon[]));

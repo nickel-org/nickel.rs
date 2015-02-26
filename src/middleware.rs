@@ -6,9 +6,9 @@ use hyper::net;
 
 pub use self::Action::{Continue, Halt};
 
-pub type MiddlewareResult<'a, 'b> = Result<Action<Response<'a, 'b, net::Fresh>,
-                                                  Response<'a, 'b, net::Streaming>>,
-                                           NickelError<'a, 'b>>;
+pub type MiddlewareResult<'a> = Result<Action<Response<'a, net::Fresh>,
+                                              Response<'a, net::Streaming>>,
+                                        NickelError<'a>>;
 
 pub enum Action<T=(), U=()> {
     Continue(T),
@@ -18,7 +18,7 @@ pub enum Action<T=(), U=()> {
 // the usage of + Send is weird here because what we really want is + Static
 // but that's not possible as of today. We have to use + Send for now.
 pub trait Middleware: Send + 'static + Sync {
-    fn invoke<'a, 'b>(&'a self, _req: &mut Request<'b, 'a>, res: Response<'a, 'a, net::Fresh>) -> MiddlewareResult<'a, 'a> {
+    fn invoke<'a, 'b>(&'a self, _req: &mut Request<'b, 'a>, res: Response<'a, net::Fresh>) -> MiddlewareResult<'a> {
         Ok(Continue(res))
     }
 }
@@ -47,7 +47,7 @@ impl MiddlewareStack {
         self.error_handlers.push(Box::new(handler));
     }
 
-    pub fn invoke<'a>(&'a self, mut req: Request<'a, 'a>, mut res: Response<'a, 'a>) {
+    pub fn invoke<'a>(&'a self, mut req: Request<'a, 'a>, mut res: Response<'a>) {
         for handler in self.handlers.iter() {
             match handler.invoke(&mut req, res) {
                 Ok(Halt(res)) => {

@@ -18,16 +18,16 @@ use mustache::Template;
 pub type TemplateCache = RwLock<HashMap<&'static str, Template>>;
 
 ///A container for the response
-pub struct Response<'a, 'b: 'a, T=Fresh> {
+pub struct Response<'a, T=Fresh> {
     ///the original `hyper::server::Response`
     pub origin: HyperResponse<'a, T>,
-    templates: &'b TemplateCache
+    templates: &'a TemplateCache
 }
 
-impl<'a, 'b> Response<'a, 'b, Fresh> {
+impl<'a> Response<'a, Fresh> {
     pub fn from_internal<'c, 'd>(response: HyperResponse<'c, Fresh>,
-                                 templates: &'d TemplateCache)
-                                -> Response<'c, 'd, Fresh> {
+                                 templates: &'c TemplateCache)
+                                -> Response<'c, Fresh> {
         Response {
             origin: response,
             templates: templates
@@ -45,7 +45,7 @@ impl<'a, 'b> Response<'a, 'b, Fresh> {
     ///     response.content_type(MediaType::Html);
     /// }
     /// ```
-    pub fn content_type(&mut self, mt: MediaType) -> &mut Response<'a,'b> {
+    pub fn content_type(&mut self, mt: MediaType) -> &mut Response<'a> {
         self.origin.headers_mut().set(header::ContentType(get_media_type(mt)));
         self
     }
@@ -63,7 +63,7 @@ impl<'a, 'b> Response<'a, 'b, Fresh> {
     /// }
     /// # }
     /// ```
-    pub fn status_code(&mut self, status: StatusCode) -> &mut Response<'a,'b> {
+    pub fn status_code(&mut self, status: StatusCode) -> &mut Response<'a> {
         *self.origin.status_mut() = status;
         self
     }
@@ -73,11 +73,11 @@ impl<'a, 'b> Response<'a, 'b, Fresh> {
     /// # Example
     /// ```{rust}
     /// # use nickel::{Request, Response};
-    /// fn handler(request: &Request, response: &mut Response) {
+    /// fn handler(request: &Request, response: &mut Response) -> MiddlewareResult<'a>{
     ///     response.send("hello world");
     /// }
     /// ```
-    pub fn send<T: BytesContainer> (mut self, text: T) -> IoResult<Response<'a, 'b, Streaming>> {
+    pub fn send<T: BytesContainer> (mut self, text: T) -> IoResult<Response<'a Streaming>> {
         self.set_common_headers();
 
         let mut stream = try!(self.start());
@@ -95,7 +95,7 @@ impl<'a, 'b> Response<'a, 'b, Fresh> {
     ///     response.send_file(&favicon).ok().expect("Failed to send favicon");
     /// }
     /// ```
-    pub fn send_file(mut self, path: &Path) -> IoResult<Response<'a, 'b, Streaming>> {
+    pub fn send_file(mut self, path: &Path) -> IoResult<Response<'a, Streaming>> {
         // Chunk the response
         self.origin.headers_mut().remove::<header::ContentLength>();
         // Determine content type by file extension or default to binary
@@ -132,7 +132,7 @@ impl<'a, 'b> Response<'a, 'b, Fresh> {
     /// }
     /// ```
     pub fn render<T>(self, path: &'static str, data: &T)
-            -> IoResult<Response<'a, 'b, Streaming>>
+            -> IoResult<Response<'a, Streaming>>
             where T: Encodable {
         fn to_ioerr<U: Debug>(r: Result<(), U>) -> IoResult<()> {
             r.map_err(|e| IoError {
@@ -171,7 +171,7 @@ impl<'a, 'b> Response<'a, 'b, Fresh> {
         Ok(stream)
     }
 
-    pub fn start(mut self) -> IoResult<Response<'a, 'b, Streaming>> {
+    pub fn start(mut self) -> IoResult<Response<'a, Streaming>> {
         self.set_common_headers();
 
         let Response { origin, templates } = self;
@@ -181,7 +181,7 @@ impl<'a, 'b> Response<'a, 'b, Fresh> {
     }
 }
 
-impl<'a, 'b> Writer for Response<'a, 'b, Streaming> {
+impl<'a, 'b> Writer for Response<'a, Streaming> {
     #[inline(always)]
     fn write_all(&mut self, msg: &[u8]) -> IoResult<()> {
         self.origin.write(msg)
@@ -192,7 +192,7 @@ impl<'a, 'b> Writer for Response<'a, 'b, Streaming> {
     }
 }
 
-impl<'a, 'b> Response<'a, 'b, Streaming> {
+impl<'a, 'b> Response<'a, Streaming> {
     /// Flushes all writing of a response to the client.
     pub fn end(self) -> IoResult<()> {
         self.origin.end()

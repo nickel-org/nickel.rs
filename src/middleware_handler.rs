@@ -22,53 +22,53 @@ use serialize::json;
 use mimes::MediaType;
 use nickel_error::NickelError;
 
-impl Middleware for for<'a> fn(&mut Request, Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+impl Middleware for for<'a> fn(&mut Request, Response<'a>) -> MiddlewareResult<'a> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>) -> MiddlewareResult<'a> {
         (*self)(req, res)
     }
 }
 
-impl Middleware for for<'a> fn(&Request, Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+impl Middleware for for<'a> fn(&Request, Response<'a>) -> MiddlewareResult<'a> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>) -> MiddlewareResult<'a> {
         (*self)(req, res)
     }
 }
 
 impl Middleware for for<'a> fn(&mut Request) {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>) -> MiddlewareResult<'a> {
         (*self)(req);
         Ok(Continue(res))
     }
 }
 
 impl Middleware for for<'a> fn(&Request) {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>) -> MiddlewareResult<'a> {
         (*self)(req);
         Ok(Continue(res))
     }
 }
 
-impl Middleware for for<'a> fn(&Request, Response<'a, 'a>) -> Response<'a, 'a, net::Fresh> {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+impl Middleware for for<'a> fn(&Request, Response<'a>) -> Response<'a, net::Fresh> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>) -> MiddlewareResult<'a> {
         Ok(Continue((*self)(req, res)))
     }
 }
 
-impl Middleware for for<'a> fn(&Request, Response<'a, 'a>) -> Response<'a, 'a, net::Streaming> {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+impl Middleware for for<'a> fn(&Request, Response<'a>) -> Response<'a, net::Streaming> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>) -> MiddlewareResult<'a> {
         Ok(Halt((*self)(req, res)))
     }
 }
 
-impl Middleware for for<'a> fn(&Request, Response<'a, 'a>) -> NickelError<'a, 'a> {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+impl Middleware for for<'a> fn(&Request, Response<'a>) -> NickelError<'a> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>) -> MiddlewareResult<'a> {
         Err((*self)(req, res))
     }
 }
 
 impl<R> Middleware for fn(&Request, &mut Response) -> R
         where R: ResponseFinalizer {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>) -> MiddlewareResult<'a> {
         let r = (*self)(req, &mut res);
         r.respond(res)
     }
@@ -76,7 +76,7 @@ impl<R> Middleware for fn(&Request, &mut Response) -> R
 
 impl<T, R> Middleware for (fn(&Request, &mut Response, &T) -> R, T)
         where T: Send + 'static + Sync, R: ResponseFinalizer + 'static {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>) -> MiddlewareResult<'a> {
         let (f, ref data) = *self;
         let r = f(req, &mut res, data);
         r.respond(res)
@@ -85,7 +85,7 @@ impl<T, R> Middleware for (fn(&Request, &mut Response, &T) -> R, T)
 
 impl<R> Middleware for fn(&mut Request, &mut Response) -> R
         where R: ResponseFinalizer {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>) -> MiddlewareResult<'a> {
         let r = (*self)(req, &mut res);
         r.respond(res)
     }
@@ -93,7 +93,7 @@ impl<R> Middleware for fn(&mut Request, &mut Response) -> R
 
 impl<T, R> Middleware for (fn(&mut Request, &mut Response, &T) -> R, T)
         where T: Send + Sync + 'static, R: ResponseFinalizer + 'static {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>) -> MiddlewareResult<'a> {
         let (f, ref data) = *self;
         let r = f(req, &mut res, data);
         r.respond(res)
@@ -106,11 +106,11 @@ impl<T, R> Middleware for (fn(&mut Request, &mut Response, &T) -> R, T)
 ///
 /// Please see the examples for some uses.
 pub trait ResponseFinalizer<T=net::Fresh> {
-    fn respond<'a, 'b>(self, Response<'a, 'a, T>) -> MiddlewareResult<'a, 'a>;
+    fn respond<'a, 'b>(self, Response<'a, T>) -> MiddlewareResult<'a>;
 }
 
 impl ResponseFinalizer for () {
-    fn respond<'a, 'b>(self, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+    fn respond<'a, 'b>(self, mut res: Response<'a>) -> MiddlewareResult<'a> {
         maybe_set_type(&mut res, MediaType::Html);
         Ok(Halt(try!(res.start())))
     }
@@ -118,14 +118,14 @@ impl ResponseFinalizer for () {
 
 // This is impossible?
 // impl<'a, 'b> ResponseFinalizer for MiddlewareResult<'a, 'b> {
-//     fn respond<'a, 'b>(self, res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+//     fn respond<'a, 'b>(self, res: Response<'a>) -> MiddlewareResult<'a> {
 //         maybe_set_type(&mut res, MediaType::Html);
 //         self
 //     }
 // }
 
 impl ResponseFinalizer for json::Json {
-    fn respond<'a, 'b>(self, mut res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+    fn respond<'a, 'b>(self, mut res: Response<'a>) -> MiddlewareResult<'a> {
         maybe_set_type(&mut res, MediaType::Json);
         // let mut stream = try!(res.start());
         // try!(stream.write(json::encode(&self).as_bytes()));
@@ -135,7 +135,7 @@ impl ResponseFinalizer for json::Json {
 }
 
 impl<'a, S: Display> ResponseFinalizer for &'a [S] {
-    fn respond<'c, 'b>(self, mut res: Response<'c, 'c>) -> MiddlewareResult<'c, 'c> {
+    fn respond<'c, 'b>(self, mut res: Response<'c>) -> MiddlewareResult<'c> {
         maybe_set_type(&mut res, MediaType::Html);
         res.status_code(StatusCode::Ok);
         let mut res = try!(res.start());
@@ -150,11 +150,11 @@ impl<'a, S: Display> ResponseFinalizer for &'a [S] {
 macro_rules! dual_impl {
     ($view:ty, $alloc:ty, |$s:ident, $res:ident| $b:block) => (
         impl<'a> ResponseFinalizer for $view {
-            fn respond<'a, 'b>($s, mut $res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> $b
+            fn respond<'a, 'b>($s, mut $res: Response<'a>) -> MiddlewareResult<'a> $b
         }
 
         impl ResponseFinalizer for $alloc {
-            fn respond<'a, 'b>($s, mut $res: Response<'a, 'a>) -> MiddlewareResult<'a, 'a> $b
+            fn respond<'a, 'b>($s, mut $res: Response<'a>) -> MiddlewareResult<'a> $b
         }
     )
 }

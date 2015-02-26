@@ -8,19 +8,22 @@ macro_rules! router {
             let mut router = nickel::Router::new();
 
             #[inline(always)]
-            fn restrict<'a, R: ResponseFinalizer>(r: R, res: nickel::Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+            fn restrict<'a, R: ResponseFinalizer>(r: R, res: nickel::Response<'a>)
+                    -> MiddlewareResult<'a> {
                 r.respond(res)
             }
 
             $(
                 {
                     #[allow(unused_variables)]
-                    fn f<'a>($req: &mut nickel::Request, $res: nickel::Response<'a, 'a>) -> MiddlewareResult<'a, 'a> {
+                    fn f<'a>($req: &mut nickel::Request, $res: nickel::Response<'a>)
+                            -> MiddlewareResult<'a> {
                         restrict($b, $res)
                     }
 
                     // issue #20178
-                    let fhandler: for<'a> fn(&mut nickel::Request, nickel::Response<'a, 'a>) -> MiddlewareResult<'a, 'a> = f;
+                    let fhandler: for<'a> fn(&mut nickel::Request, nickel::Response<'a>)
+                                                -> MiddlewareResult<'a> = f;
 
                     router.$method($path, fhandler);
                 }
