@@ -25,6 +25,7 @@ extern crate mustache;
 extern crate groupable;
 
 #[macro_use] extern crate log;
+#[macro_use] extern crate nickel_macros;
 
 pub use nickel::Nickel;
 pub use request::Request;

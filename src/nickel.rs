@@ -1,14 +1,17 @@
 use std::old_io::net::ip::{Port, IpAddr};
 
-use request::Request;
-use response::Response;
 use router::{Router, HttpRouter};
-use middleware::{MiddlewareResult, MiddlewareStack, Middleware, ErrorHandler};
+use middleware::{MiddlewareStack, Middleware, ErrorHandler};
 use nickel_error::{ErrorWithStatusCode, NickelError};
 use server::Server;
 
 use hyper::method::Method;
 use hyper::status::StatusCode;
+
+// Re-exports so that we can use nickel_macros within nickel
+// as they use the path `nickel::foo` which resolves to this module
+// rather than an external crate.
+pub use {MiddlewareResult, ResponseFinalizer, Request, Response};
 
 //pre defined middleware
 use default_error_handler::DefaultErrorHandler;
@@ -144,12 +147,9 @@ impl Nickel {
     /// server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
     /// ```
     pub fn listen(mut self, ip: IpAddr, port: Port) {
-        fn not_found_handler<'a, 'b>(_: &Request, _: &mut Response) -> (StatusCode, &'static str) {
+        self.middleware_stack.add_middleware(middleware! {
             (StatusCode::NotFound, "File Not Found")
-        }
-
-        let nfhandler: fn(&Request, &mut Response) -> (StatusCode, &'static str) = not_found_handler;
-        self.middleware_stack.add_middleware(nfhandler);
+        });
 
         match port {
             80u16 =>  println!("Listening on http://{}", ip),

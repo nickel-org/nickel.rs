@@ -176,16 +176,10 @@ fn can_match_var_routes () {
     use response::Response;
 
     let route_store = &mut Router::new();
+    let handler = middleware! { "hello from foo" };
 
-    fn handler(_request: &Request, response: &mut Response) -> &'static str {
-        "hello from foo"
-    };
-
-    // issue #20178
-    let handler_cast: fn(&Request, &mut Response) -> &'static str = handler;
-
-    route_store.add_route(Method::Get, "/foo/:userid", handler_cast);
-    route_store.add_route(Method::Get, "/bar", handler_cast);
+    route_store.add_route(Method::Get, "/foo/:userid", handler);
+    route_store.add_route(Method::Get, "/bar", handler);
 
     let route_result = route_store.match_route(&Method::Get, "/foo/4711").unwrap();
     let route = route_result.route;

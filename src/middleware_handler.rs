@@ -28,75 +28,11 @@ impl Middleware for for<'a> fn(&mut Request, Response<'a>) -> MiddlewareResult<'
     }
 }
 
-impl Middleware for for<'a> fn(&Request, Response<'a>) -> MiddlewareResult<'a> {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>) -> MiddlewareResult<'a> {
-        (*self)(req, res)
-    }
-}
-
-impl Middleware for for<'a> fn(&mut Request) {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>) -> MiddlewareResult<'a> {
-        (*self)(req);
-        Ok(Continue(res))
-    }
-}
-
-impl Middleware for for<'a> fn(&Request) {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>) -> MiddlewareResult<'a> {
-        (*self)(req);
-        Ok(Continue(res))
-    }
-}
-
-impl Middleware for for<'a> fn(&Request, Response<'a>) -> Response<'a, net::Fresh> {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>) -> MiddlewareResult<'a> {
-        Ok(Continue((*self)(req, res)))
-    }
-}
-
-impl Middleware for for<'a> fn(&Request, Response<'a>) -> Response<'a, net::Streaming> {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>) -> MiddlewareResult<'a> {
-        Ok(Halt((*self)(req, res)))
-    }
-}
-
-impl Middleware for for<'a> fn(&Request, Response<'a>) -> NickelError<'a> {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>) -> MiddlewareResult<'a> {
-        Err((*self)(req, res))
-    }
-}
-
-impl<R> Middleware for fn(&Request, &mut Response) -> R
-        where R: ResponseFinalizer {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>) -> MiddlewareResult<'a> {
-        let r = (*self)(req, &mut res);
-        r.respond(res)
-    }
-}
-
-impl<T, R> Middleware for (fn(&Request, &mut Response, &T) -> R, T)
-        where T: Send + 'static + Sync, R: ResponseFinalizer + 'static {
+impl<T> Middleware for (for <'a> fn(&mut Request, Response<'a>, &T) -> MiddlewareResult<'a>, T)
+        where T: Send + Sync + 'static {
     fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>) -> MiddlewareResult<'a> {
         let (f, ref data) = *self;
-        let r = f(req, &mut res, data);
-        r.respond(res)
-    }
-}
-
-impl<R> Middleware for fn(&mut Request, &mut Response) -> R
-        where R: ResponseFinalizer {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>) -> MiddlewareResult<'a> {
-        let r = (*self)(req, &mut res);
-        r.respond(res)
-    }
-}
-
-impl<T, R> Middleware for (fn(&mut Request, &mut Response, &T) -> R, T)
-        where T: Send + Sync + 'static, R: ResponseFinalizer + 'static {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>) -> MiddlewareResult<'a> {
-        let (f, ref data) = *self;
-        let r = f(req, &mut res, data);
-        r.respond(res)
+        f(req, res, data)
     }
 }
 
