@@ -17,7 +17,7 @@ use std::fmt::Display;
 use std::num::FromPrimitive;
 use hyper::header;
 use hyper::net;
-use middleware::{Middleware, MiddlewareResult, Halt};
+use middleware::{Middleware, MiddlewareResult, Halt, Continue};
 use serialize::json;
 use mimes::MediaType;
 
@@ -45,9 +45,8 @@ pub trait ResponseFinalizer<T=net::Fresh> {
 }
 
 impl ResponseFinalizer for () {
-    fn respond<'a>(self, mut res: Response<'a>) -> MiddlewareResult<'a> {
-        maybe_set_type(&mut res, MediaType::Html);
-        Ok(Halt(try!(res.start())))
+    fn respond<'a>(self, res: Response<'a>) -> MiddlewareResult<'a> {
+        Ok(Continue(res))
     }
 }
 

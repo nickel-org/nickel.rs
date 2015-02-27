@@ -50,11 +50,12 @@ impl MiddlewareStack {
         for handler in self.handlers.iter() {
             match handler.invoke(&mut req, res) {
                 Ok(Halt(res)) => {
-                    debug!("{:?} {:?} {:?} {:?}",
+                    debug!("Halted {:?} {:?} {:?} {:?}",
                            req.origin.method,
                            req.origin.remote_addr,
                            req.origin.uri,
                            res.origin.status());
+                    let _ = res.end();
                     return
                 }
                 Ok(Continue(fresh)) => res = fresh,
@@ -69,6 +70,7 @@ impl MiddlewareStack {
 
                     for error_handler in self.error_handlers.iter().rev() {
                         if let Halt(()) = error_handler.handle_error(&mut err, &mut req) {
+                            err.end();
                             return
                         }
                     }

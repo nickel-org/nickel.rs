@@ -91,10 +91,12 @@ impl HttpRouter for Router {
 impl Middleware for Router {
     fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>)
                         -> MiddlewareResult<'a> {
+        debug!("Router::invoke for '{:?}'", req.origin.uri);
         let route_result = match req.origin.uri {
             AbsolutePath(ref url) => self.match_route(&req.origin.method, &**url),
             _ => None
         };
+        debug!("route_result.route.path: {:?}", route_result.as_ref().map(|r| &*r.route.path));
 
         match route_result {
             Some(route_result) => {

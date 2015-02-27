@@ -1,7 +1,7 @@
 use std::borrow::{IntoCow, Cow};
 use hyper::status::StatusCode;
 use std::error::FromError;
-use std::old_io::IoError;
+use std::old_io::{IoError, IoResult};
 use response::Response;
 use hyper::net::Streaming;
 
@@ -35,6 +35,10 @@ impl<'a> NickelError<'a> {
             message: message.into_cow(),
             kind: kind
         }
+    }
+
+    pub fn end(self) -> Option<IoResult<()>> {
+        self.stream.map(|s| s.end())
     }
 }
 
