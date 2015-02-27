@@ -1,31 +1,19 @@
-#![feature(old_io)]
-
 extern crate nickel;
+#[macro_use] extern crate nickel_macros;
 
-use nickel::{Nickel, Request, Response, HttpRouter};
+use nickel::{Nickel, Request, Response, HttpRouter, MiddlewareResult};
 use std::old_io::net::ip::Ipv4Addr;
 
 fn main() {
     let mut server = Nickel::new();
 
-    fn bar_handler (_request: &Request, _response: &mut Response) -> &'static str {
-        "This is the /bar handler"
-    }
-
-    // issue #20178
-    let bhandler: fn(&Request, &mut Response) -> &'static str = bar_handler;
-
     // go to http://localhost:6767/bar to see this route in action
-    server.get("/bar", bhandler);
-
-    fn foo_handler (request: &mut Request, _response: &mut Response) -> String {
-        format!("Foo is '{}'", request.param("foo"))
-    }
-
-    let fhandler: fn(&mut Request, &mut Response) -> String = foo_handler;
+    server.get("/bar", middleware! { "This is the /bar handler" });
 
     // go to http://localhost:6767/foo to see this route in action
-    server.get("/:foo", fhandler);
+    server.get("/:foo", middleware! { |request|
+        format!("Foo is '{}'", request.param("foo"))
+    });
 
     server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
 }

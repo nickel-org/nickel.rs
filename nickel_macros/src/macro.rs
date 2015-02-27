@@ -15,6 +15,9 @@ macro_rules! router {
 
 #[macro_export]
 macro_rules! middleware {
+    (@$f:ident) => {
+        $f as for<'a> fn(&mut Request, Response<'a>) -> MiddlewareResult<'a>
+    };
     (|$req:ident, $res:ident| $($b:tt)+) => {{
         use nickel::{MiddlewareResult,ResponseFinalizer, Response, Request};
 

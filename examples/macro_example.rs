@@ -20,8 +20,9 @@ struct Person {
 }
 
 //this is an example middleware function that just logs each request
-fn logger<'a>(request: &Request) {
+fn logger<'a>(request: &mut Request, response: Response<'a>) -> MiddlewareResult<'a> {
     println!("logging request: {:?}", request.origin.uri);
+    Ok(Continue(response))
 }
 
 //this is how to overwrite the default error handler to handle 404 cases with a custom view
@@ -45,9 +46,7 @@ fn main() {
     let mut server = Nickel::new();
 
     // middleware is optional and can be registered with `utilize`
-    // issue #20178
-    let logger_handler: fn(&Request) = logger;
-    server.utilize(logger_handler);
+    server.utilize(middleware!(@logger));
 
     // go to http://localhost:6767/thoughtram_logo_brain.png to see static file serving in action
     server.utilize(StaticFilesHandler::new("examples/assets/"));
