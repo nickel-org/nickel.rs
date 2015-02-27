@@ -1,17 +1,12 @@
-use std::old_io::{IoError, IoResult, FileNotFound};
 use std::old_io::fs::PathExtensions;
 use std::old_path::BytesContainer;
-use std::error::FromError;
 
 use hyper::uri::RequestUri::AbsolutePath;
 use hyper::method::Method::{Get, Head};
-use hyper::status::StatusCode::{InternalServerError, BadRequest};
-use hyper::net;
 
 use request::Request;
 use response::Response;
 use middleware::{Halt, Continue, Middleware, MiddlewareResult};
-use nickel_error::{ NickelError, ErrorWithStatusCode };
 
 // this should be much simpler after unboxed closures land in Rust.
 

@@ -1,7 +1,5 @@
-use hyper::status::StatusCode::{NotFound, BadRequest, InternalServerError};
+use hyper::status::StatusCode::{NotFound, BadRequest};
 use request::Request;
-use response::Response;
-use ResponseFinalizer;
 use middleware::{ErrorHandler, Action, Halt};
 use nickel_error::{NickelError, ErrorWithStatusCode};
 use std::old_io::Writer;
@@ -18,7 +16,7 @@ impl ErrorHandler for DefaultErrorHandler {
                 _ => b"Internal Server Error"
             };
 
-            res.write_all(msg);
+            let _ = res.write_all(msg);
         }
 
         Halt(())

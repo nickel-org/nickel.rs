@@ -17,20 +17,19 @@ use std::fmt::Display;
 use std::num::FromPrimitive;
 use hyper::header;
 use hyper::net;
-use middleware::{Middleware, MiddlewareResult, Halt, Continue};
+use middleware::{Middleware, MiddlewareResult, Halt};
 use serialize::json;
 use mimes::MediaType;
-use nickel_error::NickelError;
 
 impl Middleware for for<'a> fn(&mut Request, Response<'a>) -> MiddlewareResult<'a> {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>) -> MiddlewareResult<'a> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: Response<'a>) -> MiddlewareResult<'a> {
         (*self)(req, res)
     }
 }
 
 impl<T> Middleware for (for <'a> fn(&mut Request, Response<'a>, &T) -> MiddlewareResult<'a>, T)
         where T: Send + Sync + 'static {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>) -> MiddlewareResult<'a> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: Response<'a>) -> MiddlewareResult<'a> {
         let (f, ref data) = *self;
         f(req, res, data)
     }
@@ -42,42 +41,40 @@ impl<T> Middleware for (for <'a> fn(&mut Request, Response<'a>, &T) -> Middlewar
 ///
 /// Please see the examples for some uses.
 pub trait ResponseFinalizer<T=net::Fresh> {
-    fn respond<'a, 'b>(self, Response<'a, T>) -> MiddlewareResult<'a>;
+    fn respond<'a>(self, Response<'a, T>) -> MiddlewareResult<'a>;
 }
 
 impl ResponseFinalizer for () {
-    fn respond<'a, 'b>(self, mut res: Response<'a>) -> MiddlewareResult<'a> {
+    fn respond<'a>(self, mut res: Response<'a>) -> MiddlewareResult<'a> {
         maybe_set_type(&mut res, MediaType::Html);
         Ok(Halt(try!(res.start())))
     }
 }
 
 // This is impossible?
-// impl<'a, 'b> ResponseFinalizer for MiddlewareResult<'a, 'b> {
-//     fn respond<'a, 'b>(self, res: Response<'a>) -> MiddlewareResult<'a> {
+// impl<'a> ResponseFinalizer for MiddlewareResult<'a> {
+//     fn respond<'a>(self, res: Response<'a>) -> MiddlewareResult<'a> {
 //         maybe_set_type(&mut res, MediaType::Html);
 //         self
 //     }
 // }
 
 impl ResponseFinalizer for json::Json {
-    fn respond<'a, 'b>(self, mut res: Response<'a>) -> MiddlewareResult<'a> {
+    fn respond<'a>(self, mut res: Response<'a>) -> MiddlewareResult<'a> {
         maybe_set_type(&mut res, MediaType::Json);
-        // let mut stream = try!(res.start());
-        // try!(stream.write(json::encode(&self).as_bytes()));
-        let mut stream = try!(res.send(json::encode(&self).unwrap()));
+        let stream = try!(res.send(json::encode(&self).unwrap()));
         Ok(Halt(stream))
     }
 }
 
 impl<'a, S: Display> ResponseFinalizer for &'a [S] {
-    fn respond<'c, 'b>(self, mut res: Response<'c>) -> MiddlewareResult<'c> {
+    fn respond<'c>(self, mut res: Response<'c>) -> MiddlewareResult<'c> {
         maybe_set_type(&mut res, MediaType::Html);
         res.status_code(StatusCode::Ok);
         let mut res = try!(res.start());
         for ref s in self.iter() {
-            // FIXME : failure unhandled
-            let _ = write!(&mut res, "{}", s);
+            // FIXME : This error handling is poor
+            try!(write!(&mut res, "{}", s));
         }
         Ok(Halt(res))
     }
@@ -86,11 +83,11 @@ impl<'a, S: Display> ResponseFinalizer for &'a [S] {
 macro_rules! dual_impl {
     ($view:ty, $alloc:ty, |$s:ident, $res:ident| $b:block) => (
         impl<'a> ResponseFinalizer for $view {
-            fn respond<'a, 'b>($s, mut $res: Response<'a>) -> MiddlewareResult<'a> $b
+            fn respond<'c>($s, mut $res: Response<'c>) -> MiddlewareResult<'c> $b
         }
 
         impl ResponseFinalizer for $alloc {
-            fn respond<'a, 'b>($s, mut $res: Response<'a>) -> MiddlewareResult<'a> $b
+            fn respond<'c>($s, mut $res: Response<'c>) -> MiddlewareResult<'c> $b
         }
     )
 }

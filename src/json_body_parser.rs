@@ -1,4 +1,3 @@
-use std::str;
 use serialize::{Decodable, json};
 use request::Request;
 use typemap::Key;

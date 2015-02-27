@@ -5,12 +5,11 @@ extern crate nickel;
 extern crate "rustc-serialize" as rustc_serialize;
 #[macro_use] extern crate nickel_macros;
 
-use nickel::status::StatusCode::{self, NotFound, BadRequest};
+use nickel::status::StatusCode::{self, NotFound};
 use nickel::{
     Nickel, NickelError, ErrorWithStatusCode, Continue, Halt, Request, Response,
     QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter, Action
 };
-use nickel::mimes::MediaType;
 use std::old_io::net::ip::Ipv4Addr;
 
 #[derive(RustcDecodable, RustcEncodable)]

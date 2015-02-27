@@ -8,8 +8,7 @@ use hyper::net;
 
 use request::Request;
 use response::Response;
-use middleware::{Action, Halt, Continue, Middleware, MiddlewareResult};
-use nickel_error::NickelError;
+use middleware::{Halt, Continue, Middleware, MiddlewareResult};
 use mimes::MediaType;
 
 pub struct FaviconHandler {
@@ -79,7 +78,7 @@ impl FaviconHandler {
     pub fn send_favicon<'a, 'b>(&self, req: &Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
         debug!("{:?} {:?}", req.origin.method, self.icon_path.display());
         res.content_type(MediaType::Ico);
-        let stream = try!(res.send(&self.icon[]));
+        let stream = try!(res.send(&*self.icon));
         Ok(Halt(stream))
     }
 }

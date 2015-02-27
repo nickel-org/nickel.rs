@@ -6,7 +6,7 @@ extern crate nickel;
 
 use nickel::status::StatusCode::{self, NotFound, BadRequest};
 use nickel::{
-    Nickel, NickelError, ErrorWithStatusCode, Continue, Halt, Request, Response,
+    Nickel, NickelError, ErrorWithStatusCode, Continue, Halt, Request,
     QueryString, JsonBody, StaticFilesHandler, HttpRouter, Action
 };
 use std::old_io::net::ip::Ipv4Addr;

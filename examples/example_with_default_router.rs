@@ -1,7 +1,8 @@
+#![feature(old_io)]
 extern crate nickel;
 #[macro_use] extern crate nickel_macros;
 
-use nickel::{Nickel, Request, Response, HttpRouter, MiddlewareResult};
+use nickel::{Nickel, HttpRouter};
 use std::old_io::net::ip::Ipv4Addr;
 
 fn main() {

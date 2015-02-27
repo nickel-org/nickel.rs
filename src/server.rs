@@ -1,4 +1,4 @@
-use std::old_io::net::ip::{SocketAddr, IpAddr, Port};
+use std::old_io::net::ip::{IpAddr, Port};
 use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
 use hyper::server::{Request, Response, Handler};
@@ -39,7 +39,7 @@ impl Server {
     pub fn serve(self) {
         let socket = HyperServer::http(self.ip, self.port);
         let arc = Arc::new(self);
-        socket.listen(arc);
+        let _ = socket.listen(arc);
     }
 }
 

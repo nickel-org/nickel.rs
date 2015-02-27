@@ -190,7 +190,7 @@ impl<'a> Response<'a, Fresh> {
 impl<'a, 'b> Writer for Response<'a, Streaming> {
     #[inline(always)]
     fn write_all(&mut self, msg: &[u8]) -> IoResult<()> {
-        self.origin.write(msg)
+        self.origin.write_all(msg)
     }
     #[inline(always)]
     fn flush(&mut self) -> IoResult<()> {

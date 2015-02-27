@@ -172,8 +172,6 @@ fn creates_valid_regex_for_routes () {
 #[test]
 fn can_match_var_routes () {
     use hyper::method::Method;
-    use request::Request;
-    use response::Response;
 
     let route_store = &mut Router::new();
     let handler = middleware! { "hello from foo" };

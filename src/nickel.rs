@@ -2,7 +2,6 @@ use std::old_io::net::ip::{Port, IpAddr};
 
 use router::{Router, HttpRouter};
 use middleware::{MiddlewareStack, Middleware, ErrorHandler};
-use nickel_error::{ErrorWithStatusCode, NickelError};
 use server::Server;
 
 use hyper::method::Method;
