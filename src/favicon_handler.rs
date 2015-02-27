@@ -32,9 +32,8 @@ impl FaviconHandler {
     /// Create a new middleware to serve an /favicon.ico file from an in-memory cache.
     /// The file is only read from disk once when the server starts.
     ///
-    ///
-    /// # Example
-    /// ```{rust,ignore}
+    /// # Examples
+    /// ```{rust,no_run}
     /// use nickel::{Nickel, FaviconHandler};
     /// let mut server = Nickel::new();
     ///

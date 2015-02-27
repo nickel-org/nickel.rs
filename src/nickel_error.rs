@@ -9,7 +9,6 @@ pub use self::NickelErrorKind::{ErrorWithStatusCode, UserDefinedError, Other};
 
 /// NickelError is the basic error type for HTTP errors as well as user defined errors.
 /// One can pattern match against the `kind` property to handle the different cases.
-
 pub struct NickelError<'a> {
     pub stream: Option<Response<'a, Streaming>>,
     pub kind: NickelErrorKind,
@@ -19,9 +18,13 @@ pub struct NickelError<'a> {
 impl<'a> NickelError<'a> {
     /// Creates a new `NickelError` instance
     ///
-    /// # Example
-    /// ```{rust,ignore}
-    /// NickelError::new("Error Parsing JSON", ErrorWithStatusCode(BadRequest));
+    /// # Examples
+    /// ```{rust}
+    /// use nickel::{NickelError, ErrorWithStatusCode};
+    /// use nickel::status::StatusCode;
+    /// NickelError::new(None,
+    ///                  "Error Parsing JSON",
+    ///                  ErrorWithStatusCode(StatusCode::BadRequest));
     /// ```
     pub fn new<T>(stream: Option<Response<'a, Streaming>>,
                   message: T,
@@ -43,7 +46,6 @@ impl<'a> FromError<IoError> for NickelError<'a> {
 
 #[derive(Debug)]
 pub enum NickelErrorKind {
-    // FIXME: Should probably re-export hyper::status::StatusCode
     ErrorWithStatusCode(StatusCode),
     UserDefinedError(usize, String),
     Other

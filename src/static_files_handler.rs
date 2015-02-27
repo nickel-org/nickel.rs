@@ -35,7 +35,7 @@ impl StaticFilesHandler {
     /// the provided root directory.
     ///
     ///
-    /// # Example
+    /// # Examples
     /// ```{rust}
     /// use nickel::{Nickel, StaticFilesHandler};
     /// let mut server = Nickel::new();

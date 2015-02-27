@@ -54,18 +54,17 @@ impl Nickel {
     /// down the stack should continue or if the middleware invocation should
     /// be stopped after the current handler.
     ///
-    /// # Example
-    ///
+    /// # Examples
     /// ```{rust}
-    /// use nickel::{Nickel, Request, Response, Continue, MiddlewareResult};
-    /// fn logger(req: &Request, res: Response<'a>) -> MiddlewareResult<'a> {
-    ///     println!("logging request: {}", req.origin.uri);
-    ///     Ok(Continue)
-    /// }
-    ///
+    /// # extern crate nickel;
+    /// # #[macro_use] extern crate nickel_macros;
+    /// # fn main() {
+    /// use nickel::Nickel;
     /// let mut server = Nickel::new();
-    /// let l: fn(&Request, &mut Response) -> MiddlewareResult = logger;
-    /// server.utilize(l);
+    /// server.utilize(middleware! { |req|
+    ///     println!("logging request: {:?}", req.origin.uri);
+    /// });
+    /// # }
     /// ```
     pub fn utilize<T: Middleware>(&mut self, handler: T){
         self.middleware_stack.add_middleware(handler);
@@ -77,33 +76,31 @@ impl Nickel {
     /// A error handler is nearly identical to a regular middleware handler with the only
     /// difference that it takes an additional error parameter or type `NickelError.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```{rust}
-    /// # extern crate http;
     /// # extern crate nickel;
     /// # fn main() {
-    /// use nickel::{Nickel, Request, Response, Continue, Halt, MiddlewareResult};
-    /// use nickel::{NickelError, ErrorWithStatusCode};
-    /// use hyper::status::StatusCode::NotFound;
-    /// use nickel::mimes::MediaType::Html;
+    /// use nickel::{Nickel, Request, Response, Continue, Halt};
+    /// use nickel::{NickelError, ErrorWithStatusCode, Action};
+    /// use nickel::status::StatusCode::NotFound;
     ///
-    /// fn error_handler(err: &NickelError, req: &Request, response: &mut Response)
-    ///                  -> MiddlewareResult {
+    /// fn error_handler(err: &mut NickelError, req: &mut Request) -> Action {
     ///    match err.kind {
     ///        ErrorWithStatusCode(NotFound) => {
-    ///            response.content_type(Html);
-    ///            response.origin.status = NotFound;
-    ///            response.send("<h1>Call the police!<h1>");
-    ///            Ok(Halt)
+    ///            if let Some(ref mut res) = err.stream {
+    ///                let _ = res.write_all(b"<h1>Call the police!</h1>");
+    ///            }
+    ///            Halt(())
+    ///
     ///        },
-    ///        _ => Ok(Continue)
+    ///        _ => Continue(())
     ///    }
     /// }
     ///
     /// let mut server = Nickel::new();
     ///
-    /// let ehandler: fn(&NickelError, &Request, &mut Response) -> MiddlewareResult = error_handler;
+    /// let ehandler: fn(&mut NickelError, &mut Request) -> Action = error_handler;
     ///
     /// server.handle_error(ehandler)
     /// # }
@@ -115,22 +112,22 @@ impl Nickel {
     /// Create a new middleware to serve as a router.
     ///
     ///
-    /// # Example
+    /// # Examples
     /// ```{rust}
-    /// use nickel::{Nickel, Request, Response, HttpRouter};
+    /// extern crate nickel;
+    /// #[macro_use] extern crate nickel_macros;
+    /// use nickel::{Nickel, HttpRouter};
     ///
-    /// let mut server = Nickel::new();
-    /// let mut router = Nickel::router();
+    /// fn main() {
+    ///     let mut server = Nickel::new();
+    ///     let mut router = Nickel::router();
     ///
-    /// fn foo_handler(request: &Request, response: &mut Response) {
-    ///     response.send("Hi from /foo");
-    /// };
+    ///     router.get("/foo", middleware! {
+    ///         "Hi from /foo"
+    ///     });
     ///
-    /// let fhandler: fn(&Request, &mut Response) = foo_handler;
-    ///
-    /// router.get("/foo", fhandler);
-    ///
-    /// server.utilize(router);
+    ///     server.utilize(router);
+    /// }
     /// ```
     pub fn router() -> Router {
         Router::new()
@@ -138,7 +135,7 @@ impl Nickel {
 
     /// Bind and listen for connections on the given host and port
     ///
-    /// # Example
+    /// # Examples
     /// ```{rust,no_run}
     /// use nickel::Nickel;
     /// use std::old_io::net::ip::IpAddr::Ipv4Addr;

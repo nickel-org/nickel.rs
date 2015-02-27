@@ -37,12 +37,14 @@ impl<'a> Response<'a, Fresh> {
     /// Sets the content type by it's short form.
     /// Returns the response for chaining.
     ///
-    /// # Example
+    /// # Examples
     /// ```{rust}
-    /// # use nickel::{Request, Response};
+    /// use nickel::{Request, Response, MiddlewareResult, Continue};
     /// use nickel::mimes::MediaType;
-    /// fn handler(request: &Request, response: &mut Response) {
-    ///     response.content_type(MediaType::Html);
+    ///
+    /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
+    ///     res.content_type(MediaType::Html);
+    ///     Ok(Continue(res))
     /// }
     /// ```
     pub fn content_type(&mut self, mt: MediaType) -> &mut Response<'a> {
@@ -52,16 +54,15 @@ impl<'a> Response<'a, Fresh> {
 
     /// Sets the status code and returns the response for chaining
     ///
-    /// # Example
+    /// # Examples
     /// ```{rust}
-    /// # extern crate hyper;
-    /// # extern crate nickel;
-    /// # use nickel::{Request, Response};
-    /// # fn main() {
-    /// fn handler(request: &Request, response: &mut Response) {
-    ///     response.status_code(hyper::status::StatusCode::NotFound);
+    /// use nickel::{Request, Response, MiddlewareResult, Continue};
+    /// use nickel::status::StatusCode;
+    ///
+    /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
+    ///     res.status_code(StatusCode::NotFound);
+    ///     Ok(Continue(res))
     /// }
-    /// # }
     /// ```
     pub fn status_code(&mut self, status: StatusCode) -> &mut Response<'a> {
         *self.origin.status_mut() = status;
@@ -70,11 +71,12 @@ impl<'a> Response<'a, Fresh> {
 
     /// Writes a response
     ///
-    /// # Example
+    /// # Examples
     /// ```{rust}
-    /// # use nickel::{Request, Response};
-    /// fn handler(request: &Request, response: &mut Response) -> MiddlewareResult<'a>{
-    ///     response.send("hello world");
+    /// use nickel::{Request, Response, MiddlewareResult, Halt};
+    ///
+    /// fn handler<'a>(_: &mut Request, res: Response<'a>) -> MiddlewareResult<'a> {
+    ///     Ok(Halt(try!(res.send("hello world"))))
     /// }
     /// ```
     pub fn send<T: BytesContainer> (mut self, text: T) -> IoResult<Response<'a Streaming>> {
@@ -87,12 +89,14 @@ impl<'a> Response<'a, Fresh> {
 
     /// Writes a file to the output.
     ///
-    /// # Example
+    /// # Examples
     /// ```{rust}
-    /// # use nickel::{Request, Response};
-    /// fn handler(request: &Request, response: &mut Response) {
+    /// use nickel::{Request, Response, MiddlewareResult, Halt};
+    /// use nickel::status::StatusCode;
+    ///
+    /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
     ///     let favicon = Path::new("/assets/favicon.ico");
-    ///     response.send_file(&favicon).ok().expect("Failed to send favicon");
+    ///     Ok(Halt(try!(res.send_file(&favicon))))
     /// }
     /// ```
     pub fn send_file(mut self, path: &Path) -> IoResult<Response<'a, Streaming>> {
@@ -121,14 +125,16 @@ impl<'a> Response<'a, Fresh> {
 
     /// Renders the given template bound with the given data.
     ///
-    /// # Example
+    /// # Examples
     /// ```{rust}
-    /// # use nickel::{Request, Response};
-    /// # use std::collections::HashMap;
-    /// fn handler(request: &Request, response: &mut Response) {
+    /// use std::collections::HashMap;
+    /// use nickel::{Request, Response, MiddlewareResult, Halt};
+    ///
+    /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
     ///     let mut data = HashMap::new();
     ///     data.insert("name", "user");
-    ///     response.render("examples/assets/template.tpl", &data);
+    ///     let stream = try!(res.render("examples/assets/template.tpl", &data));
+    ///     Ok(Halt(stream))
     /// }
     /// ```
     pub fn render<T>(self, path: &'static str, data: &T)
