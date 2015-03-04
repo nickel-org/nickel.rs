@@ -40,7 +40,7 @@ impl<'a, 'b> QueryString for Request<'a, 'b> {
 }
 
 fn parse(origin: &RequestUri) -> QueryStore {
-    let f = |&: query: Option<&String>| query.map(|q| urlencoded::parse(&*q));
+    let f = |query: Option<&String>| query.map(|q| urlencoded::parse(&*q));
 
     let result = match *origin {
         AbsoluteUri(ref url) => f(url.query.as_ref()),
@@ -59,7 +59,7 @@ fn parse(origin: &RequestUri) -> QueryStore {
 #[test]
 fn splits_and_parses_an_url() {
     use url::Url;
-    let t = |&: url|{
+    let t = |url| {
         let store = parse(&url);
         assert_eq!(store["foo".to_string()], vec!["bar".to_string()]);
         assert_eq!(store["message".to_string()],

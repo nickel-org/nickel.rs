@@ -1,9 +1,8 @@
 use std::sync::RwLock;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
-use std::old_io::{IoResult, File, IoError, IoErrorKind};
-use std::old_io::util::copy;
 use std::old_path::BytesContainer;
+use std::path::Path;
 use std::fmt::Debug;
 use serialize::Encodable;
 use hyper::status::StatusCode;
@@ -14,6 +13,9 @@ use time;
 use mimes::{get_media_type, MediaType};
 use mustache;
 use mustache::Template;
+use std::io;
+use std::io::{Read, Write, ErrorKind, copy};
+use std::fs::File;
 
 pub type TemplateCache = RwLock<HashMap<&'static str, Template>>;
 
@@ -79,7 +81,7 @@ impl<'a> Response<'a, Fresh> {
     ///     Ok(Halt(try!(res.send("hello world"))))
     /// }
     /// ```
-    pub fn send<T: BytesContainer> (mut self, text: T) -> IoResult<Response<'a Streaming>> {
+    pub fn send<T: BytesContainer> (mut self, text: T) -> io::Result<Response<'a, Streaming>> {
         self.set_common_headers();
 
         let mut stream = try!(self.start());
@@ -93,17 +95,19 @@ impl<'a> Response<'a, Fresh> {
     /// ```{rust}
     /// use nickel::{Request, Response, MiddlewareResult, Halt};
     /// use nickel::status::StatusCode;
+    /// use std::path::Path;
     ///
     /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
     ///     let favicon = Path::new("/assets/favicon.ico");
-    ///     Ok(Halt(try!(res.send_file(&favicon))))
+    ///     Ok(Halt(try!(res.send_file(favicon))))
     /// }
     /// ```
-    pub fn send_file(mut self, path: &Path) -> IoResult<Response<'a, Streaming>> {
+    pub fn send_file(mut self, path: &Path) -> io::Result<Response<'a, Streaming>> {
         // Chunk the response
         self.origin.headers_mut().remove::<header::ContentLength>();
         // Determine content type by file extension or default to binary
-        self.content_type(path.extension_str()
+        self.content_type(path.extension()
+                              .and_then(|os| os.to_str())
                               .and_then(|s| s.parse().ok())
                               .unwrap_or(MediaType::Bin));
 
@@ -138,14 +142,12 @@ impl<'a> Response<'a, Fresh> {
     /// }
     /// ```
     pub fn render<T>(self, path: &'static str, data: &T)
-            -> IoResult<Response<'a, Streaming>>
+            -> io::Result<Response<'a, Streaming>>
             where T: Encodable {
-        fn to_ioerr<U: Debug>(r: Result<(), U>) -> IoResult<()> {
-            r.map_err(|e| IoError {
-                kind: IoErrorKind::OtherIoError,
-                desc: "Problem rendering template",
-                detail: Some(format!("{:?}", e))
-            })
+        fn to_ioerr<U: Debug>(r: Result<(), U>) -> io::Result<()> {
+            r.map_err(|e| io::Error::new(ErrorKind::Other,
+                                         "Problem rendering template",
+                                         Some(format!("{:?}", e))))
         }
 
         // Fast path doesn't need writer lock
@@ -160,14 +162,14 @@ impl<'a> Response<'a, Fresh> {
         // Search again incase there was a race to compile the template
         let template = match templates.entry(path) {
             Vacant(entry) => {
-                let mut file = File::open(&Path::new(path));
-                let raw_template =
-                    file.read_to_string()
-                        .ok()
-                        .expect(format!("Couldn't open the template file: {}",
-                                        path).as_slice());
+                let mut file = File::open(&Path::new(path))
+                                     .ok().expect(&*format!("Couldn't open the template file: {}", path));
+                let mut raw_template = String::new();
 
-                entry.insert(mustache::compile_str(raw_template.as_slice()))
+                file.read_to_string(&mut raw_template)
+                    .ok().expect(&*format!("Couldn't open the template file: {}", path));
+
+                entry.insert(mustache::compile_str(&*raw_template))
             },
             Occupied(entry) => entry.into_mut()
         };
@@ -177,7 +179,7 @@ impl<'a> Response<'a, Fresh> {
         Ok(stream)
     }
 
-    pub fn start(mut self) -> IoResult<Response<'a, Streaming>> {
+    pub fn start(mut self) -> io::Result<Response<'a, Streaming>> {
         self.set_common_headers();
 
         let Response { origin, templates } = self;
@@ -187,20 +189,20 @@ impl<'a> Response<'a, Fresh> {
     }
 }
 
-impl<'a, 'b> Writer for Response<'a, Streaming> {
+impl<'a, 'b> Write for Response<'a, Streaming> {
     #[inline(always)]
-    fn write_all(&mut self, msg: &[u8]) -> IoResult<()> {
-        self.origin.write_all(msg)
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.origin.write(buf)
     }
     #[inline(always)]
-    fn flush(&mut self) -> IoResult<()> {
+    fn flush(&mut self) -> io::Result<()> {
         self.origin.flush()
     }
 }
 
 impl<'a, 'b> Response<'a, Streaming> {
     /// Flushes all writing of a response to the client.
-    pub fn end(self) -> IoResult<()> {
+    pub fn end(self) -> io::Result<()> {
         self.origin.end()
     }
 }
@@ -209,7 +211,9 @@ impl<'a, 'b> Response<'a, Streaming> {
 fn matches_content_type () {
     use hyper::mime::{Mime, TopLevel, SubLevel};
     let path = &Path::new("test.txt");
-    let content_type = path.extension_str().and_then(|s| s.parse().ok());
+    let content_type = path.extension()
+                           .and_then(|os| os.to_str())
+                           .and_then(|s| s.parse().ok());
 
     assert_eq!(content_type, Some(MediaType::Txt));
     let content_type = content_type.map(get_media_type).unwrap();

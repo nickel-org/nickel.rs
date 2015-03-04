@@ -1,4 +1,4 @@
-#![feature(plugin, core, old_io)]
+#![feature(plugin, core, io, net)]
 
 extern crate url;
 extern crate nickel;
@@ -10,7 +10,8 @@ use nickel::{
     Nickel, NickelError, ErrorWithStatusCode, Continue, Halt, Request, Response,
     QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter, Action
 };
-use std::old_io::net::ip::Ipv4Addr;
+use std::io::Write;
+use std::net::IpAddr;
 
 #[derive(RustcDecodable, RustcEncodable)]
 struct Person {
@@ -117,5 +118,5 @@ fn main() {
     server.handle_error(custom_handler);
 
     println!("Running server!");
-    server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
+    server.listen(IpAddr::new_v4(127, 0, 0, 1), 6767);
 }

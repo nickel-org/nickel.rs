@@ -1,4 +1,4 @@
-use std::old_io::net::ip::{IpAddr, Port};
+use std::net::IpAddr;
 use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
 use hyper::server::{Request, Response, Handler};
@@ -7,12 +7,9 @@ use hyper::server::Server as HyperServer;
 use middleware::MiddlewareStack;
 use request;
 use response;
-use mustache;
 
 pub struct Server {
     middleware_stack: MiddlewareStack,
-    ip: IpAddr,
-    port: Port,
     templates: response::TemplateCache
 }
 
@@ -26,20 +23,18 @@ impl Handler for Arc<Server> {
 }
 
 impl Server {
-    pub fn new(middleware_stack: MiddlewareStack, ip: IpAddr, port: Port) -> Server {
+    pub fn new(middleware_stack: MiddlewareStack) -> Server {
         Server {
             middleware_stack: middleware_stack,
-            ip: ip,
-            port: port,
-            templates: RwLock::new(HashMap::<&'static str, mustache::Template>::new())
+            templates: RwLock::new(HashMap::new())
         }
     }
 
     // why do we need this? Is the http::Server.serve_forever method protected in C# terms?
-    pub fn serve(self) {
-        let socket = HyperServer::http(self.ip, self.port);
+    pub fn serve(self, ip: IpAddr, port: u16) {
         let arc = Arc::new(self);
-        let _ = socket.listen(arc);
+        let server = HyperServer::http(arc);
+        let _ = server.listen(ip, port);
     }
 }
 

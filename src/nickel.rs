@@ -1,9 +1,7 @@
-use std::old_io::net::ip::{Port, IpAddr};
-
+use std::net::IpAddr;
 use router::{Router, HttpRouter};
 use middleware::{MiddlewareStack, Middleware, ErrorHandler};
 use server::Server;
-
 use hyper::method::Method;
 use hyper::status::StatusCode;
 
@@ -80,6 +78,7 @@ impl Nickel {
     /// ```{rust}
     /// # extern crate nickel;
     /// # fn main() {
+    /// use std::io::Write;
     /// use nickel::{Nickel, Request, Response, Continue, Halt};
     /// use nickel::{NickelError, ErrorWithStatusCode, Action};
     /// use nickel::status::StatusCode::NotFound;
@@ -137,12 +136,12 @@ impl Nickel {
     /// # Examples
     /// ```{rust,no_run}
     /// use nickel::Nickel;
-    /// use std::old_io::net::ip::IpAddr::Ipv4Addr;
+    /// use std::net::IpAddr;
     ///
     /// let mut server = Nickel::new();
-    /// server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
+    /// server.listen(IpAddr::new_v4(127, 0, 0, 1), 6767);
     /// ```
-    pub fn listen(mut self, ip: IpAddr, port: Port) {
+    pub fn listen(mut self, ip: IpAddr, port: u16) {
         self.middleware_stack.add_middleware(middleware! {
             (StatusCode::NotFound, "File Not Found")
         });
@@ -153,6 +152,6 @@ impl Nickel {
         }
         println!("Ctrl-C to shutdown server");
 
-        Server::new(self.middleware_stack, ip, port).serve();
+        Server::new(self.middleware_stack).serve(ip, port);
     }
 }

@@ -1,7 +1,7 @@
 use std::borrow::{IntoCow, Cow};
 use hyper::status::StatusCode;
 use std::error::FromError;
-use std::old_io::{IoError, IoResult};
+use std::io;
 use response::Response;
 use hyper::net::Streaming;
 
@@ -37,14 +37,16 @@ impl<'a> NickelError<'a> {
         }
     }
 
-    pub fn end(self) -> Option<IoResult<()>> {
+    pub fn end(self) -> Option<io::Result<()>> {
         self.stream.map(|s| s.end())
     }
 }
 
-impl<'a> FromError<IoError> for NickelError<'a> {
-    fn from_error(err: IoError) -> NickelError<'a> {
-        NickelError::new(None, err.desc, ErrorWithStatusCode(StatusCode::InternalServerError))
+impl<'a> FromError<io::Error> for NickelError<'a> {
+    fn from_error(err: io::Error) -> NickelError<'a> {
+        NickelError::new(None,
+                         err.description().to_string(),
+                         ErrorWithStatusCode(StatusCode::InternalServerError))
     }
 }
 

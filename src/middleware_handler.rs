@@ -20,6 +20,7 @@ use hyper::net;
 use middleware::{Middleware, MiddlewareResult, Halt, Continue};
 use serialize::json;
 use mimes::MediaType;
+use std::io::Write;
 
 impl Middleware for for<'a> fn(&mut Request, Response<'a>) -> MiddlewareResult<'a> {
     fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: Response<'a>) -> MiddlewareResult<'a> {
@@ -73,7 +74,7 @@ impl<'a, S: Display> ResponseFinalizer for &'a [S] {
         let mut res = try!(res.start());
         for ref s in self.iter() {
             // FIXME : This error handling is poor
-            try!(write!(&mut res, "{}", s));
+            try!(res.write_fmt(format_args!("{}", s)))
         }
         Ok(Halt(res))
     }

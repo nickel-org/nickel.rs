@@ -2,7 +2,7 @@ use hyper::status::StatusCode::{NotFound, BadRequest};
 use request::Request;
 use middleware::{ErrorHandler, Action, Halt};
 use nickel_error::{NickelError, ErrorWithStatusCode};
-use std::old_io::Writer;
+use std::io::Write;
 
 #[derive(Clone, Copy)]
 pub struct DefaultErrorHandler;

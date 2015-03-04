@@ -1,5 +1,5 @@
-use std::old_io::fs::PathExtensions;
-use std::old_path::BytesContainer;
+use std::path::{AsPath, PathBuf};
+use std::fs::PathExt;
 
 use hyper::uri::RequestUri::AbsolutePath;
 use hyper::method::Method::{Get, Head};
@@ -12,7 +12,7 @@ use middleware::{Halt, Continue, Middleware, MiddlewareResult};
 
 #[derive(Clone)]
 pub struct StaticFilesHandler {
-    root_path: Path
+    root_path: PathBuf
 }
 
 impl Middleware for StaticFilesHandler {
@@ -37,9 +37,9 @@ impl StaticFilesHandler {
     ///
     /// server.utilize(StaticFilesHandler::new("/path/to/serve/"));
     /// ```
-    pub fn new (root_path: &str) -> StaticFilesHandler {
+    pub fn new<P: AsPath>(root_path: P) -> StaticFilesHandler {
         StaticFilesHandler {
-            root_path: Path::new(root_path)
+            root_path: root_path.as_path().to_path_buf()
         }
     }
 
@@ -57,12 +57,12 @@ impl StaticFilesHandler {
         }
     }
 
-    fn with_file<'a, 'b, T>(&self,
-                            relative_path: Option<T>,
+    fn with_file<'a, 'b, P>(&self,
+                            relative_path: Option<P>,
                             res: Response<'a>)
-            -> MiddlewareResult<'a> where T: BytesContainer {
+            -> MiddlewareResult<'a> where P: AsPath {
         if let Some(path) = relative_path {
-            let path = self.root_path.join(path);
+            let path = self.root_path.join(path.as_path());
             if path.exists() {
                 return Ok(Halt(try!(res.send_file(&path))));
             }
