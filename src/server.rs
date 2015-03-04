@@ -30,7 +30,6 @@ impl Server {
         }
     }
 
-    // why do we need this? Is the http::Server.serve_forever method protected in C# terms?
     pub fn serve(self, ip: IpAddr, port: u16) {
         let arc = Arc::new(self);
         let server = HyperServer::http(arc);
