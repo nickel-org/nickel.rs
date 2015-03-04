@@ -1,25 +1,21 @@
-#![feature(old_io)]
-
+#![feature(net)]
 extern crate nickel;
-extern crate http;
+#[macro_use] extern crate nickel_macros;
 
-use nickel::{Nickel, Request, Response, HttpRouter};
-use std::old_io::net::ip::Ipv4Addr;
+use nickel::{Nickel, Request, Response, HttpRouter, MiddlewareResult, Halt};
+use std::net::IpAddr;
 use std::collections::HashMap;
 
 fn main() {
     let mut server = Nickel::new();
 
-    fn root_handler (_request: &Request, response: &mut Response) {
+    fn handler<'a>(_: &mut Request, res: Response<'a>) -> MiddlewareResult<'a> {
         let mut data = HashMap::<&str, &str>::new();
         data.insert("name", "user");
-        response.render("examples/assets/template.tpl", &data);
+        Ok(Halt(try!(res.render("examples/assets/template.tpl", &data))))
     }
 
-    // issue #20178
-    let handler: fn(&Request, &mut Response) = root_handler;
+    server.get("/", middleware!(@handler));
 
-    server.get("/", handler);
-
-    server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
+    server.listen(IpAddr::new_v4(127, 0, 0, 1), 6767);
 }

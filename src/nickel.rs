@@ -1,14 +1,14 @@
-use std::old_io::net::ip::{Port, IpAddr};
-
-use request::Request;
-use response::Response;
+use std::net::IpAddr;
 use router::{Router, HttpRouter};
-use middleware::{MiddlewareResult, MiddlewareStack, Middleware, ErrorHandler};
-use nickel_error::{ErrorWithStatusCode, NickelError};
+use middleware::{MiddlewareStack, Middleware, ErrorHandler};
 use server::Server;
+use hyper::method::Method;
+use hyper::status::StatusCode;
 
-use http::method::Method;
-use http::status::NotFound;
+// Re-exports so that we can use nickel_macros within nickel
+// as they use the path `nickel::foo` which resolves to this module
+// rather than an external crate.
+pub use {MiddlewareResult, ResponseFinalizer, Request, Response};
 
 //pre defined middleware
 use default_error_handler::DefaultErrorHandler;
@@ -51,18 +51,17 @@ impl Nickel {
     /// down the stack should continue or if the middleware invocation should
     /// be stopped after the current handler.
     ///
-    /// # Example
-    ///
+    /// # Examples
     /// ```{rust}
-    /// use nickel::{Nickel, Request, Response, Continue, MiddlewareResult};
-    /// fn logger(req: &Request, res: &mut Response) -> MiddlewareResult {
-    ///     println!("logging request: {}", req.origin.request_uri);
-    ///     Ok(Continue)
-    /// }
-    ///
+    /// # extern crate nickel;
+    /// # #[macro_use] extern crate nickel_macros;
+    /// # fn main() {
+    /// use nickel::Nickel;
     /// let mut server = Nickel::new();
-    /// let l: fn(&Request, &mut Response) -> MiddlewareResult = logger;
-    /// server.utilize(l);
+    /// server.utilize(middleware! { |req|
+    ///     println!("logging request: {:?}", req.origin.uri);
+    /// });
+    /// # }
     /// ```
     pub fn utilize<T: Middleware>(&mut self, handler: T){
         self.middleware_stack.add_middleware(handler);
@@ -74,33 +73,32 @@ impl Nickel {
     /// A error handler is nearly identical to a regular middleware handler with the only
     /// difference that it takes an additional error parameter or type `NickelError.
     ///
-    /// # Example
+    /// # Examples
     ///
     /// ```{rust}
-    /// # extern crate http;
     /// # extern crate nickel;
     /// # fn main() {
-    /// use nickel::{Nickel, Request, Response, Continue, Halt, MiddlewareResult};
-    /// use nickel::{NickelError, ErrorWithStatusCode};
-    /// use http::status::NotFound;
-    /// use nickel::mimes::MediaType::Html;
+    /// use std::io::Write;
+    /// use nickel::{Nickel, Request, Response, Continue, Halt};
+    /// use nickel::{NickelError, ErrorWithStatusCode, Action};
+    /// use nickel::status::StatusCode::NotFound;
     ///
-    /// fn error_handler(err: &NickelError, req: &Request, response: &mut Response)
-    ///                  -> MiddlewareResult {
+    /// fn error_handler(err: &mut NickelError, req: &mut Request) -> Action {
     ///    match err.kind {
     ///        ErrorWithStatusCode(NotFound) => {
-    ///            response.content_type(Html);
-    ///            response.origin.status = NotFound;
-    ///            response.send("<h1>Call the police!<h1>");
-    ///            Ok(Halt)
+    ///            if let Some(ref mut res) = err.stream {
+    ///                let _ = res.write_all(b"<h1>Call the police!</h1>");
+    ///            }
+    ///            Halt(())
+    ///
     ///        },
-    ///        _ => Ok(Continue)
+    ///        _ => Continue(())
     ///    }
     /// }
     ///
     /// let mut server = Nickel::new();
     ///
-    /// let ehandler: fn(&NickelError, &Request, &mut Response) -> MiddlewareResult = error_handler;
+    /// let ehandler: fn(&mut NickelError, &mut Request) -> Action = error_handler;
     ///
     /// server.handle_error(ehandler)
     /// # }
@@ -112,22 +110,22 @@ impl Nickel {
     /// Create a new middleware to serve as a router.
     ///
     ///
-    /// # Example
+    /// # Examples
     /// ```{rust}
-    /// use nickel::{Nickel, Request, Response, HttpRouter};
+    /// extern crate nickel;
+    /// #[macro_use] extern crate nickel_macros;
+    /// use nickel::{Nickel, HttpRouter};
     ///
-    /// let mut server = Nickel::new();
-    /// let mut router = Nickel::router();
+    /// fn main() {
+    ///     let mut server = Nickel::new();
+    ///     let mut router = Nickel::router();
     ///
-    /// fn foo_handler(request: &Request, response: &mut Response) {
-    ///     response.send("Hi from /foo");
-    /// };
+    ///     router.get("/foo", middleware! {
+    ///         "Hi from /foo"
+    ///     });
     ///
-    /// let fhandler: fn(&Request, &mut Response) = foo_handler;
-    ///
-    /// router.get("/foo", fhandler);
-    ///
-    /// server.utilize(router);
+    ///     server.utilize(router);
+    /// }
     /// ```
     pub fn router() -> Router {
         Router::new()
@@ -135,21 +133,18 @@ impl Nickel {
 
     /// Bind and listen for connections on the given host and port
     ///
-    /// # Example
+    /// # Examples
     /// ```{rust,no_run}
     /// use nickel::Nickel;
-    /// use std::old_io::net::ip::IpAddr::Ipv4Addr;
+    /// use std::net::IpAddr;
     ///
     /// let mut server = Nickel::new();
-    /// server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
+    /// server.listen(IpAddr::new_v4(127, 0, 0, 1), 6767);
     /// ```
-    pub fn listen(mut self, ip: IpAddr, port: Port) {
-        fn not_found_handler(_: &Request, _: &mut Response) -> MiddlewareResult {
-            Err(NickelError::new("File Not Found", ErrorWithStatusCode(NotFound)))
-        }
-
-        let nfhandler: fn(&Request, &mut Response) -> MiddlewareResult = not_found_handler;
-        self.middleware_stack.add_middleware(nfhandler);
+    pub fn listen(mut self, ip: IpAddr, port: u16) {
+        self.middleware_stack.add_middleware(middleware! {
+            (StatusCode::NotFound, "File Not Found")
+        });
 
         match port {
             80u16 =>  println!("Listening on http://{}", ip),
@@ -157,6 +152,6 @@ impl Nickel {
         }
         println!("Ctrl-C to shutdown server");
 
-        Server::new(self.middleware_stack, ip, port).serve();
+        Server::new(self.middleware_stack).serve(ip, port);
     }
 }

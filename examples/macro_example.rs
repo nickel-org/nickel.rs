@@ -1,18 +1,17 @@
-#![feature(plugin, core, old_io)]
+#![feature(plugin, core, io, net)]
 
 extern crate url;
-extern crate http;
 extern crate nickel;
 extern crate "rustc-serialize" as rustc_serialize;
 #[macro_use] extern crate nickel_macros;
 
-use http::status;
+use nickel::status::StatusCode::{self, NotFound};
 use nickel::{
     Nickel, NickelError, ErrorWithStatusCode, Continue, Halt, Request, Response,
-    QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter
+    QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter, Action
 };
-use nickel::mimes::MediaType;
-use std::old_io::net::ip::Ipv4Addr;
+use std::io::Write;
+use std::net::IpAddr;
 
 #[derive(RustcDecodable, RustcEncodable)]
 struct Person {
@@ -21,24 +20,25 @@ struct Person {
 }
 
 //this is an example middleware function that just logs each request
-fn logger(request: &Request, _response: &mut Response) -> MiddlewareResult {
-    println!("logging request: {}", request.origin.request_uri);
-
-    // a request is supposed to return a `bool` to indicate whether additional
-    // middleware should continue executing or should be stopped.
-    Ok(Continue)
+fn logger<'a>(request: &mut Request, response: Response<'a>) -> MiddlewareResult<'a> {
+    println!("logging request: {:?}", request.origin.uri);
+    Ok(Continue(response))
 }
 
 //this is how to overwrite the default error handler to handle 404 cases with a custom view
-fn custom_404(err: &NickelError, _req: &Request, response: &mut Response) -> MiddlewareResult {
+fn custom_404<'a>(err: &mut NickelError, _req: &mut Request) -> Action {
     match err.kind {
-        ErrorWithStatusCode(status::NotFound) => {
-            response.content_type(MediaType::Html)
-                    .status_code(status::NotFound)
-                    .send("<h1>Call the police!<h1>");
-            Ok(Halt)
+        ErrorWithStatusCode(NotFound) => {
+            // FIXME: Supportable?
+            // response.content_type(MediaType::Html)
+            //         .status_code(NotFound)
+            //         .send("<h1>Call the police!<h1>");
+            if let Some(ref mut res) = err.stream {
+                let _ = res.write_all(b"<h1>Call the police!</h1>");
+            }
+            Halt(())
         },
-        _ => Ok(Continue)
+        _ => Continue(())
     }
 }
 
@@ -46,9 +46,7 @@ fn main() {
     let mut server = Nickel::new();
 
     // middleware is optional and can be registered with `utilize`
-    // issue #20178
-    let logger_handler: fn(&Request, &mut Response) -> MiddlewareResult = logger;
-    server.utilize(logger_handler);
+    server.utilize(middleware!(@logger));
 
     // go to http://localhost:6767/thoughtram_logo_brain.png to see static file serving in action
     server.utilize(StaticFilesHandler::new("examples/assets/"));
@@ -73,18 +71,19 @@ fn main() {
             (200usize, "This is the /bar handler")
         }
 
-        // go to http://localhost:6767/redirect to see this route in action
-        get "/redirect" => |request, response| {
-            use http::headers::response::Header::Location;
-            let root = url::Url::parse("http://www.rust-lang.org/").unwrap();
-            // returning a typed http status, a response body and some additional headers
-            (status::TemporaryRedirect, "Redirecting you to 'rust-lang.org'", vec![Location(root)])
-        }
+        // FIXME
+        // // go to http://localhost:6767/redirect to see this route in action
+        // get "/redirect" => |request, response| {
+        //     use http::headers::response::Header::Location;
+        //     let root = url::Url::parse("http://www.rust-lang.org/").unwrap();
+        //     // returning a typed http status, a response body and some additional headers
+        //     (StatusCode::TemporaryRedirect, "Redirecting you to 'rust-lang.org'", vec![Location(root)])
+        // }
 
         // go to http://localhost:6767/private to see this route in action
         get "/private" => |request, response| {
             // returning a typed http status and a response body
-            (status::Unauthorized, "This is a private place")
+            (StatusCode::Unauthorized, "This is a private place")
         }
 
         // go to http://localhost:6767/some/crazy/route to see this route in action
@@ -102,25 +101,22 @@ fn main() {
         // curl 'http://localhost:6767/a/post/request' -H 'Content-Type: application/json;charset=UTF-8'  --data-binary $'{ "firstname": "John","lastname": "Connor" }'
         post "/a/post/request" => |request, response| {
             let person = request.json_as::<Person>().unwrap();
-            let text = format!("Hello {} {}", person.firstname, person.lastname);
-            response.send(text.as_slice());
-            // a 'regular' handler with no return, handling everything via the response object
+            format!("Hello {} {}", person.firstname, person.lastname)
         }
 
         // try calling http://localhost:6767/query?foo=bar
         get "/query" => |request, response| {
             let text = format!("Your foo values in the query string are: {:?}",
                                request.query("foo", "This is only a default value!"));
-            response.send(text.as_slice());
-            // a 'regular' handler with no return, handling everything via the response object
+            text
         }
     ));
 
     // issue #20178
-    let custom_handler: fn(&NickelError, &Request, &mut Response) -> MiddlewareResult = custom_404;
+    let custom_handler: fn(&mut NickelError, &mut Request) -> Action = custom_404;
 
     server.handle_error(custom_handler);
 
     println!("Running server!");
-    server.listen(Ipv4Addr(127, 0, 0, 1), 6767);
+    server.listen(IpAddr::new_v4(127, 0, 0, 1), 6767);
 }

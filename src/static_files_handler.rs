@@ -1,39 +1,25 @@
-use std::old_io::{IoError, IoResult, FileNotFound};
-use std::old_path::BytesContainer;
+use std::path::{AsPath, PathBuf};
+use std::fs::PathExt;
 
-use http::server::request::RequestUri::AbsolutePath;
-use http::method::{Get, Head};
-use http::status::{ InternalServerError };
+use hyper::uri::RequestUri::AbsolutePath;
+use hyper::method::Method::{Get, Head};
 
-use request;
-use response;
+use request::Request;
+use response::Response;
 use middleware::{Halt, Continue, Middleware, MiddlewareResult};
-use nickel_error::{ NickelError, ErrorWithStatusCode };
 
 // this should be much simpler after unboxed closures land in Rust.
 
 #[derive(Clone)]
 pub struct StaticFilesHandler {
-    root_path: Path
+    root_path: PathBuf
 }
 
 impl Middleware for StaticFilesHandler {
-    fn invoke (&self, req: &mut request::Request, res: &mut response::Response)
-               -> MiddlewareResult {
+    fn invoke<'a>(&self, req: &mut Request, res: Response<'a>) -> MiddlewareResult<'a> {
         match req.origin.method {
-            Get | Head => {
-                match self.with_file(self.extract_path(req), res) {
-                    Ok(()) => Ok(Halt),
-                    Err(err) => match err.kind {
-                        // We shouldn't assume the StaticFileHandler to be the last middleware in the stack.
-                        // Therefore it's important to continue in case of FileNotFound errors.
-                        FileNotFound => Ok(Continue),
-                        _ => Err(NickelError::new(format!("Unknown Error ({})", err),
-                                                  ErrorWithStatusCode(InternalServerError)))
-                    }
-                }
-            },
-            _ => Ok(Continue)
+            Get | Head => self.with_file(self.extract_path(req), res),
+            _ => Ok(Continue(res))
         }
     }
 }
@@ -44,21 +30,21 @@ impl StaticFilesHandler {
     /// the provided root directory.
     ///
     ///
-    /// # Example
+    /// # Examples
     /// ```{rust}
     /// use nickel::{Nickel, StaticFilesHandler};
     /// let mut server = Nickel::new();
     ///
     /// server.utilize(StaticFilesHandler::new("/path/to/serve/"));
     /// ```
-    pub fn new (root_path: &str) -> StaticFilesHandler {
+    pub fn new<P: AsPath>(root_path: P) -> StaticFilesHandler {
         StaticFilesHandler {
-            root_path: Path::new(root_path)
+            root_path: root_path.as_path().to_path_buf()
         }
     }
 
-    fn extract_path<'a>(&self, req: &'a mut request::Request) -> Option<&'a str> {
-        match req.origin.request_uri {
+    fn extract_path<'a>(&self, req: &'a mut Request) -> Option<&'a str> {
+        match req.origin.uri {
             AbsolutePath(ref path) => {
                 debug!("{:?} {:?}{:?}", req.origin.method, self.root_path.display(), path);
 
@@ -71,11 +57,17 @@ impl StaticFilesHandler {
         }
     }
 
-    fn with_file<T: BytesContainer>(&self, relative_path: Option<T>, res: &mut response::Response)
-                                    -> IoResult<()> {
-        match relative_path {
-            Some(path) => res.send_file(&self.root_path.join(path)),
-            None => Err(IoError::last_error())
-        }
+    fn with_file<'a, 'b, P>(&self,
+                            relative_path: Option<P>,
+                            res: Response<'a>)
+            -> MiddlewareResult<'a> where P: AsPath {
+        if let Some(path) = relative_path {
+            let path = self.root_path.join(path.as_path());
+            if path.exists() {
+                return Ok(Halt(try!(res.send_file(&path))));
+            }
+        };
+
+        Ok(Continue(res))
     }
 }

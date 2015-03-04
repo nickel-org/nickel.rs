@@ -1,4 +1,4 @@
-use http::headers::content_type;
+use hyper::mime::Mime;
 use std::str::FromStr;
 
 macro_rules! mimes {
@@ -13,19 +13,16 @@ macro_rules! mimes {
             ),*
         }
 
-        pub fn get_media_type(ty: MediaType) -> content_type::MediaType {
-            let (ty, subty) = match ty {
+        // FIXME: Should be less runtime cost to this, hyper's Mime type looks
+        // slightly more robust than old-http, so could probably just re-export
+        // that and depreciate this.
+        pub fn get_media_type(ty: MediaType) -> Mime {
+            match ty {
                 $(
                     $(
-                        MediaType::$name => ($t, $subt)
+                        MediaType::$name => (concat!($t, "/", $subt)).parse().unwrap()
                     ),*
                 ),*
-            };
-
-            content_type::MediaType {
-                type_: ty.to_string(),
-                subtype: subty.to_string(),
-                parameters: vec![]
             }
         }
 

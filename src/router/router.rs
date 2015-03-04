@@ -1,10 +1,11 @@
 use middleware::{Middleware, Continue, MiddlewareResult};
 use super::path_utils;
-use http::server::request::RequestUri::AbsolutePath;
+use hyper::uri::RequestUri::AbsolutePath;
 use request::Request;
 use response::Response;
 use router::HttpRouter;
-use http::method::Method;
+use hyper::method::Method;
+use hyper::status::StatusCode;
 use regex::Regex;
 use std::collections::HashMap;
 
@@ -88,21 +89,23 @@ impl HttpRouter for Router {
 }
 
 impl Middleware for Router {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: &mut Response)
-                        -> MiddlewareResult {
-        match req.origin.request_uri {
-            AbsolutePath(ref url) => {
-                match self.match_route(&req.origin.method, &*url) {
-                    Some(route_result) => {
-                        res.origin.status = ::http::status::Ok;
-                        let handler = &route_result.route.handler;
-                        req.route_result = Some(route_result);
-                        handler.invoke(req, res)
-                    },
-                    None => Ok(Continue)
-                }
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>)
+                        -> MiddlewareResult<'a> {
+        debug!("Router::invoke for '{:?}'", req.origin.uri);
+        let route_result = match req.origin.uri {
+            AbsolutePath(ref url) => self.match_route(&req.origin.method, &**url),
+            _ => None
+        };
+        debug!("route_result.route.path: {:?}", route_result.as_ref().map(|r| &*r.route.path));
+
+        match route_result {
+            Some(route_result) => {
+                res.status_code(StatusCode::Ok);
+                let handler = &route_result.route.handler;
+                req.route_result = Some(route_result);
+                handler.invoke(req, res)
             },
-            _ => Ok(Continue)
+            None => Ok(Continue(res))
         }
     }
 }
@@ -170,23 +173,15 @@ fn creates_valid_regex_for_routes () {
 
 #[test]
 fn can_match_var_routes () {
-    use http::method;
-    use request::Request;
-    use response::Response;
+    use hyper::method::Method;
 
     let route_store = &mut Router::new();
+    let handler = middleware! { "hello from foo" };
 
-    fn handler (_request: &Request, response: &mut Response) -> () {
-        let _ = response.origin.write_all("hello from foo".as_bytes());
-    };
+    route_store.add_route(Method::Get, "/foo/:userid", handler);
+    route_store.add_route(Method::Get, "/bar", handler);
 
-    // issue #20178
-    let handler_cast: fn(&Request, &mut Response) = handler;
-
-    route_store.add_route(method::Get, "/foo/:userid", handler_cast);
-    route_store.add_route(method::Get, "/bar", handler_cast);
-
-    let route_result = route_store.match_route(&method::Get, "/foo/4711").unwrap();
+    let route_result = route_store.match_route(&Method::Get, "/foo/4711").unwrap();
     let route = route_result.route;
 
     assert_eq!(route_result.param("userid"), "4711");
@@ -195,21 +190,21 @@ fn can_match_var_routes () {
     assert_eq!(route.variables.len(), 1);
     assert_eq!(route.variables["userid".to_string()], 0);
 
-    let route_result = route_store.match_route(&method::Get, "/bar/4711");
+    let route_result = route_store.match_route(&Method::Get, "/bar/4711");
     assert!(route_result.is_none());
 
-    let route_result = route_store.match_route(&method::Get, "/foo");
+    let route_result = route_store.match_route(&Method::Get, "/foo");
     assert!(route_result.is_none());
 
     //ensure that this will work with commas too
-    let route_result = route_store.match_route(&method::Get, "/foo/123,456");
+    let route_result = route_store.match_route(&Method::Get, "/foo/123,456");
     assert!(route_result.is_some());
 
     let route_result = route_result.unwrap();
     assert_eq!(route_result.param("userid"), "123,456");
 
     //ensure that this will work with spacing too
-    let route_result = route_store.match_route(&method::Get, "/foo/John%20Doe");
+    let route_result = route_store.match_route(&Method::Get, "/foo/John%20Doe");
     assert!(route_result.is_some());
 
     let route_result = route_result.unwrap();

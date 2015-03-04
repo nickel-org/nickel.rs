@@ -1,36 +1,34 @@
 use request::Request;
 use response::Response;
 use nickel_error::NickelError;
-use middleware_handler::ResponseFinalizer;
+use hyper::net;
+
 pub use self::Action::{Continue, Halt};
 
-pub type MiddlewareResult = Result<Action, NickelError>;
+pub type MiddlewareResult<'a> = Result<Action<Response<'a, net::Fresh>,
+                                              Response<'a, net::Streaming>>,
+                                        NickelError<'a>>;
 
-#[derive(PartialEq, Copy)]
-pub enum Action {
-  Continue,
-  Halt
+pub enum Action<T=(), U=()> {
+    Continue(T),
+    Halt(U)
 }
 
 // the usage of + Send is weird here because what we really want is + Static
 // but that's not possible as of today. We have to use + Send for now.
 pub trait Middleware: Send + 'static + Sync {
-    fn invoke<'a, 'b>(&'a self, _req: &mut Request<'b, 'a>, _res: &mut Response) -> MiddlewareResult {
-        Ok(Continue)
+    fn invoke<'a, 'b>(&'a self, _req: &mut Request<'b, 'a>, res: Response<'a, net::Fresh>) -> MiddlewareResult<'a> {
+        Ok(Continue(res))
     }
 }
 
 pub trait ErrorHandler: Send + 'static + Sync {
-    fn invoke(&self, _err: &NickelError, _req: &mut Request, _res: &mut Response) -> MiddlewareResult {
-        Ok(Continue)
-    }
+    fn handle_error(&self, &mut NickelError, &mut Request) -> Action;
 }
 
-impl<R> ErrorHandler for fn(&NickelError, &Request, &mut Response) -> R
-        where R: ResponseFinalizer {
-    fn invoke(&self, err: &NickelError, req: &mut Request, res: &mut Response) -> MiddlewareResult {
-        let r = (*self)(err, req, res);
-        r.respond(res)
+impl ErrorHandler for fn(&mut NickelError, &mut Request) -> Action {
+    fn handle_error(&self, err: &mut NickelError, req: &mut Request) -> Action {
+        (*self)(err, req)
     }
 }
 
@@ -48,33 +46,43 @@ impl MiddlewareStack {
         self.error_handlers.push(Box::new(handler));
     }
 
-    pub fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: &mut Response) {
+    pub fn invoke<'a>(&'a self, mut req: Request<'a, 'a>, mut res: Response<'a>) {
         for handler in self.handlers.iter() {
-            match handler.invoke(req, res) {
-                Ok(Halt) => {
-                    debug!("{:?} {:?} {:?} {:?}",
+            match handler.invoke(&mut req, res) {
+                Ok(Halt(res)) => {
+                    debug!("Halted {:?} {:?} {:?} {:?}",
                            req.origin.method,
                            req.origin.remote_addr,
-                           req.origin.request_uri,
-                           res.origin.status);
+                           req.origin.uri,
+                           res.origin.status());
+                    let _ = res.end();
                     return
                 }
-                Ok(Continue) => {},
+                Ok(Continue(fresh)) => res = fresh,
                 Err(mut err) => {
-                    warn!("{:?} {:?} {:?} {:?}",
+                    warn!("{:?} {:?} {:?} {:?} {:?} {:?}",
                           req.origin.method,
                           req.origin.remote_addr,
-                          req.origin.request_uri,
-                          err.kind);
+                          req.origin.uri,
+                          err.kind,
+                          err.message,
+                          err.stream.as_ref().map(|s| s.origin.status()));
+
                     for error_handler in self.error_handlers.iter().rev() {
-                        match error_handler.invoke(&err, req, res) {
-                            Ok(Continue) => {},
-                            Ok(Halt) => return,
-                            // change the error so that other ErrorHandler
-                            // down the stack receive the new error.
-                            Err(new_err) => err = new_err,
+                        if let Halt(()) = error_handler.handle_error(&mut err, &mut req) {
+                            err.end();
+                            return
                         }
                     }
+
+                    warn!("Unhandled error: {:?} {:?} {:?} {:?} {:?} {:?}",
+                          req.origin.method,
+                          req.origin.remote_addr,
+                          req.origin.uri,
+                          err.kind,
+                          err.message,
+                          err.stream.map(|s| s.origin.status()));
+                    return
                 }
             }
         }

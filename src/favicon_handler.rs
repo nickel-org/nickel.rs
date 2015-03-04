@@ -1,27 +1,30 @@
-use std::old_io::File;
+use std::fs::File;
+use std::path::{PathBuf, AsPath};
+use std::io::Read;
 
-use http::server::request::RequestUri::AbsolutePath;
-use http::method::{Get, Head, Options};
-use http::status;
+use hyper::uri::RequestUri::AbsolutePath;
+use hyper::method::Method::{Get, Head, Options};
+use hyper::status::StatusCode;
+use hyper::header;
+use hyper::net;
 
-use request;
-use response;
-use middleware::{Action, Halt, Continue, Middleware};
-use nickel_error::NickelError;
+use request::Request;
+use response::Response;
+use middleware::{Halt, Continue, Middleware, MiddlewareResult};
 use mimes::MediaType;
 
 pub struct FaviconHandler {
     icon: Vec<u8>,
-    icon_path: Path, // Is it useful to log where in-memory favicon came from every request?
+    icon_path: PathBuf, // Is it useful to log where in-memory favicon came from every request?
 }
 
 impl Middleware for FaviconHandler {
-    fn invoke (&self, req: &mut request::Request, res: &mut response::Response)
-               -> Result<Action, NickelError> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: Response<'a, net::Fresh>)
+            -> MiddlewareResult<'a> {
         if FaviconHandler::is_favicon_request(req) {
             self.handle_request(req, res)
         } else {
-            Ok(Continue)
+            Ok(Continue(res))
         }
     }
 }
@@ -30,52 +33,57 @@ impl FaviconHandler {
     /// Create a new middleware to serve an /favicon.ico file from an in-memory cache.
     /// The file is only read from disk once when the server starts.
     ///
-    ///
-    /// # Example
-    /// ```{rust,ignore}
+    /// # Examples
+    /// ```{rust,no_run}
     /// use nickel::{Nickel, FaviconHandler};
     /// let mut server = Nickel::new();
     ///
     /// server.utilize(FaviconHandler::new("/path/to/ico/file"));
     /// ```
-    pub fn new (icon_path: &str) -> FaviconHandler {
-        let _icon_path = Path::new(icon_path);
+    pub fn new<P: AsPath>(icon_path: P) -> FaviconHandler {
+        let icon_path = icon_path.as_path().to_path_buf();
+        let mut icon = vec![];
+        File::open(&icon_path).unwrap().read_to_end(&mut icon).unwrap();
+
         FaviconHandler {
             // Fail when favicon cannot be read. Better error message though?
-            icon: File::open(&Path::new(icon_path)).unwrap().read_to_end().unwrap(),
-            icon_path: _icon_path,
+            icon: icon,
+            icon_path: icon_path,
         }
     }
 
     #[inline]
-    pub fn is_favicon_request (req: &request::Request) -> bool {
-        match req.origin.request_uri {
+    pub fn is_favicon_request(req: &Request) -> bool {
+        match req.origin.uri {
             AbsolutePath(ref path) => &**path == "/favicon.ico",
             _                      => false
         }
     }
 
-    pub fn handle_request (&self, req: &request::Request, res: &mut response::Response)
-               -> Result<Action, NickelError> {
+    pub fn handle_request<'a>(&self, req: &Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
         match req.origin.method {
             Get | Head => {
-                self.send_favicon(req, res);
+                self.send_favicon(req, res)
             },
             Options => {
-                res.status_code(status::Ok);
-                res.origin.headers.allow = Some(vec!(Get, Head, Options));
+                res.status_code(StatusCode::Ok);
+                res.origin.headers_mut().set(header::Allow(vec!(Get, Head, Options)));
+                let stream = try!(res.send(""));
+                Ok(Halt(stream))
             },
             _ => {
-                res.status_code(status::MethodNotAllowed);
-                res.origin.headers.allow = Some(vec!(Get, Head, Options));
+                res.status_code(StatusCode::MethodNotAllowed);
+                res.origin.headers_mut().set(header::Allow(vec!(Get, Head, Options)));
+                let stream = try!(res.send(""));
+                Ok(Halt(stream))
             }
         }
-        Ok(Halt)
     }
 
-    pub fn send_favicon (&self, req: &request::Request, res: &mut response::Response) {
+    pub fn send_favicon<'a, 'b>(&self, req: &Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
         debug!("{:?} {:?}", req.origin.method, self.icon_path.display());
         res.content_type(MediaType::Ico);
-        res.send(&*self.icon);
+        let stream = try!(res.send(&*self.icon));
+        Ok(Halt(stream))
     }
 }
