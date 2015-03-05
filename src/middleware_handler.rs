@@ -118,7 +118,7 @@ dual_impl!((usize, &'a str),
            |self, res| {
                 maybe_set_type(&mut res, MediaType::Html);
                 let (status, data) = self;
-                match FromPrimitive::from_uint(status) {
+                match FromPrimitive::from_usize(status) {
                     Some(status) => {
                         res.status_code(status);
                         let stream = try!(res.send(data));
