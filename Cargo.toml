@@ -6,6 +6,12 @@ authors = [ "christoph@thoughtram.io" ]
 description = "An express.js inspired web framework"
 license = "MIT"
 
+[profile.dev]
+debug = false
+
+[profile.test]
+debug = false
+
 [lib]
 
 name = "nickel"

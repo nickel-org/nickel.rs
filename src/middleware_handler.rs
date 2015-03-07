@@ -150,7 +150,7 @@ dual_impl!((usize, &'a str),
 //             })
 
 fn maybe_set_type(res: &mut Response, ty: MediaType) {
-    if res.origin.headers().has::<header::ContentType>() {
+    if !res.origin.headers().has::<header::ContentType>() {
         res.content_type(ty);
     }
 }
