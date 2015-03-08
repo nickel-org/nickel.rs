@@ -63,7 +63,7 @@ impl StaticFilesHandler {
             -> MiddlewareResult<'a> where P: AsPath {
         if let Some(path) = relative_path {
             let path = self.root_path.join(path.as_path());
-            if path.exists() {
+            if path.exists() && path.is_file() {
                 return Ok(Halt(try!(res.send_file(&path))));
             }
         };
