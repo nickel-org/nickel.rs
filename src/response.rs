@@ -7,7 +7,7 @@ use std::fmt::Debug;
 use serialize::Encodable;
 use hyper::status::StatusCode;
 use hyper::server::Response as HyperResponse;
-use hyper::header;
+use hyper::header::{Date, Server, ContentType, ContentLength, Header, HeaderFormat};
 use hyper::net::{Fresh, Streaming};
 use time;
 use mimes::{get_media_type, MediaType};
@@ -50,7 +50,7 @@ impl<'a> Response<'a, Fresh> {
     /// }
     /// ```
     pub fn content_type(&mut self, mt: MediaType) -> &mut Response<'a> {
-        self.origin.headers_mut().set(header::ContentType(get_media_type(mt)));
+        self.origin.headers_mut().set(ContentType(get_media_type(mt)));
         self
     }
 
@@ -81,9 +81,7 @@ impl<'a> Response<'a, Fresh> {
     ///     Ok(Halt(try!(res.send("hello world"))))
     /// }
     /// ```
-    pub fn send<T: BytesContainer> (mut self, text: T) -> io::Result<Response<'a, Streaming>> {
-        self.set_common_headers();
-
+    pub fn send<T: BytesContainer> (self, text: T) -> io::Result<Response<'a, Streaming>> {
         let mut stream = try!(self.start());
         try!(stream.write_all(text.container_as_bytes()));
         Ok(stream)
@@ -104,7 +102,7 @@ impl<'a> Response<'a, Fresh> {
     /// ```
     pub fn send_file(mut self, path: &Path) -> io::Result<Response<'a, Streaming>> {
         // Chunk the response
-        self.origin.headers_mut().remove::<header::ContentLength>();
+        self.origin.headers_mut().remove::<ContentLength>();
         // Determine content type by file extension or default to binary
         self.content_type(path.extension()
                               .and_then(|os| os.to_str())
@@ -121,10 +119,41 @@ impl<'a> Response<'a, Fresh> {
     // not just "some headers" :)
     //
     // Also, it should only set them if not already set.
-    fn set_common_headers(&mut self) {
-        let ref mut headers = self.origin.headers_mut();
-        headers.set(header::Date(time::now_utc()));
-        headers.set(header::Server(String::from_str("Nickel")));
+    fn set_fallback_headers(&mut self) {
+        self.set_header_fallback(|| Date(time::now_utc()));
+        self.set_header_fallback(|| Server("Nickel".to_string()));
+        self.set_header_fallback(|| ContentType(get_media_type(MediaType::Html)));
+    }
+
+    /// Sets the header if not already set.
+    ///
+    /// If the header is not set then `f` will be called.
+    /// Renders the given template bound with the given data.
+    ///
+    /// # Examples
+    /// ```{rust}
+    /// # extern crate nickel;
+    /// # extern crate hyper;
+    ///
+    /// # fn main() {
+    /// use nickel::{Request, Response, MiddlewareResult, Halt, MediaType, get_media_type};
+    /// use hyper::header::ContentType;
+    ///
+    /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
+    ///     res.content_type(MediaType::Html);
+    ///     res.set_header_fallback(|| {
+    ///         panic!("Should not get called");
+    ///         ContentType(get_media_type(MediaType::Txt))
+    ///     });
+    ///     let stream = try!(res.send("<h1>Hello World</h1>"));
+    ///     Ok(Halt(stream))
+    /// }
+    /// # }
+    /// ```
+    pub fn set_header_fallback<F, H>(&mut self, f: F)
+            where H: Header + HeaderFormat, F: FnOnce() -> H {
+        let headers = self.origin.headers_mut();
+        if !headers.has::<H>() { headers.set(f()) }
     }
 
     /// Renders the given template bound with the given data.
@@ -180,7 +209,7 @@ impl<'a> Response<'a, Fresh> {
     }
 
     pub fn start(mut self) -> io::Result<Response<'a, Streaming>> {
-        self.set_common_headers();
+        self.set_fallback_headers();
 
         let Response { origin, templates } = self;
         let origin = try!(origin.start());

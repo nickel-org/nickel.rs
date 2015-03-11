@@ -19,7 +19,7 @@ use hyper::header;
 use hyper::net;
 use middleware::{Middleware, MiddlewareResult, Halt, Continue};
 use serialize::json;
-use mimes::MediaType;
+use mimes::{MediaType, get_media_type};
 use std::io::Write;
 
 impl Middleware for for<'a> fn(&mut Request, Response<'a>) -> MiddlewareResult<'a> {
@@ -150,7 +150,5 @@ dual_impl!((usize, &'a str),
 //             })
 
 fn maybe_set_type(res: &mut Response, ty: MediaType) {
-    if !res.origin.headers().has::<header::ContentType>() {
-        res.content_type(ty);
-    }
+    res.set_header_fallback(|| header::ContentType(get_media_type(ty)));
 }
