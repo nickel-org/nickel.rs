@@ -109,10 +109,19 @@ impl<'a> Response<'a, Fresh> {
                               .and_then(|s| s.parse().ok())
                               .unwrap_or(MediaType::Bin));
 
-        let mut stream = try!(self.start());
-        let mut file = try!(File::open(path));
-        try!(copy(&mut file, &mut stream));
-        Ok(stream)
+        match File::open(path) {
+            Ok(mut file) => {
+                let mut stream = try!(self.start());
+                try!(copy(&mut file, &mut stream));
+                Ok(stream)
+            }
+            Err(e) => {
+                warn!("Failed to send_file '{:?}': {}", path, e);
+                self.status_code(StatusCode::InternalServerError);
+                let _ = self.send("").map(|s| s.end());
+                Err(e)
+            }
+        }
     }
 
     // TODO: This needs to be more sophisticated to return the correct headers
