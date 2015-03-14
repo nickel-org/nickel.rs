@@ -3,9 +3,8 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::old_path::BytesContainer;
 use std::path::Path;
-use std::fmt::Debug;
 use serialize::Encodable;
-use hyper::status::StatusCode;
+use hyper::status::StatusCode::{self, InternalServerError};
 use hyper::server::Response as HyperResponse;
 use hyper::header::{Date, Server, ContentType, ContentLength, Header, HeaderFormat};
 use hyper::net::{Fresh, Streaming};
@@ -14,8 +13,10 @@ use mimes::{get_media_type, MediaType};
 use mustache;
 use mustache::Template;
 use std::io;
-use std::io::{Read, Write, ErrorKind, copy};
+use std::io::{Read, Write, copy};
 use std::fs::File;
+use {NickelError, Halt, MiddlewareResult};
+use NickelErrorKind::ErrorWithStatusCode;
 
 pub type TemplateCache = RwLock<HashMap<&'static str, Template>>;
 
@@ -78,13 +79,17 @@ impl<'a> Response<'a, Fresh> {
     /// use nickel::{Request, Response, MiddlewareResult, Halt};
     ///
     /// fn handler<'a>(_: &mut Request, res: Response<'a>) -> MiddlewareResult<'a> {
-    ///     Ok(Halt(try!(res.send("hello world"))))
+    ///     res.send("hello world")
     /// }
     /// ```
-    pub fn send<T: BytesContainer> (self, text: T) -> io::Result<Response<'a, Streaming>> {
+    pub fn send<T: BytesContainer> (self, text: T) -> MiddlewareResult<'a> {
         let mut stream = try!(self.start());
-        try!(stream.write_all(text.container_as_bytes()));
-        Ok(stream)
+        match stream.write_all(text.container_as_bytes()) {
+            Ok(()) => Ok(Halt(stream)),
+            Err(e) => Err(NickelError::new(stream,
+                                           format!("Failed to send: {}", e),
+                                           ErrorWithStatusCode(InternalServerError)))
+        }
     }
 
     /// Writes a file to the output.
@@ -97,10 +102,10 @@ impl<'a> Response<'a, Fresh> {
     ///
     /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
     ///     let favicon = Path::new("/assets/favicon.ico");
-    ///     Ok(Halt(try!(res.send_file(favicon))))
+    ///     res.send_file(favicon)
     /// }
     /// ```
-    pub fn send_file(mut self, path: &Path) -> io::Result<Response<'a, Streaming>> {
+    pub fn send_file(mut self, path: &Path) -> MiddlewareResult<'a> {
         // Chunk the response
         self.origin.headers_mut().remove::<ContentLength>();
         // Determine content type by file extension or default to binary
@@ -112,14 +117,19 @@ impl<'a> Response<'a, Fresh> {
         match File::open(path) {
             Ok(mut file) => {
                 let mut stream = try!(self.start());
-                try!(copy(&mut file, &mut stream));
-                Ok(stream)
+                match copy(&mut file, &mut stream) {
+                    Ok(_) => Ok(Halt(stream)),
+                    Err(e) => Err(NickelError::new(stream,
+                                                   format!("Failed to send file: {}", e),
+                                                   ErrorWithStatusCode(InternalServerError)))
+                }
             }
             Err(e) => {
-                warn!("Failed to send_file '{:?}': {}", path, e);
-                self.status_code(StatusCode::InternalServerError);
-                let _ = self.send("").map(|s| s.end());
-                Err(e)
+                self.status_code(InternalServerError);
+                let stream = try!(self.start());
+                Err(NickelError::new(stream,
+                                     format!("Failed to send file '{:?}': {}", path, e),
+                                     ErrorWithStatusCode(InternalServerError)))
             }
         }
     }
@@ -154,8 +164,7 @@ impl<'a> Response<'a, Fresh> {
     ///         panic!("Should not get called");
     ///         ContentType(get_media_type(MediaType::Txt))
     ///     });
-    ///     let stream = try!(res.send("<h1>Hello World</h1>"));
-    ///     Ok(Halt(stream))
+    ///     res.send("<h1>Hello World</h1>")
     /// }
     /// # }
     /// ```
@@ -175,24 +184,27 @@ impl<'a> Response<'a, Fresh> {
     /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
     ///     let mut data = HashMap::new();
     ///     data.insert("name", "user");
-    ///     let stream = try!(res.render("examples/assets/template.tpl", &data));
-    ///     Ok(Halt(stream))
+    ///     res.render("examples/assets/template.tpl", &data)
     /// }
     /// ```
-    pub fn render<T>(self, path: &'static str, data: &T)
-            -> io::Result<Response<'a, Streaming>>
+    pub fn render<T>(self, path: &'static str, data: &T) -> MiddlewareResult<'a>
             where T: Encodable {
-        fn to_ioerr<U: Debug>(r: Result<(), U>) -> io::Result<()> {
-            r.map_err(|e| io::Error::new(ErrorKind::Other,
-                                         "Problem rendering template",
-                                         Some(format!("{:?}", e))))
+        fn render<'a, T>(res: Response<'a>, template: &Template, data: &T)
+                -> MiddlewareResult<'a> where T: Encodable {
+            let mut stream = try!(res.start());
+            match template.render(&mut stream, data) {
+                Ok(()) => Ok(Halt(stream)),
+                Err(e) => {
+                    Err(NickelError::new(stream,
+                                         format!("Problem rendering template: {:?}", e),
+                                         ErrorWithStatusCode(InternalServerError)))
+                }
+            }
         }
 
         // Fast path doesn't need writer lock
         if let Some(t) = self.templates.read().unwrap().get(&path) {
-            let mut stream = try!(self.start());
-            try!(to_ioerr(t.render(&mut stream, data)));
-            return Ok(stream);
+            return render(self, t, data);
         }
 
         // We didn't find the template, get writers lock
@@ -212,18 +224,22 @@ impl<'a> Response<'a, Fresh> {
             Occupied(entry) => entry.into_mut()
         };
 
-        let mut stream = try!(self.start());
-        try!(to_ioerr(template.render(&mut stream, data)));
-        Ok(stream)
+        render(self, template, data)
     }
 
-    pub fn start(mut self) -> io::Result<Response<'a, Streaming>> {
+    pub fn start(mut self) -> Result<Response<'a, Streaming>, NickelError<'a>> {
         self.set_fallback_headers();
 
         let Response { origin, templates } = self;
-        let origin = try!(origin.start());
-
-        Ok(Response { origin: origin, templates: templates })
+        match origin.start() {
+            Ok(origin) => Ok(Response { origin: origin, templates: templates }),
+            Err(e) => {
+                unsafe {
+                    Err(NickelError::without_response(format!("Failed to start response: {}", e),
+                                                      ErrorWithStatusCode(InternalServerError)))
+                }
+            }
+        }
     }
 }
 

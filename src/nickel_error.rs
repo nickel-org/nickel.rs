@@ -1,6 +1,5 @@
 use std::borrow::{IntoCow, Cow};
 use hyper::status::StatusCode;
-use std::error::FromError;
 use std::io;
 use response::Response;
 use hyper::net::Streaming;
@@ -20,18 +19,46 @@ impl<'a> NickelError<'a> {
     ///
     /// # Examples
     /// ```{rust}
+    /// # extern crate nickel;
+    ///
+    /// # fn main() {
+    /// use nickel::{Request, Response, MiddlewareResult, Halt, MediaType, get_media_type};
     /// use nickel::{NickelError, ErrorWithStatusCode};
     /// use nickel::status::StatusCode;
-    /// NickelError::new(None,
-    ///                  "Error Parsing JSON",
-    ///                  ErrorWithStatusCode(StatusCode::BadRequest));
+    ///
+    /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
+    ///     let stream = try!(res.start());
+    ///     Err(NickelError::new(stream,
+    ///                          "Error Parsing JSON",
+    ///                          ErrorWithStatusCode(StatusCode::BadRequest)))
+    /// }
+    /// # }
     /// ```
-    pub fn new<T>(stream: Option<Response<'a, Streaming>>,
+    pub fn new<T>(stream: Response<'a, Streaming>,
                   message: T,
                   kind: NickelErrorKind) -> NickelError<'a>
             where T: IntoCow<'static, str> {
         NickelError {
-            stream: stream,
+            stream: Some(stream),
+            message: message.into_cow(),
+            kind: kind
+        }
+    }
+
+    /// Creates a new `NickelError` without a `Response`.
+    ///
+    /// This should only be called in a state where the `Response` has
+    /// has failed in an unrecoverable state. If there is an available
+    /// `Response` then it must be provided to `new` so that the
+    /// underlying stream can be flushed, allowing future requests.
+    ///
+    /// This is considered `unsafe` as deadlock can occur if the `Response`
+    /// does not have the underlying stream flushed when processing is finished.
+    pub unsafe fn without_response<T>(message: T,
+                                      kind: NickelErrorKind) -> NickelError<'a>
+            where T: IntoCow<'static, str> {
+        NickelError {
+            stream: None,
             message: message.into_cow(),
             kind: kind
         }
@@ -39,14 +66,6 @@ impl<'a> NickelError<'a> {
 
     pub fn end(self) -> Option<io::Result<()>> {
         self.stream.map(|s| s.end())
-    }
-}
-
-impl<'a> FromError<io::Error> for NickelError<'a> {
-    fn from_error(err: io::Error) -> NickelError<'a> {
-        NickelError::new(None,
-                         err.description().to_string(),
-                         ErrorWithStatusCode(StatusCode::InternalServerError))
     }
 }
 

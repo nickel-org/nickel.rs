@@ -2,7 +2,7 @@
 extern crate nickel;
 #[macro_use] extern crate nickel_macros;
 
-use nickel::{Nickel, Request, Response, HttpRouter, MiddlewareResult, Halt};
+use nickel::{Nickel, Request, Response, HttpRouter, MiddlewareResult};
 use std::net::IpAddr;
 use std::collections::HashMap;
 
@@ -12,7 +12,7 @@ fn main() {
     fn handler<'a>(_: &mut Request, res: Response<'a>) -> MiddlewareResult<'a> {
         let mut data = HashMap::<&str, &str>::new();
         data.insert("name", "user");
-        Ok(Halt(try!(res.render("examples/assets/template.tpl", &data))))
+        res.render("examples/assets/template.tpl", &data)
     }
 
     server.get("/", middleware!(@handler));

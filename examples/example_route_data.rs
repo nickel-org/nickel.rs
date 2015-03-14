@@ -2,7 +2,7 @@
 
 extern crate nickel;
 
-use nickel::{Nickel, Request, Response, HttpRouter, MiddlewareResult, Halt};
+use nickel::{Nickel, Request, Response, HttpRouter, MiddlewareResult};
 use std::net::IpAddr;
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering::Relaxed;
@@ -17,8 +17,7 @@ fn main() {
     fn root_handler<'a>(_: &mut Request, response: Response<'a>, logger: &Logger)
             -> MiddlewareResult<'a> {
         let text = format!("{}", logger.visits.fetch_add(1, Relaxed));
-        let response = try!(response.send(text));
-        Ok(Halt(response))
+        response.send(text)
     }
 
     // issue #20178

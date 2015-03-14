@@ -12,7 +12,7 @@
 
 use request::Request;
 use response::Response;
-use hyper::status::StatusCode;
+use hyper::status::StatusCode::{self, InternalServerError};
 use std::fmt::Display;
 use std::num::FromPrimitive;
 use hyper::header;
@@ -21,6 +21,8 @@ use middleware::{Middleware, MiddlewareResult, Halt, Continue};
 use serialize::json;
 use mimes::{MediaType, get_media_type};
 use std::io::Write;
+use NickelError;
+use NickelErrorKind::ErrorWithStatusCode;
 
 impl Middleware for for<'a> fn(&mut Request, Response<'a>) -> MiddlewareResult<'a> {
     fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: Response<'a>) -> MiddlewareResult<'a> {
@@ -62,8 +64,7 @@ impl ResponseFinalizer for () {
 impl ResponseFinalizer for json::Json {
     fn respond<'a>(self, mut res: Response<'a>) -> MiddlewareResult<'a> {
         maybe_set_type(&mut res, MediaType::Json);
-        let stream = try!(res.send(json::encode(&self).unwrap()));
-        Ok(Halt(stream))
+        res.send(json::encode(&self).unwrap())
     }
 }
 
@@ -71,12 +72,17 @@ impl<'a, S: Display> ResponseFinalizer for &'a [S] {
     fn respond<'c>(self, mut res: Response<'c>) -> MiddlewareResult<'c> {
         maybe_set_type(&mut res, MediaType::Html);
         res.status_code(StatusCode::Ok);
-        let mut res = try!(res.start());
+        let mut stream = try!(res.start());
         for ref s in self.iter() {
             // FIXME : This error handling is poor
-            try!(res.write_fmt(format_args!("{}", s)))
+            match stream.write_fmt(format_args!("{}", s)) {
+            Ok(()) => {},
+            Err(e) => return Err(NickelError::new(stream,
+                                                  format!("Failed to write to stream: {}", e),
+                                                  ErrorWithStatusCode(InternalServerError)))
+            }
         }
-        Ok(Halt(res))
+        Ok(Halt(stream))
     }
 }
 
@@ -98,8 +104,7 @@ dual_impl!(&'a str,
                 maybe_set_type(&mut res, MediaType::Html);
 
                 res.status_code(StatusCode::Ok);
-                let stream = try!(res.send(self));
-                Ok(Halt(stream))
+                res.send(self)
             });
 
 dual_impl!((StatusCode, &'a str),
@@ -109,8 +114,7 @@ dual_impl!((StatusCode, &'a str),
                 let (status, data) = self;
 
                 res.status_code(status);
-                let stream = try!(res.send(data));
-                Ok(Halt(stream))
+                res.send(data)
             });
 
 dual_impl!((usize, &'a str),
@@ -121,8 +125,7 @@ dual_impl!((usize, &'a str),
                 match FromPrimitive::from_usize(status) {
                     Some(status) => {
                         res.status_code(status);
-                        let stream = try!(res.send(data));
-                        Ok(Halt(stream))
+                        res.send(data)
                     }
                     // This is a logic error
                     None => panic!("Bad status code")
