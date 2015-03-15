@@ -12,7 +12,7 @@
 
 use request::Request;
 use response::Response;
-use hyper::status::StatusCode::{self, InternalServerError};
+use hyper::status::StatusCode;
 use std::fmt::Display;
 use std::num::FromPrimitive;
 use hyper::header;
@@ -21,8 +21,6 @@ use middleware::{Middleware, MiddlewareResult, Halt, Continue};
 use serialize::json;
 use mimes::{MediaType, get_media_type};
 use std::io::Write;
-use NickelError;
-use NickelErrorKind::ErrorWithStatusCode;
 
 impl Middleware for for<'a> fn(&mut Request, Response<'a>) -> MiddlewareResult<'a> {
     fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: Response<'a>) -> MiddlewareResult<'a> {
@@ -76,10 +74,8 @@ impl<'a, S: Display> ResponseFinalizer for &'a [S] {
         for ref s in self.iter() {
             // FIXME : This error handling is poor
             match stream.write_fmt(format_args!("{}", s)) {
-            Ok(()) => {},
-            Err(e) => return Err(NickelError::new(stream,
-                                                  format!("Failed to write to stream: {}", e),
-                                                  ErrorWithStatusCode(InternalServerError)))
+                Ok(()) => {},
+                Err(e) => return stream.bail(format!("Failed to write to stream: {}", e))
             }
         }
         Ok(Halt(stream))

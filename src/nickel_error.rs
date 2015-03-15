@@ -2,7 +2,7 @@ use std::borrow::{IntoCow, Cow};
 use hyper::status::StatusCode;
 use std::io;
 use response::Response;
-use hyper::net::Streaming;
+use hyper::net::{Fresh, Streaming};
 
 pub use self::NickelErrorKind::{ErrorWithStatusCode, UserDefinedError, Other};
 
@@ -15,7 +15,9 @@ pub struct NickelError<'a> {
 }
 
 impl<'a> NickelError<'a> {
-    /// Creates a new `NickelError` instance
+    /// Creates a new `NickelError` instance.
+    ///
+    /// You should probably use `Response#error` in favor of this.
     ///
     /// # Examples
     /// ```{rust}
@@ -27,21 +29,27 @@ impl<'a> NickelError<'a> {
     /// use nickel::status::StatusCode;
     ///
     /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
-    ///     let stream = try!(res.start());
-    ///     Err(NickelError::new(stream,
+    ///     Err(NickelError::new(res,
     ///                          "Error Parsing JSON",
-    ///                          ErrorWithStatusCode(StatusCode::BadRequest)))
+    ///                          StatusCode::BadRequest))
     /// }
     /// # }
     /// ```
-    pub fn new<T>(stream: Response<'a, Streaming>,
+    pub fn new<T>(mut stream: Response<'a, Fresh>,
                   message: T,
-                  kind: NickelErrorKind) -> NickelError<'a>
+                  status_code: StatusCode) -> NickelError<'a>
             where T: IntoCow<'static, str> {
-        NickelError {
-            stream: Some(stream),
-            message: message.into_cow(),
-            kind: kind
+        stream.status_code(status_code);
+
+        match stream.start() {
+            Ok(stream) => {
+                NickelError {
+                    stream: Some(stream),
+                    message: message.into_cow(),
+                    kind: ErrorWithStatusCode(status_code)
+                }
+            },
+            Err(e) => e
         }
     }
 
@@ -54,13 +62,14 @@ impl<'a> NickelError<'a> {
     ///
     /// This is considered `unsafe` as deadlock can occur if the `Response`
     /// does not have the underlying stream flushed when processing is finished.
-    pub unsafe fn without_response<T>(message: T,
-                                      kind: NickelErrorKind) -> NickelError<'a>
+    pub unsafe fn without_response<T>(message: T) -> NickelError<'a>
             where T: IntoCow<'static, str> {
+        let message = message.into_cow();
+        println!("Error: {}", message);
         NickelError {
             stream: None,
-            message: message.into_cow(),
-            kind: kind
+            message: message,
+            kind: Other
         }
     }
 

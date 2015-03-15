@@ -1,3 +1,4 @@
+use std::borrow::IntoCow;
 use std::sync::RwLock;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
@@ -16,7 +17,6 @@ use std::io;
 use std::io::{Read, Write, copy};
 use std::fs::File;
 use {NickelError, Halt, MiddlewareResult};
-use NickelErrorKind::ErrorWithStatusCode;
 
 pub type TemplateCache = RwLock<HashMap<&'static str, Template>>;
 
@@ -86,9 +86,7 @@ impl<'a> Response<'a, Fresh> {
         let mut stream = try!(self.start());
         match stream.write_all(text.container_as_bytes()) {
             Ok(()) => Ok(Halt(stream)),
-            Err(e) => Err(NickelError::new(stream,
-                                           format!("Failed to send: {}", e),
-                                           ErrorWithStatusCode(InternalServerError)))
+            Err(e) => stream.bail(format!("Failed to send: {}", e))
         }
     }
 
@@ -119,17 +117,12 @@ impl<'a> Response<'a, Fresh> {
                 let mut stream = try!(self.start());
                 match copy(&mut file, &mut stream) {
                     Ok(_) => Ok(Halt(stream)),
-                    Err(e) => Err(NickelError::new(stream,
-                                                   format!("Failed to send file: {}", e),
-                                                   ErrorWithStatusCode(InternalServerError)))
+                    Err(e) => stream.bail(format!("Failed to send file: {}", e))
                 }
             }
             Err(e) => {
-                self.status_code(InternalServerError);
-                let stream = try!(self.start());
-                Err(NickelError::new(stream,
-                                     format!("Failed to send file '{:?}': {}", path, e),
-                                     ErrorWithStatusCode(InternalServerError)))
+                self.error(InternalServerError,
+                           format!("Failed to send file '{:?}': {}", path, e))
             }
         }
     }
@@ -142,6 +135,13 @@ impl<'a> Response<'a, Fresh> {
         self.set_header_fallback(|| Date(time::now_utc()));
         self.set_header_fallback(|| Server("Nickel".to_string()));
         self.set_header_fallback(|| ContentType(get_media_type(MediaType::Html)));
+    }
+
+    /// Return an error with the appropriate status code for error handlers to
+    /// provide output for.
+    pub fn error<T>(self, status: StatusCode, message: T) -> MiddlewareResult<'a>
+            where T: IntoCow<'static, str> {
+        Err(NickelError::new(self, message, status))
     }
 
     /// Sets the header if not already set.
@@ -194,11 +194,7 @@ impl<'a> Response<'a, Fresh> {
             let mut stream = try!(res.start());
             match template.render(&mut stream, data) {
                 Ok(()) => Ok(Halt(stream)),
-                Err(e) => {
-                    Err(NickelError::new(stream,
-                                         format!("Problem rendering template: {:?}", e),
-                                         ErrorWithStatusCode(InternalServerError)))
-                }
+                Err(e) => stream.bail(format!("Problem rendering template: {:?}", e))
             }
         }
 
@@ -235,8 +231,7 @@ impl<'a> Response<'a, Fresh> {
             Ok(origin) => Ok(Response { origin: origin, templates: templates }),
             Err(e) => {
                 unsafe {
-                    Err(NickelError::without_response(format!("Failed to start response: {}", e),
-                                                      ErrorWithStatusCode(InternalServerError)))
+                    Err(NickelError::without_response(format!("Failed to start response: {}", e)))
                 }
             }
         }
@@ -255,6 +250,16 @@ impl<'a, 'b> Write for Response<'a, Streaming> {
 }
 
 impl<'a, 'b> Response<'a, Streaming> {
+    /// In the case of an unrecoverable error while a stream is already in
+    /// progress, there is no standard way to signal to the client that an
+    /// error has occurred. `bail` will drop the connection and log an error
+    /// message.
+    pub fn bail<T>(self, message: T) -> MiddlewareResult<'a>
+            where T: IntoCow<'static, str> {
+        let _ = self.end();
+        unsafe { Err(NickelError::without_response(message)) }
+    }
+
     /// Flushes all writing of a response to the client.
     pub fn end(self) -> io::Result<()> {
         self.origin.end()
