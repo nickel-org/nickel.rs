@@ -59,11 +59,9 @@ impl<'a> NickelError<'a> {
     /// does not have the underlying stream flushed when processing is finished.
     pub unsafe fn without_response<T>(message: T) -> NickelError<'a>
             where T: IntoCow<'static, str> {
-        let message = message.into_cow();
-        println!("Error: {}", message);
         NickelError {
             stream: None,
-            message: message,
+            message: message.into_cow(),
         }
     }
 

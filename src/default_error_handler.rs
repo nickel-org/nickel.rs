@@ -17,6 +17,8 @@ impl ErrorHandler for DefaultErrorHandler {
             };
 
             let _ = res.write_all(msg);
+        } else {
+            println!("Error: {}", err.message);
         }
 
         Halt(())
