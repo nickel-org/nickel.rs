@@ -69,7 +69,7 @@ impl ResponseFinalizer for json::Json {
 impl<'a, S: Display> ResponseFinalizer for &'a [S] {
     fn respond<'c>(self, mut res: Response<'c>) -> MiddlewareResult<'c> {
         maybe_set_type(&mut res, MediaType::Html);
-        res.status_code(StatusCode::Ok);
+        res.set_status(StatusCode::Ok);
         let mut stream = try!(res.start());
         for ref s in self.iter() {
             // FIXME : This error handling is poor
@@ -99,7 +99,7 @@ dual_impl!(&'a str,
             |self, res| {
                 maybe_set_type(&mut res, MediaType::Html);
 
-                res.status_code(StatusCode::Ok);
+                res.set_status(StatusCode::Ok);
                 res.send(self)
             });
 
@@ -109,7 +109,7 @@ dual_impl!((StatusCode, &'a str),
                 maybe_set_type(&mut res, MediaType::Html);
                 let (status, data) = self;
 
-                res.status_code(status);
+                res.set_status(status);
                 res.send(data)
             });
 
@@ -120,7 +120,7 @@ dual_impl!((usize, &'a str),
                 let (status, data) = self;
                 match FromPrimitive::from_usize(status) {
                     Some(status) => {
-                        res.status_code(status);
+                        res.set_status(status);
                         res.send(data)
                     }
                     // This is a logic error

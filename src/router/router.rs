@@ -109,7 +109,7 @@ impl Middleware for Router {
 
         match route_result {
             Some(route_result) => {
-                res.status_code(StatusCode::Ok);
+                res.set_status(StatusCode::Ok);
                 let handler = &route_result.route.handler;
                 req.route_result = Some(route_result);
                 handler.invoke(req, res)

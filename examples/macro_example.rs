@@ -7,7 +7,7 @@ extern crate "rustc-serialize" as rustc_serialize;
 
 use nickel::status::StatusCode::{self, NotFound};
 use nickel::{
-    Nickel, NickelError, ErrorWithStatusCode, Continue, Halt, Request, Response,
+    Nickel, NickelError, Continue, Halt, Request, Response,
     QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter, Action
 };
 use std::io::Write;
@@ -27,19 +27,14 @@ fn logger<'a>(request: &mut Request, response: Response<'a>) -> MiddlewareResult
 
 //this is how to overwrite the default error handler to handle 404 cases with a custom view
 fn custom_404<'a>(err: &mut NickelError, _req: &mut Request) -> Action {
-    match err.kind {
-        ErrorWithStatusCode(NotFound) => {
-            // FIXME: Supportable?
-            // response.content_type(MediaType::Html)
-            //         .status_code(NotFound)
-            //         .send("<h1>Call the police!<h1>");
-            if let Some(ref mut res) = err.stream {
-                let _ = res.write_all(b"<h1>Call the police!</h1>");
-            }
-            Halt(())
-        },
-        _ => Continue(())
+    if let Some(ref mut res) = err.stream {
+        if let NotFound = res.status() {
+            let _ = res.write_all(b"<h1>Call the police!</h1>");
+            return Halt(())
+        }
     }
+
+    Continue(())
 }
 
 fn main() {

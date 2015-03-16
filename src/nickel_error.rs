@@ -4,13 +4,10 @@ use std::io;
 use response::Response;
 use hyper::net::{Fresh, Streaming};
 
-pub use self::NickelErrorKind::{ErrorWithStatusCode, UserDefinedError, Other};
-
 /// NickelError is the basic error type for HTTP errors as well as user defined errors.
 /// One can pattern match against the `kind` property to handle the different cases.
 pub struct NickelError<'a> {
     pub stream: Option<Response<'a, Streaming>>,
-    pub kind: NickelErrorKind,
     pub message: Cow<'static, str>
 }
 
@@ -24,8 +21,7 @@ impl<'a> NickelError<'a> {
     /// # extern crate nickel;
     ///
     /// # fn main() {
-    /// use nickel::{Request, Response, MiddlewareResult, Halt, MediaType, get_media_type};
-    /// use nickel::{NickelError, ErrorWithStatusCode};
+    /// use nickel::{Request, Response, MiddlewareResult, NickelError};
     /// use nickel::status::StatusCode;
     ///
     /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
@@ -39,14 +35,13 @@ impl<'a> NickelError<'a> {
                   message: T,
                   status_code: StatusCode) -> NickelError<'a>
             where T: IntoCow<'static, str> {
-        stream.status_code(status_code);
+        stream.set_status(status_code);
 
         match stream.start() {
             Ok(stream) => {
                 NickelError {
                     stream: Some(stream),
                     message: message.into_cow(),
-                    kind: ErrorWithStatusCode(status_code)
                 }
             },
             Err(e) => e
@@ -69,18 +64,10 @@ impl<'a> NickelError<'a> {
         NickelError {
             stream: None,
             message: message,
-            kind: Other
         }
     }
 
     pub fn end(self) -> Option<io::Result<()>> {
         self.stream.map(|s| s.end())
     }
-}
-
-#[derive(Debug)]
-pub enum NickelErrorKind {
-    ErrorWithStatusCode(StatusCode),
-    UserDefinedError(usize, String),
-    Other
 }

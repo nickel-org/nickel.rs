@@ -61,7 +61,7 @@ extern crate nickel;
 
 use nickel::status::StatusCode::{self, NotFound, BadRequest};
 use nickel::{
-    Nickel, NickelError, ErrorWithStatusCode, Continue, Halt, Request,
+    Nickel, NickelError, Continue, Halt, Request,
     QueryString, JsonBody, StaticFilesHandler, HttpRouter, Action
 };
 use std::net::IpAddr;
@@ -155,20 +155,16 @@ fn main() {
 
     //this is how to overwrite the default error handler to handle 404 cases with a custom view
     fn custom_404<'a>(err: &mut NickelError, _req: &mut Request) -> Action {
-        match err.kind {
-            ErrorWithStatusCode(NotFound) => {
-                // FIXME: Supportable?
-                // response.content_type(MediaType::Html)
-                //         .status_code(NotFound)
-                //         .send("<h1>Call the police!<h1>");
-                if let Some(ref mut res) = err.stream {
-                    let _ = res.write_all(b"<h1>Call the police!</h1>");
-                }
-                Halt(())
-            },
-            _ => Continue(())
+        if let Some(ref mut res) = err.stream {
+            if let NotFound = res.status() {
+                let _ = res.write_all(b"<h1>Call the police!</h1>");
+                return Halt(())
+            }
         }
+
+        Continue(())
     }
+
 
     // issue #20178
     let custom_handler: fn(&mut NickelError, &mut Request) -> Action = custom_404;

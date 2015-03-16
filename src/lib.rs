@@ -37,7 +37,7 @@ pub use default_error_handler::DefaultErrorHandler;
 pub use json_body_parser::JsonBody;
 pub use query_string::QueryString;
 pub use router::{Router, Route, RouteResult, HttpRouter};
-pub use nickel_error::{ NickelError, NickelErrorKind, ErrorWithStatusCode, UserDefinedError, Other };
+pub use nickel_error::NickelError;
 pub use mimes::{get_media_type, MediaType};
 pub use middleware_handler::ResponseFinalizer;
 

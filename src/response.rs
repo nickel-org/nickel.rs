@@ -63,11 +63,11 @@ impl<'a> Response<'a, Fresh> {
     /// use nickel::status::StatusCode;
     ///
     /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
-    ///     res.status_code(StatusCode::NotFound);
+    ///     res.set_status(StatusCode::NotFound);
     ///     Ok(Continue(res))
     /// }
     /// ```
-    pub fn status_code(&mut self, status: StatusCode) -> &mut Response<'a> {
+    pub fn set_status(&mut self, status: StatusCode) -> &mut Response<'a> {
         *self.origin.status_mut() = status;
         self
     }
@@ -263,6 +263,13 @@ impl<'a, 'b> Response<'a, Streaming> {
     /// Flushes all writing of a response to the client.
     pub fn end(self) -> io::Result<()> {
         self.origin.end()
+    }
+}
+
+impl <'a, T> Response<'a, T> {
+    /// Gets the current status code for this response
+    pub fn status(&self) -> StatusCode {
+        self.origin.status()
     }
 }
 

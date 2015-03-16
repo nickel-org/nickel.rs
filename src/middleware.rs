@@ -60,11 +60,10 @@ impl MiddlewareStack {
                 }
                 Ok(Continue(fresh)) => res = fresh,
                 Err(mut err) => {
-                    warn!("{:?} {:?} {:?} {:?} {:?} {:?}",
+                    warn!("{:?} {:?} {:?} {:?} {:?}",
                           req.origin.method,
                           req.origin.remote_addr,
                           req.origin.uri,
-                          err.kind,
                           err.message,
                           err.stream.as_ref().map(|s| s.origin.status()));
 
@@ -75,11 +74,10 @@ impl MiddlewareStack {
                         }
                     }
 
-                    warn!("Unhandled error: {:?} {:?} {:?} {:?} {:?} {:?}",
+                    warn!("Unhandled error: {:?} {:?} {:?} {:?} {:?}",
                           req.origin.method,
                           req.origin.remote_addr,
                           req.origin.uri,
-                          err.kind,
                           err.message,
                           err.stream.map(|s| s.origin.status()));
                     return

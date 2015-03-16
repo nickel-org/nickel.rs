@@ -80,20 +80,18 @@ impl Nickel {
     /// # fn main() {
     /// use std::io::Write;
     /// use nickel::{Nickel, Request, Response, Continue, Halt};
-    /// use nickel::{NickelError, ErrorWithStatusCode, Action};
+    /// use nickel::{NickelError, Action};
     /// use nickel::status::StatusCode::NotFound;
     ///
     /// fn error_handler(err: &mut NickelError, req: &mut Request) -> Action {
-    ///    match err.kind {
-    ///        ErrorWithStatusCode(NotFound) => {
-    ///            if let Some(ref mut res) = err.stream {
-    ///                let _ = res.write_all(b"<h1>Call the police!</h1>");
-    ///            }
-    ///            Halt(())
-    ///
-    ///        },
-    ///        _ => Continue(())
+    ///    if let Some(ref mut res) = err.stream {
+    ///        if let NotFound = res.status() {
+    ///            let _ = res.write_all(b"<h1>Call the police!</h1>");
+    ///            return Halt(())
+    ///        }
     ///    }
+    ///
+    ///     Continue(())
     /// }
     ///
     /// let mut server = Nickel::new();
