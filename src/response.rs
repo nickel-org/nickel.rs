@@ -2,7 +2,6 @@ use std::borrow::IntoCow;
 use std::sync::RwLock;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
-use std::old_path::BytesContainer;
 use std::path::Path;
 use serialize::Encodable;
 use hyper::status::StatusCode::{self, InternalServerError};
@@ -16,7 +15,7 @@ use mustache::Template;
 use std::io;
 use std::io::{Read, Write, copy};
 use std::fs::File;
-use {NickelError, Halt, MiddlewareResult};
+use {NickelError, Halt, MiddlewareResult, AsBytes};
 
 pub type TemplateCache = RwLock<HashMap<&'static str, Template>>;
 
@@ -82,9 +81,9 @@ impl<'a> Response<'a, Fresh> {
     ///     res.send("hello world")
     /// }
     /// ```
-    pub fn send<T: BytesContainer> (self, text: T) -> MiddlewareResult<'a> {
+    pub fn send<T: AsBytes>(self, text: T) -> MiddlewareResult<'a> {
         let mut stream = try!(self.start());
-        match stream.write_all(text.container_as_bytes()) {
+        match stream.write_all(&text.as_bytes()) {
             Ok(()) => Ok(Halt(stream)),
             Err(e) => stream.bail(format!("Failed to send: {}", e))
         }

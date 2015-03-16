@@ -1,4 +1,4 @@
-#![feature(plugin, core, io, net)]
+#![feature(plugin, core, net)]
 
 extern crate url;
 extern crate nickel;

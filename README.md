@@ -53,7 +53,7 @@ Then try `localhost:6767/user/4711` and `localhost:6767/bar`
 Here is how sample server in `example.rs` looks like:
 
 ```rust
-#![feature(core, io, net)]
+#![feature(core, net)]
 
 extern crate "rustc-serialize" as rustc_serialize;
 extern crate nickel;
