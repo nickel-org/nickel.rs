@@ -18,12 +18,12 @@ time = "*"
 typemap = "*"
 plugin = "*"
 regex = "*"
-regex_macros = "*"
 rustc-serialize = "*"
 log = "*"
 hyper = "*"
 groupable = "*"
 mustache = "*"
+lazy_static = "*"
 
 [[example]]
 
