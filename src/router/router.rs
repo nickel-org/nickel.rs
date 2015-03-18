@@ -7,7 +7,6 @@ use router::HttpRouter;
 use hyper::method::Method;
 use hyper::status::StatusCode;
 use regex::Regex;
-use std::collections::HashMap;
 
 /// A Route is the basic data structure that stores both the path
 /// and the handler that gets executed for the route.
@@ -16,7 +15,6 @@ pub struct Route {
     pub path: String,
     pub method: Method,
     pub handler: Box<Middleware + Send + Sync + 'static>,
-    pub variables: HashMap<String, usize>,
     matcher: Regex
 }
 
@@ -26,13 +24,20 @@ pub struct Route {
 /// evaluated string
 pub struct RouteResult<'a> {
     pub route: &'a Route,
-    params: Vec<String>
+    params: Vec<(String, String)>
 }
 
 impl<'a> RouteResult<'a> {
     pub fn param(&self, key: &str) -> &str {
-        let idx = self.route.variables.get(key).unwrap();
-        &*self.params[*idx]
+        for &(ref k, ref v) in &self.params {
+            if k == &key {
+                return &v[..]
+            }
+        }
+
+        // FIXME: should have a default format
+        if key == "format" { return "" }
+        panic!("unknown param: {}", key)
     }
 }
 
@@ -43,33 +48,36 @@ pub struct Router {
     routes: Vec<Route>,
 }
 
-impl<'a> Router {
+impl Router {
     pub fn new () -> Router {
         Router {
             routes: Vec::new()
         }
     }
 
-    pub fn match_route(&'a self, method: &Method, path: &str) -> Option<RouteResult<'a>> {
+    pub fn match_route<'a>(&'a self, method: &Method, path: &str) -> Option<RouteResult<'a>> {
         self.routes
             .iter()
             .find(|item| item.method == *method && item.matcher.is_match(path))
-            .map(|route| {
-                let vec = match route.matcher.captures(path) {
-                    Some(captures) => {
-                        (0..route.variables.len())
-                            .filter_map(|pos| {
-                                captures.at(pos + 1).map(|c| c.to_string())
-                            })
-                            .collect()
-                    },
-                    None => vec![],
-                };
+            .map(|route|
                 RouteResult {
-                    route: route,
-                    params: vec
+                    params: extract_params(route, path),
+                    route: route
                 }
-            })
+            )
+    }
+}
+
+fn extract_params(route: &Route, path: &str) -> Vec<(String, String)> {
+    match route.matcher.captures(path) {
+        Some(captures) => {
+            captures.iter_named()
+                    .filter_map(|(name, subcap)| {
+                        subcap.map(|cap| (name.to_string(), cap.to_string()))
+                    })
+                    .collect()
+        }
+        None => vec![]
     }
 }
 
@@ -83,16 +91,13 @@ impl HttpRouter for Router {
             format!("{}(\\.{})?", path, FORMAT_VAR)
         };
 
-        let matcher = path_utils::create_regex(&with_format);
-        let variable_infos = path_utils::get_variable_info(&with_format);
-
         let route = Route {
+            matcher: path_utils::create_regex(&with_format),
             path: with_format,
             method: method,
-            matcher: matcher,
             handler: Box::new(handler),
-            variables: variable_infos
         };
+
         self.routes.push(route);
     }
 }
@@ -117,15 +122,6 @@ impl Middleware for Router {
             None => Ok(Continue(res))
         }
     }
-}
-
-#[test]
-fn creates_map_with_var_variable_infos () {
-    let map = path_utils::get_variable_info("foo/:uid/bar/:groupid");
-
-    assert_eq!(map.len(), 2);
-    assert_eq!(map["uid"], 0);
-    assert_eq!(map["groupid"], 1);
 }
 
 #[test]
@@ -182,8 +178,6 @@ fn creates_valid_regex_for_routes () {
 
 #[test]
 fn can_match_var_routes () {
-    use hyper::method::Method;
-
     let route_store = &mut Router::new();
     let handler = middleware! { "hello from foo" };
 
@@ -192,15 +186,7 @@ fn can_match_var_routes () {
     route_store.add_route(Method::Get, "/file/:format/:file", handler);
 
     let route_result = route_store.match_route(&Method::Get, "/foo/4711").unwrap();
-    let route = route_result.route;
-
     assert_eq!(route_result.param("userid"), "4711");
-
-    // assert the route has identified the variable
-    assert_eq!(route.variables.len(), 2);
-    assert_eq!(route.variables["userid"], 0);
-    // routes have an implicit format variable
-    assert_eq!(route.variables["format"], 1);
 
     let route_result = route_store.match_route(&Method::Get, "/bar/4711");
     assert!(route_result.is_none());
@@ -228,7 +214,7 @@ fn can_match_var_routes () {
 
     let route_result = route_result.unwrap();
     assert_eq!(route_result.param("userid"), "John%20Doe");
-    assert_eq!(route_result.param("format"), ".json");
+    assert_eq!(route_result.param("format"), "json");
 
     // ensure format works with queries
     let route_result = route_store.match_route(&Method::Get,
@@ -238,7 +224,13 @@ fn can_match_var_routes () {
     let route_result = route_result.unwrap();
     // NOTE: `.param` doesn't cover query params currently
     assert_eq!(route_result.param("userid"), "5490,1234");
-    assert_eq!(route_result.param("format"), ".csv");
+    assert_eq!(route_result.param("format"), "csv");
+
+    // ensure format works with no format
+    let route_result = route_store.match_route(&Method::Get,
+                                               "/foo/5490,1234?foo=true&bar=false").unwrap();
+
+    assert_eq!(route_result.param("format"), "");
 
     // ensure format works if defined by user
     let route_result = route_store.match_route(&Method::Get, "/file/markdown/something?foo=true");
