@@ -1,9 +1,6 @@
-#![feature(net)]
-
 extern crate nickel;
 
 use nickel::{Nickel, Request, Response, HttpRouter, MiddlewareResult};
-use std::net::IpAddr;
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering::Relaxed;
 
@@ -24,5 +21,5 @@ fn main() {
     let rhandler: for <'a> fn(&mut Request, Response<'a>, &Logger) -> MiddlewareResult<'a> = root_handler;
 
     server.get("/", (rhandler, Logger{visits: AtomicUsize::new(0)}));
-    server.listen(IpAddr::new_v4(127, 0, 0, 1), 6767);
+    server.listen("127.0.0.1:6767");
 }

@@ -23,14 +23,14 @@ use mimes::{MediaType, get_media_type};
 use std::io::Write;
 
 impl Middleware for for<'a> fn(&mut Request, Response<'a>) -> MiddlewareResult<'a> {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: Response<'a>) -> MiddlewareResult<'a> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a, 'b>, res: Response<'a>) -> MiddlewareResult<'a> {
         (*self)(req, res)
     }
 }
 
 impl<T> Middleware for (for <'a> fn(&mut Request, Response<'a>, &T) -> MiddlewareResult<'a>, T)
         where T: Send + Sync + 'static {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: Response<'a>) -> MiddlewareResult<'a> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a, 'b>, res: Response<'a>) -> MiddlewareResult<'a> {
         let (f, ref data) = *self;
         f(req, res, data)
     }

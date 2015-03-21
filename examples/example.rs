@@ -1,4 +1,4 @@
-#![feature(core, net)]
+#![feature(core)]
 
 extern crate "rustc-serialize" as rustc_serialize;
 extern crate nickel;
@@ -9,7 +9,7 @@ use nickel::{
     Nickel, NickelError, Continue, Halt, Request,
     QueryString, JsonBody, StaticFilesHandler, HttpRouter, Action
 };
-use std::net::IpAddr;
+
 use std::collections::BTreeMap;
 use std::io::Write;
 use rustc_serialize::json::{Json, ToJson};
@@ -101,7 +101,7 @@ fn main() {
     //this is how to overwrite the default error handler to handle 404 cases with a custom view
     fn custom_404<'a>(err: &mut NickelError, _req: &mut Request) -> Action {
         if let Some(ref mut res) = err.stream {
-            if let NotFound = res.status() {
+            if res.status() == NotFound {
                 let _ = res.write_all(b"<h1>Call the police!</h1>");
                 return Halt(())
             }
@@ -116,5 +116,5 @@ fn main() {
 
     server.handle_error(custom_handler);
 
-    server.listen(IpAddr::new_v4(127, 0, 0, 1), 6767);
+    server.listen("127.0.0.1:6767");
 }

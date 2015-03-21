@@ -25,9 +25,7 @@ impl<'a> NickelError<'a> {
     /// use nickel::status::StatusCode;
     ///
     /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
-    ///     Err(NickelError::new(res,
-    ///                          "Error Parsing JSON",
-    ///                          StatusCode::BadRequest))
+    ///     Err(NickelError::new(res, "Error Parsing JSON", StatusCode::BadRequest))
     /// }
     /// # }
     /// ```
@@ -38,12 +36,11 @@ impl<'a> NickelError<'a> {
         stream.set_status(status_code);
 
         match stream.start() {
-            Ok(stream) => {
+            Ok(stream) =>
                 NickelError {
                     stream: Some(stream),
                     message: message.into_cow(),
-                }
-            },
+                },
             Err(e) => e
         }
     }
@@ -51,7 +48,7 @@ impl<'a> NickelError<'a> {
     /// Creates a new `NickelError` without a `Response`.
     ///
     /// This should only be called in a state where the `Response` has
-    /// has failed in an unrecoverable state. If there is an available
+    /// failed in an unrecoverable state. If there is an available
     /// `Response` then it must be provided to `new` so that the
     /// underlying stream can be flushed, allowing future requests.
     ///

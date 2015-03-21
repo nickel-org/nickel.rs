@@ -3,7 +3,7 @@ pub trait AsBytes {
 }
 
 impl<'a> AsBytes for &'a str {
-    fn as_bytes(&self) -> &[u8] { <str as StrExt>::as_bytes(*self) }
+    fn as_bytes(&self) -> &[u8] { str::as_bytes(*self) }
 }
 
 impl<'a> AsBytes for &'a [u8] {

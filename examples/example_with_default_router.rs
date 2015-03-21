@@ -1,9 +1,7 @@
-#![feature(net)]
 extern crate nickel;
 #[macro_use] extern crate nickel_macros;
 
 use nickel::{Nickel, HttpRouter};
-use std::net::IpAddr;
 
 fn main() {
     let mut server = Nickel::new();
@@ -16,5 +14,5 @@ fn main() {
         format!("Foo is '{}'", request.param("foo"))
     });
 
-    server.listen(IpAddr::new_v4(127, 0, 0, 1), 6767);
+    server.listen("127.0.0.1:6767");
 }

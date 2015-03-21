@@ -1,4 +1,5 @@
-use std::net::IpAddr;
+use std::fmt::Display;
+use std::net::ToSocketAddrs;
 use router::{Router, HttpRouter};
 use middleware::{MiddlewareStack, Middleware, ErrorHandler};
 use server::Server;
@@ -85,7 +86,7 @@ impl Nickel {
     ///
     /// fn error_handler(err: &mut NickelError, req: &mut Request) -> Action {
     ///    if let Some(ref mut res) = err.stream {
-    ///        if let NotFound = res.status() {
+    ///        if res.status() == NotFound {
     ///            let _ = res.write_all(b"<h1>Call the police!</h1>");
     ///            return Halt(())
     ///        }
@@ -134,22 +135,18 @@ impl Nickel {
     /// # Examples
     /// ```{rust,no_run}
     /// use nickel::Nickel;
-    /// use std::net::IpAddr;
     ///
     /// let mut server = Nickel::new();
-    /// server.listen(IpAddr::new_v4(127, 0, 0, 1), 6767);
+    /// server.listen("127.0.0.1:6767");
     /// ```
-    pub fn listen(mut self, ip: IpAddr, port: u16) {
+    pub fn listen<T: ToSocketAddrs + Display>(mut self, addr: T) {
         self.middleware_stack.add_middleware(middleware! {
             (StatusCode::NotFound, "File Not Found")
         });
 
-        match port {
-            80u16 =>  println!("Listening on http://{}", ip),
-            _ =>  println!("Listening on http://{}:{}", ip, port),
-        }
+        println!("Listening on http://{}", addr);
         println!("Ctrl-C to shutdown server");
 
-        Server::new(self.middleware_stack).serve(ip, port);
+        Server::new(self.middleware_stack).serve(addr);
     }
 }

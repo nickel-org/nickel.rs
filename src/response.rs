@@ -83,7 +83,7 @@ impl<'a> Response<'a, Fresh> {
     /// ```
     pub fn send<T: AsBytes>(self, text: T) -> MiddlewareResult<'a> {
         let mut stream = try!(self.start());
-        match stream.write_all(&text.as_bytes()) {
+        match stream.write_all(text.as_bytes()) {
             Ok(()) => Ok(Halt(stream)),
             Err(e) => stream.bail(format!("Failed to send: {}", e))
         }
@@ -228,11 +228,10 @@ impl<'a> Response<'a, Fresh> {
         let Response { origin, templates } = self;
         match origin.start() {
             Ok(origin) => Ok(Response { origin: origin, templates: templates }),
-            Err(e) => {
+            Err(e) =>
                 unsafe {
                     Err(NickelError::without_response(format!("Failed to start response: {}", e)))
                 }
-            }
         }
     }
 }

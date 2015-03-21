@@ -17,7 +17,7 @@ pub enum Action<T=(), U=()> {
 // the usage of + Send is weird here because what we really want is + Static
 // but that's not possible as of today. We have to use + Send for now.
 pub trait Middleware: Send + 'static + Sync {
-    fn invoke<'a, 'b>(&'a self, _req: &mut Request<'b, 'a>, res: Response<'a, net::Fresh>) -> MiddlewareResult<'a> {
+    fn invoke<'a, 'b>(&'a self, _req: &mut Request<'b, 'a, 'b>, res: Response<'a, net::Fresh>) -> MiddlewareResult<'a> {
         Ok(Continue(res))
     }
 }
@@ -46,7 +46,7 @@ impl MiddlewareStack {
         self.error_handlers.push(Box::new(handler));
     }
 
-    pub fn invoke<'a>(&'a self, mut req: Request<'a, 'a>, mut res: Response<'a>) {
+    pub fn invoke<'a, 'b>(&'a self, mut req: Request<'a, 'a, 'b>, mut res: Response<'a>) {
         for handler in self.handlers.iter() {
             match handler.invoke(&mut req, res) {
                 Ok(Halt(res)) => {
