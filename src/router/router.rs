@@ -57,7 +57,7 @@ impl<'a> Router {
             .map(|route| {
                 let vec = match route.matcher.captures(path) {
                     Some(captures) => {
-                        range(0, route.variables.len())
+                        (0..route.variables.len())
                             .filter_map(|pos| {
                                 captures.at(pos + 1).map(|c| c.to_string())
                             })
