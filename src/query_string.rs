@@ -14,7 +14,7 @@ type QueryStore = HashMap<String, Vec<String>>;
 struct QueryStringParser;
 impl Key for QueryStringParser { type Value = QueryStore; }
 
-impl<'a, 'b> Plugin<Request<'a, 'b>> for QueryStringParser {
+impl<'a, 'b, 'k> Plugin<Request<'a, 'b, 'k>> for QueryStringParser {
     type Error = ();
 
     fn eval(req: &mut Request) -> Result<QueryStore, ()> {
@@ -26,7 +26,7 @@ pub trait QueryString {
     fn query(&mut self, key: &str, default: &str) -> Cow<[String]>;
 }
 
-impl<'a, 'b> QueryString for Request<'a, 'b> {
+impl<'a, 'b, 'k> QueryString for Request<'a, 'b, 'k> {
     fn query(&mut self, key: &str, default: &str) -> Cow<[String]> {
         let store = self.get_ref::<QueryStringParser>()
                         .ok()

@@ -4,17 +4,17 @@ use typemap::TypeMap;
 use hyper::server::Request as HyperRequest;
 
 ///A container for all the request data
-pub struct Request<'a, 'b: 'a> {
+pub struct Request<'a, 'b: 'k, 'k: 'a> {
     ///the original `hyper::server::Request`
-    pub origin: HyperRequest<'a>,
+    pub origin: HyperRequest<'a, 'k>,
     ///a `HashMap<String, String>` holding all params with names and values
     pub route_result: Option<RouteResult<'b>>,
 
     map: TypeMap
 }
 
-impl<'a, 'b> Request<'a, 'b> {
-    pub fn from_internal(req: HyperRequest<'a>) -> Request<'a, 'b> {
+impl<'a, 'b, 'k> Request<'a, 'b, 'k> {
+    pub fn from_internal(req: HyperRequest<'a, 'k>) -> Request<'a, 'b, 'k> {
         Request {
             origin: req,
             route_result: None,
@@ -27,7 +27,7 @@ impl<'a, 'b> Request<'a, 'b> {
     }
 }
 
-impl<'a, 'b> Extensible for Request<'a, 'b> {
+impl<'a, 'b, 'k> Extensible for Request<'a, 'b, 'k> {
     fn extensions(&self) -> &TypeMap {
         &self.map
     }
@@ -37,4 +37,4 @@ impl<'a, 'b> Extensible for Request<'a, 'b> {
     }
 }
 
-impl<'a, 'b> Pluggable for Request<'a, 'b> {}
+impl<'a, 'b, 'k> Pluggable for Request<'a, 'b, 'k> {}

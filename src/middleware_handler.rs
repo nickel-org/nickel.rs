@@ -19,18 +19,18 @@ use hyper::header;
 use hyper::net;
 use middleware::{Middleware, MiddlewareResult, Halt, Continue};
 use serialize::json;
-use mimes::MediaType;
+use mimes::{MediaType, get_media_type};
 use std::io::Write;
 
 impl Middleware for for<'a> fn(&mut Request, Response<'a>) -> MiddlewareResult<'a> {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: Response<'a>) -> MiddlewareResult<'a> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a, 'b>, res: Response<'a>) -> MiddlewareResult<'a> {
         (*self)(req, res)
     }
 }
 
 impl<T> Middleware for (for <'a> fn(&mut Request, Response<'a>, &T) -> MiddlewareResult<'a>, T)
         where T: Send + Sync + 'static {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: Response<'a>) -> MiddlewareResult<'a> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a, 'b>, res: Response<'a>) -> MiddlewareResult<'a> {
         let (f, ref data) = *self;
         f(req, res, data)
     }
@@ -62,21 +62,23 @@ impl ResponseFinalizer for () {
 impl ResponseFinalizer for json::Json {
     fn respond<'a>(self, mut res: Response<'a>) -> MiddlewareResult<'a> {
         maybe_set_type(&mut res, MediaType::Json);
-        let stream = try!(res.send(json::encode(&self).unwrap()));
-        Ok(Halt(stream))
+        res.send(json::encode(&self).unwrap())
     }
 }
 
 impl<'a, S: Display> ResponseFinalizer for &'a [S] {
     fn respond<'c>(self, mut res: Response<'c>) -> MiddlewareResult<'c> {
         maybe_set_type(&mut res, MediaType::Html);
-        res.status_code(StatusCode::Ok);
-        let mut res = try!(res.start());
+        res.set_status(StatusCode::Ok);
+        let mut stream = try!(res.start());
         for ref s in self.iter() {
             // FIXME : This error handling is poor
-            try!(res.write_fmt(format_args!("{}", s)))
+            match stream.write_fmt(format_args!("{}", s)) {
+                Ok(()) => {},
+                Err(e) => return stream.bail(format!("Failed to write to stream: {}", e))
+            }
         }
-        Ok(Halt(res))
+        Ok(Halt(stream))
     }
 }
 
@@ -97,9 +99,8 @@ dual_impl!(&'a str,
             |self, res| {
                 maybe_set_type(&mut res, MediaType::Html);
 
-                res.status_code(StatusCode::Ok);
-                let stream = try!(res.send(self));
-                Ok(Halt(stream))
+                res.set_status(StatusCode::Ok);
+                res.send(self)
             });
 
 dual_impl!((StatusCode, &'a str),
@@ -108,9 +109,8 @@ dual_impl!((StatusCode, &'a str),
                 maybe_set_type(&mut res, MediaType::Html);
                 let (status, data) = self;
 
-                res.status_code(status);
-                let stream = try!(res.send(data));
-                Ok(Halt(stream))
+                res.set_status(status);
+                res.send(data)
             });
 
 dual_impl!((usize, &'a str),
@@ -120,9 +120,8 @@ dual_impl!((usize, &'a str),
                 let (status, data) = self;
                 match FromPrimitive::from_usize(status) {
                     Some(status) => {
-                        res.status_code(status);
-                        let stream = try!(res.send(data));
-                        Ok(Halt(stream))
+                        res.set_status(status);
+                        res.send(data)
                     }
                     // This is a logic error
                     None => panic!("Bad status code")
@@ -150,7 +149,5 @@ dual_impl!((usize, &'a str),
 //             })
 
 fn maybe_set_type(res: &mut Response, ty: MediaType) {
-    if !res.origin.headers().has::<header::ContentType>() {
-        res.content_type(ty);
-    }
+    res.set_header_fallback(|| header::ContentType(get_media_type(ty)));
 }

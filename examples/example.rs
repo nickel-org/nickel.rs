@@ -1,4 +1,4 @@
-#![feature(core, io, net)]
+#![feature(core)]
 
 extern crate "rustc-serialize" as rustc_serialize;
 extern crate nickel;
@@ -6,10 +6,10 @@ extern crate nickel;
 
 use nickel::status::StatusCode::{self, NotFound, BadRequest};
 use nickel::{
-    Nickel, NickelError, ErrorWithStatusCode, Continue, Halt, Request,
+    Nickel, NickelError, Continue, Halt, Request,
     QueryString, JsonBody, StaticFilesHandler, HttpRouter, Action
 };
-use std::net::IpAddr;
+
 use std::collections::BTreeMap;
 use std::io::Write;
 use rustc_serialize::json::{Json, ToJson};
@@ -100,25 +100,21 @@ fn main() {
 
     //this is how to overwrite the default error handler to handle 404 cases with a custom view
     fn custom_404<'a>(err: &mut NickelError, _req: &mut Request) -> Action {
-        match err.kind {
-            ErrorWithStatusCode(NotFound) => {
-                // FIXME: Supportable?
-                // response.content_type(MediaType::Html)
-                //         .status_code(NotFound)
-                //         .send("<h1>Call the police!<h1>");
-                if let Some(ref mut res) = err.stream {
-                    let _ = res.write_all(b"<h1>Call the police!</h1>");
-                }
-                Halt(())
-            },
-            _ => Continue(())
+        if let Some(ref mut res) = err.stream {
+            if res.status() == NotFound {
+                let _ = res.write_all(b"<h1>Call the police!</h1>");
+                return Halt(())
+            }
         }
+
+        Continue(())
     }
+
 
     // issue #20178
     let custom_handler: fn(&mut NickelError, &mut Request) -> Action = custom_404;
 
     server.handle_error(custom_handler);
 
-    server.listen(IpAddr::new_v4(127, 0, 0, 1), 6767);
+    server.listen("127.0.0.1:6767");
 }

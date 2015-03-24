@@ -6,7 +6,7 @@ use hyper::method::Method::{Get, Head};
 
 use request::Request;
 use response::Response;
-use middleware::{Halt, Continue, Middleware, MiddlewareResult};
+use middleware::{Continue, Middleware, MiddlewareResult};
 
 // this should be much simpler after unboxed closures land in Rust.
 
@@ -64,7 +64,7 @@ impl StaticFilesHandler {
         if let Some(path) = relative_path {
             let path = self.root_path.join(path.as_path());
             if path.exists() && path.is_file() {
-                return Ok(Halt(try!(res.send_file(&path))));
+                return res.send_file(&path);
             }
         };
 

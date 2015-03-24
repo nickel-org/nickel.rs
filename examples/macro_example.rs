@@ -1,4 +1,4 @@
-#![feature(plugin, core, io, net)]
+#![feature(core)]
 
 extern crate url;
 extern crate nickel;
@@ -7,11 +7,10 @@ extern crate "rustc-serialize" as rustc_serialize;
 
 use nickel::status::StatusCode::{self, NotFound};
 use nickel::{
-    Nickel, NickelError, ErrorWithStatusCode, Continue, Halt, Request, Response,
+    Nickel, NickelError, Continue, Halt, Request, Response,
     QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter, Action
 };
 use std::io::Write;
-use std::net::IpAddr;
 
 #[derive(RustcDecodable, RustcEncodable)]
 struct Person {
@@ -27,19 +26,14 @@ fn logger<'a>(request: &mut Request, response: Response<'a>) -> MiddlewareResult
 
 //this is how to overwrite the default error handler to handle 404 cases with a custom view
 fn custom_404<'a>(err: &mut NickelError, _req: &mut Request) -> Action {
-    match err.kind {
-        ErrorWithStatusCode(NotFound) => {
-            // FIXME: Supportable?
-            // response.content_type(MediaType::Html)
-            //         .status_code(NotFound)
-            //         .send("<h1>Call the police!<h1>");
-            if let Some(ref mut res) = err.stream {
-                let _ = res.write_all(b"<h1>Call the police!</h1>");
-            }
-            Halt(())
-        },
-        _ => Continue(())
+    if let Some(ref mut res) = err.stream {
+        if res.status() == NotFound {
+            let _ = res.write_all(b"<h1>Call the police!</h1>");
+            return Halt(())
+        }
     }
+
+    Continue(())
 }
 
 fn main() {
@@ -118,5 +112,5 @@ fn main() {
     server.handle_error(custom_handler);
 
     println!("Running server!");
-    server.listen(IpAddr::new_v4(127, 0, 0, 1), 6767);
+    server.listen("127.0.0.1:6767");
 }

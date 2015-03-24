@@ -10,7 +10,7 @@ use hyper::net;
 
 use request::Request;
 use response::Response;
-use middleware::{Halt, Continue, Middleware, MiddlewareResult};
+use middleware::{Continue, Middleware, MiddlewareResult};
 use mimes::MediaType;
 
 pub struct FaviconHandler {
@@ -19,7 +19,7 @@ pub struct FaviconHandler {
 }
 
 impl Middleware for FaviconHandler {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, res: Response<'a, net::Fresh>)
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a, 'b>, res: Response<'a, net::Fresh>)
             -> MiddlewareResult<'a> {
         if FaviconHandler::is_favicon_request(req) {
             self.handle_request(req, res)
@@ -66,16 +66,14 @@ impl FaviconHandler {
                 self.send_favicon(req, res)
             },
             Options => {
-                res.status_code(StatusCode::Ok);
+                res.set_status(StatusCode::Ok);
                 res.origin.headers_mut().set(header::Allow(vec!(Get, Head, Options)));
-                let stream = try!(res.send(""));
-                Ok(Halt(stream))
+                res.send("")
             },
             _ => {
-                res.status_code(StatusCode::MethodNotAllowed);
+                res.set_status(StatusCode::MethodNotAllowed);
                 res.origin.headers_mut().set(header::Allow(vec!(Get, Head, Options)));
-                let stream = try!(res.send(""));
-                Ok(Halt(stream))
+                res.send("")
             }
         }
     }
@@ -83,7 +81,6 @@ impl FaviconHandler {
     pub fn send_favicon<'a, 'b>(&self, req: &Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
         debug!("{:?} {:?}", req.origin.method, self.icon_path.display());
         res.content_type(MediaType::Ico);
-        let stream = try!(res.send(&*self.icon));
-        Ok(Halt(stream))
+        res.send(&*self.icon)
     }
 }

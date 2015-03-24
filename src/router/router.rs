@@ -98,7 +98,7 @@ impl HttpRouter for Router {
 }
 
 impl Middleware for Router {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a>, mut res: Response<'a>)
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a, 'b>, mut res: Response<'a>)
                         -> MiddlewareResult<'a> {
         debug!("Router::invoke for '{:?}'", req.origin.uri);
         let route_result = match req.origin.uri {
@@ -109,7 +109,7 @@ impl Middleware for Router {
 
         match route_result {
             Some(route_result) => {
-                res.status_code(StatusCode::Ok);
+                res.set_status(StatusCode::Ok);
                 let handler = &route_result.route.handler;
                 req.route_result = Some(route_result);
                 handler.invoke(req, res)

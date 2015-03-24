@@ -1,21 +1,21 @@
+use std::borrow::IntoCow;
 use std::sync::RwLock;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
-use std::old_path::BytesContainer;
 use std::path::Path;
-use std::fmt::Debug;
 use serialize::Encodable;
-use hyper::status::StatusCode;
+use hyper::status::StatusCode::{self, InternalServerError};
 use hyper::server::Response as HyperResponse;
-use hyper::header;
+use hyper::header::{Date, Server, ContentType, ContentLength, Header, HeaderFormat};
 use hyper::net::{Fresh, Streaming};
 use time;
 use mimes::{get_media_type, MediaType};
 use mustache;
 use mustache::Template;
 use std::io;
-use std::io::{Read, Write, ErrorKind, copy};
+use std::io::{Read, Write, copy};
 use std::fs::File;
+use {NickelError, Halt, MiddlewareResult, AsBytes};
 
 pub type TemplateCache = RwLock<HashMap<&'static str, Template>>;
 
@@ -50,7 +50,7 @@ impl<'a> Response<'a, Fresh> {
     /// }
     /// ```
     pub fn content_type(&mut self, mt: MediaType) -> &mut Response<'a> {
-        self.origin.headers_mut().set(header::ContentType(get_media_type(mt)));
+        self.origin.headers_mut().set(ContentType(get_media_type(mt)));
         self
     }
 
@@ -62,11 +62,11 @@ impl<'a> Response<'a, Fresh> {
     /// use nickel::status::StatusCode;
     ///
     /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
-    ///     res.status_code(StatusCode::NotFound);
+    ///     res.set_status(StatusCode::NotFound);
     ///     Ok(Continue(res))
     /// }
     /// ```
-    pub fn status_code(&mut self, status: StatusCode) -> &mut Response<'a> {
+    pub fn set_status(&mut self, status: StatusCode) -> &mut Response<'a> {
         *self.origin.status_mut() = status;
         self
     }
@@ -78,15 +78,15 @@ impl<'a> Response<'a, Fresh> {
     /// use nickel::{Request, Response, MiddlewareResult, Halt};
     ///
     /// fn handler<'a>(_: &mut Request, res: Response<'a>) -> MiddlewareResult<'a> {
-    ///     Ok(Halt(try!(res.send("hello world"))))
+    ///     res.send("hello world")
     /// }
     /// ```
-    pub fn send<T: BytesContainer> (mut self, text: T) -> io::Result<Response<'a, Streaming>> {
-        self.set_common_headers();
-
+    pub fn send<T: AsBytes>(self, text: T) -> MiddlewareResult<'a> {
         let mut stream = try!(self.start());
-        try!(stream.write_all(text.container_as_bytes()));
-        Ok(stream)
+        match stream.write_all(text.as_bytes()) {
+            Ok(()) => Ok(Halt(stream)),
+            Err(e) => stream.bail(format!("Failed to send: {}", e))
+        }
     }
 
     /// Writes a file to the output.
@@ -99,32 +99,78 @@ impl<'a> Response<'a, Fresh> {
     ///
     /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
     ///     let favicon = Path::new("/assets/favicon.ico");
-    ///     Ok(Halt(try!(res.send_file(favicon))))
+    ///     res.send_file(favicon)
     /// }
     /// ```
-    pub fn send_file(mut self, path: &Path) -> io::Result<Response<'a, Streaming>> {
+    pub fn send_file(mut self, path: &Path) -> MiddlewareResult<'a> {
         // Chunk the response
-        self.origin.headers_mut().remove::<header::ContentLength>();
+        self.origin.headers_mut().remove::<ContentLength>();
         // Determine content type by file extension or default to binary
         self.content_type(path.extension()
                               .and_then(|os| os.to_str())
                               .and_then(|s| s.parse().ok())
                               .unwrap_or(MediaType::Bin));
 
-        let mut stream = try!(self.start());
-        let mut file = try!(File::open(path));
-        try!(copy(&mut file, &mut stream));
-        Ok(stream)
+        match File::open(path) {
+            Ok(mut file) => {
+                let mut stream = try!(self.start());
+                match copy(&mut file, &mut stream) {
+                    Ok(_) => Ok(Halt(stream)),
+                    Err(e) => stream.bail(format!("Failed to send file: {}", e))
+                }
+            }
+            Err(e) => {
+                self.error(InternalServerError,
+                           format!("Failed to send file '{:?}': {}", path, e))
+            }
+        }
     }
 
     // TODO: This needs to be more sophisticated to return the correct headers
     // not just "some headers" :)
     //
     // Also, it should only set them if not already set.
-    fn set_common_headers(&mut self) {
-        let ref mut headers = self.origin.headers_mut();
-        headers.set(header::Date(time::now_utc()));
-        headers.set(header::Server(String::from_str("Nickel")));
+    fn set_fallback_headers(&mut self) {
+        self.set_header_fallback(|| Date(time::now_utc()));
+        self.set_header_fallback(|| Server("Nickel".to_string()));
+        self.set_header_fallback(|| ContentType(get_media_type(MediaType::Html)));
+    }
+
+    /// Return an error with the appropriate status code for error handlers to
+    /// provide output for.
+    pub fn error<T>(self, status: StatusCode, message: T) -> MiddlewareResult<'a>
+            where T: IntoCow<'static, str> {
+        Err(NickelError::new(self, message, status))
+    }
+
+    /// Sets the header if not already set.
+    ///
+    /// If the header is not set then `f` will be called.
+    /// Renders the given template bound with the given data.
+    ///
+    /// # Examples
+    /// ```{rust}
+    /// # extern crate nickel;
+    /// # extern crate hyper;
+    ///
+    /// # fn main() {
+    /// use nickel::{Request, Response, MiddlewareResult, Halt, MediaType, get_media_type};
+    /// use hyper::header::ContentType;
+    ///
+    /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
+    ///     res.content_type(MediaType::Html);
+    ///     res.set_header_fallback(|| {
+    ///         panic!("Should not get called");
+    ///         ContentType(get_media_type(MediaType::Txt))
+    ///     });
+    ///     res.send("<h1>Hello World</h1>")
+    /// }
+    /// # }
+    /// ```
+    pub fn set_header_fallback<F, H>(&mut self, f: F)
+            where H: Header + HeaderFormat, F: FnOnce() -> H {
+        let headers = self.origin.headers_mut();
+        if !headers.has::<H>() { headers.set(f()) }
     }
 
     /// Renders the given template bound with the given data.
@@ -137,24 +183,23 @@ impl<'a> Response<'a, Fresh> {
     /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
     ///     let mut data = HashMap::new();
     ///     data.insert("name", "user");
-    ///     let stream = try!(res.render("examples/assets/template.tpl", &data));
-    ///     Ok(Halt(stream))
+    ///     res.render("examples/assets/template.tpl", &data)
     /// }
     /// ```
-    pub fn render<T>(self, path: &'static str, data: &T)
-            -> io::Result<Response<'a, Streaming>>
+    pub fn render<T>(self, path: &'static str, data: &T) -> MiddlewareResult<'a>
             where T: Encodable {
-        fn to_ioerr<U: Debug>(r: Result<(), U>) -> io::Result<()> {
-            r.map_err(|e| io::Error::new(ErrorKind::Other,
-                                         "Problem rendering template",
-                                         Some(format!("{:?}", e))))
+        fn render<'a, T>(res: Response<'a>, template: &Template, data: &T)
+                -> MiddlewareResult<'a> where T: Encodable {
+            let mut stream = try!(res.start());
+            match template.render(&mut stream, data) {
+                Ok(()) => Ok(Halt(stream)),
+                Err(e) => stream.bail(format!("Problem rendering template: {:?}", e))
+            }
         }
 
         // Fast path doesn't need writer lock
         if let Some(t) = self.templates.read().unwrap().get(&path) {
-            let mut stream = try!(self.start());
-            try!(to_ioerr(t.render(&mut stream, data)));
-            return Ok(stream);
+            return render(self, t, data);
         }
 
         // We didn't find the template, get writers lock
@@ -174,18 +219,20 @@ impl<'a> Response<'a, Fresh> {
             Occupied(entry) => entry.into_mut()
         };
 
-        let mut stream = try!(self.start());
-        try!(to_ioerr(template.render(&mut stream, data)));
-        Ok(stream)
+        render(self, template, data)
     }
 
-    pub fn start(mut self) -> io::Result<Response<'a, Streaming>> {
-        self.set_common_headers();
+    pub fn start(mut self) -> Result<Response<'a, Streaming>, NickelError<'a>> {
+        self.set_fallback_headers();
 
         let Response { origin, templates } = self;
-        let origin = try!(origin.start());
-
-        Ok(Response { origin: origin, templates: templates })
+        match origin.start() {
+            Ok(origin) => Ok(Response { origin: origin, templates: templates }),
+            Err(e) =>
+                unsafe {
+                    Err(NickelError::without_response(format!("Failed to start response: {}", e)))
+                }
+        }
     }
 }
 
@@ -201,9 +248,26 @@ impl<'a, 'b> Write for Response<'a, Streaming> {
 }
 
 impl<'a, 'b> Response<'a, Streaming> {
+    /// In the case of an unrecoverable error while a stream is already in
+    /// progress, there is no standard way to signal to the client that an
+    /// error has occurred. `bail` will drop the connection and log an error
+    /// message.
+    pub fn bail<T>(self, message: T) -> MiddlewareResult<'a>
+            where T: IntoCow<'static, str> {
+        let _ = self.end();
+        unsafe { Err(NickelError::without_response(message)) }
+    }
+
     /// Flushes all writing of a response to the client.
     pub fn end(self) -> io::Result<()> {
         self.origin.end()
+    }
+}
+
+impl <'a, T> Response<'a, T> {
+    /// Gets the current status code for this response
+    pub fn status(&self) -> StatusCode {
+        self.origin.status()
     }
 }
 
