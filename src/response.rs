@@ -3,7 +3,7 @@ use std::sync::RwLock;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::path::Path;
-use serialize::Encodable;
+use rustc_serialize::Encodable;
 use hyper::status::StatusCode::{self, InternalServerError};
 use hyper::server::Response as HyperResponse;
 use hyper::header::{Date, Server, ContentType, ContentLength, Header, HeaderFormat};

@@ -1,4 +1,4 @@
-use serialize::{Decodable, json};
+use rustc_serialize::{Decodable, json};
 use request::Request;
 use typemap::Key;
 use plugin::{Plugin, Pluggable};
