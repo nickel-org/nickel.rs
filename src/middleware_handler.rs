@@ -18,7 +18,7 @@ use std::num::FromPrimitive;
 use hyper::header;
 use hyper::net;
 use middleware::{Middleware, MiddlewareResult, Halt, Continue};
-use serialize::json;
+use rustc_serialize::json;
 use mimes::{MediaType, get_media_type};
 use std::io::Write;
 
