@@ -124,8 +124,8 @@ fn creates_map_with_var_variable_infos () {
     let map = path_utils::get_variable_info("foo/:uid/bar/:groupid");
 
     assert_eq!(map.len(), 2);
-    assert_eq!(map["uid".to_string()], 0);
-    assert_eq!(map["groupid".to_string()], 1);
+    assert_eq!(map["uid"], 0);
+    assert_eq!(map["groupid"], 1);
 }
 
 #[test]
@@ -198,9 +198,9 @@ fn can_match_var_routes () {
 
     // assert the route has identified the variable
     assert_eq!(route.variables.len(), 2);
-    assert_eq!(route.variables["userid".to_string()], 0);
+    assert_eq!(route.variables["userid"], 0);
     // routes have an implicit format variable
-    assert_eq!(route.variables["format".to_string()], 1);
+    assert_eq!(route.variables["format"], 1);
 
     let route_result = route_store.match_route(&Method::Get, "/bar/4711");
     assert!(route_result.is_none());

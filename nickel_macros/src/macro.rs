@@ -15,9 +15,11 @@ macro_rules! router {
 
 #[macro_export]
 macro_rules! middleware {
-    (@$f:ident) => {
-        $f as for<'a> fn(&mut Request, Response<'a>) -> MiddlewareResult<'a>
-    };
+    (@$f:ident) => {{
+        // issue #20178 with a lame interaction from #23630. *grumble*
+        let f : for<'a> fn(&mut Request, Response<'a>) -> MiddlewareResult<'a> = $f;
+        f
+    }};
     (|$req:ident, $res:ident| $($b:tt)+) => {{
         use nickel::{MiddlewareResult,ResponseFinalizer, Response, Request};
 
@@ -33,8 +35,7 @@ macro_rules! middleware {
             restrict(as_block!({$($b)+}), $res)
         }
 
-        // issue #20178
-        f as for<'a> fn(&mut Request, Response<'a>) -> MiddlewareResult<'a>
+        middleware!(@f)
     }};
     (|$req:ident| $($b:tt)+) => { middleware!(|$req, res| $($b)+) };
     ($($b:tt)+) => { middleware!(|req, res| $($b)+) };

@@ -1,4 +1,4 @@
-use std::path::{AsPath, PathBuf};
+use std::path::{Path, PathBuf};
 use std::fs::PathExt;
 
 use hyper::uri::RequestUri::AbsolutePath;
@@ -37,9 +37,9 @@ impl StaticFilesHandler {
     ///
     /// server.utilize(StaticFilesHandler::new("/path/to/serve/"));
     /// ```
-    pub fn new<P: AsPath>(root_path: P) -> StaticFilesHandler {
+    pub fn new<P: AsRef<Path>>(root_path: P) -> StaticFilesHandler {
         StaticFilesHandler {
-            root_path: root_path.as_path().to_path_buf()
+            root_path: root_path.as_ref().to_path_buf()
         }
     }
 
@@ -60,9 +60,9 @@ impl StaticFilesHandler {
     fn with_file<'a, 'b, P>(&self,
                             relative_path: Option<P>,
                             res: Response<'a>)
-            -> MiddlewareResult<'a> where P: AsPath {
+            -> MiddlewareResult<'a> where P: AsRef<Path> {
         if let Some(path) = relative_path {
-            let path = self.root_path.join(path.as_path());
+            let path = self.root_path.join(path);
             if path.exists() && path.is_file() {
                 return res.send_file(&path);
             }
