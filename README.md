@@ -53,9 +53,7 @@ Then try `localhost:6767/user/4711` and `localhost:6767/bar`
 Here is how sample server in `example.rs` looks like:
 
 ```rust
-#![feature(core, net)]
-
-extern crate "rustc-serialize" as rustc_serialize;
+extern crate rustc_serialize;
 extern crate nickel;
 #[macro_use] extern crate nickel_macros;
 
@@ -64,9 +62,9 @@ use nickel::{
     Nickel, NickelError, Continue, Halt, Request,
     QueryString, JsonBody, StaticFilesHandler, HttpRouter, Action
 };
-use std::net::IpAddr;
-use std::io::Write;
+
 use std::collections::BTreeMap;
+use std::io::Write;
 use rustc_serialize::json::{Json, ToJson};
 
 #[derive(RustcDecodable, RustcEncodable)]
@@ -141,7 +139,7 @@ fn main() {
     // try calling http://localhost:6767/strict?state=valid
     // then try calling http://localhost:6767/strict?state=invalid
     router.get("/strict", middleware! { |request|
-        if request.query("state", "invalid")[0].as_slice() != "valid" {
+        if &*request.query("state", "invalid")[0] != "valid" {
             (BadRequest, "Error Parsing JSON")
         } else {
             (StatusCode::Ok, "Congratulations on conforming!")
@@ -156,7 +154,7 @@ fn main() {
     //this is how to overwrite the default error handler to handle 404 cases with a custom view
     fn custom_404<'a>(err: &mut NickelError, _req: &mut Request) -> Action {
         if let Some(ref mut res) = err.stream {
-            if let NotFound = res.status() {
+            if res.status() == NotFound {
                 let _ = res.write_all(b"<h1>Call the police!</h1>");
                 return Halt(())
             }
@@ -171,7 +169,7 @@ fn main() {
 
     server.handle_error(custom_handler);
 
-    server.listen(IpAddr::new_v4(127, 0, 0, 1), 6767);
+    server.listen("127.0.0.1:6767");
 }
 ```
 

@@ -9,10 +9,10 @@ pub fn parse (encoded_string : &str) -> HashMap<String, Vec<String>> {
 #[test]
 fn parses_encoded_string_with_duplicate_keys() {
     let map = parse("foo=bar&message=hello&message=world");
-    assert_eq!(map["foo".to_string()],
+    assert_eq!(map["foo"],
                 vec!["bar".to_string()]);
     // Ensure the ordering is correct
-    assert_eq!(map["message".to_string()],
+    assert_eq!(map["message"],
                 vec!["hello".to_string(), "world".to_string()]);
 }
 
@@ -20,6 +20,6 @@ fn parses_encoded_string_with_duplicate_keys() {
 fn parses_urlencoded_characters() {
     let map = parse("message=hello%20world");
 
-    assert_eq!(map["message".to_string()],
+    assert_eq!(map["message"],
                 vec!["hello world".to_string()]);
 }

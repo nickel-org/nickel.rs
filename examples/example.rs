@@ -1,6 +1,4 @@
-#![feature(core)]
-
-extern crate "rustc-serialize" as rustc_serialize;
+extern crate rustc_serialize;
 extern crate nickel;
 #[macro_use] extern crate nickel_macros;
 
@@ -86,7 +84,7 @@ fn main() {
     // try calling http://localhost:6767/strict?state=valid
     // then try calling http://localhost:6767/strict?state=invalid
     router.get("/strict", middleware! { |request|
-        if request.query("state", "invalid")[0].as_slice() != "valid" {
+        if &*request.query("state", "invalid")[0] != "valid" {
             (BadRequest, "Error Parsing JSON")
         } else {
             (StatusCode::Ok, "Congratulations on conforming!")

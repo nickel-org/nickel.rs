@@ -61,8 +61,8 @@ fn splits_and_parses_an_url() {
     use url::Url;
     let t = |url| {
         let store = parse(&url);
-        assert_eq!(store["foo".to_string()], vec!["bar".to_string()]);
-        assert_eq!(store["message".to_string()],
+        assert_eq!(store["foo"], vec!["bar".to_string()]);
+        assert_eq!(store["message"],
                         vec!["hello".to_string(), "world".to_string()]);
     };
 

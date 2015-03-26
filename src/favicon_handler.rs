@@ -1,5 +1,5 @@
 use std::fs::File;
-use std::path::{PathBuf, AsPath};
+use std::path::{PathBuf, Path};
 use std::io::Read;
 
 use hyper::uri::RequestUri::AbsolutePath;
@@ -40,8 +40,8 @@ impl FaviconHandler {
     ///
     /// server.utilize(FaviconHandler::new("/path/to/ico/file"));
     /// ```
-    pub fn new<P: AsPath>(icon_path: P) -> FaviconHandler {
-        let icon_path = icon_path.as_path().to_path_buf();
+    pub fn new<P: AsRef<Path>>(icon_path: P) -> FaviconHandler {
+        let icon_path = icon_path.as_ref().to_path_buf();
         let mut icon = vec![];
         File::open(&icon_path).unwrap().read_to_end(&mut icon).unwrap();
 

@@ -1,8 +1,6 @@
-#![feature(core)]
-
 extern crate url;
 extern crate nickel;
-extern crate "rustc-serialize" as rustc_serialize;
+extern crate rustc_serialize;
 #[macro_use] extern crate nickel_macros;
 
 use nickel::status::StatusCode::{self, NotFound};
@@ -56,7 +54,7 @@ fn main() {
         // go to http://localhost:6767/no_alloc/4711 to see this route in action
         get "/no_alloc/:userid" => |request, response| {
             // returning a slice of T where T: Display
-            ["This is user: ", request.param("userid")].as_slice()
+            &["This is user: ", request.param("userid")][..]
         }
 
         // go to http://localhost:6767/bar to see this route in action
