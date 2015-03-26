@@ -5,7 +5,7 @@ use response::Response;
 use router::HttpRouter;
 use hyper::method::Method;
 use hyper::status::StatusCode;
-use router::{IntoMatcher, Matcher};
+use router::{IntoMatcher, Matcher, FORMAT_PARAM};
 
 /// A Route is the basic data structure that stores both the path
 /// and the handler that gets executed for the route.
@@ -34,7 +34,7 @@ impl<'a> RouteResult<'a> {
         }
 
         // FIXME: should have a default format
-        if key == "format" { return "" }
+        if key == FORMAT_PARAM { return "" }
         panic!("unknown param: {}", key)
     }
 }

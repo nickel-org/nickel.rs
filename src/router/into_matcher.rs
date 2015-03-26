@@ -22,30 +22,32 @@ lazy_static! {
     static ref REGEX_VAR_SEQ: Regex = Regex::new(r":([,a-zA-Z0-9_-]*)").unwrap();
 }
 
+pub static FORMAT_PARAM:      &'static str = "format";
+// FIXME: Once const fn lands this could be defined in terms of the above
+static FORMAT_VAR:            &'static str = ":format";
+static VAR_SEQ:               &'static str = "[,a-zA-Z0-9_-]*";
+static VAR_SEQ_WITH_SLASH:    &'static str = "[,/a-zA-Z0-9_-]*";
+// matches request params (e.g. ?foo=true&bar=false)
+static REGEX_PARAM_SEQ:       &'static str = "(\\?[a-zA-Z0-9%_=&-]*)?";
+
 impl IntoMatcher for String {
     fn into_matcher(self) -> Matcher {
-        static FORMAT_VAR: &'static str = ":format";
-        static VAR_SEQ:               &'static str = "[,a-zA-Z0-9_-]*";
-        static VAR_SEQ_WITH_SLASH:    &'static str = "[,/a-zA-Z0-9_-]*";
-        // matches request params (e.g. ?foo=true&bar=false)
-        static REGEX_PARAM_SEQ: &'static str = "(\\?[a-zA-Z0-9%_=&-]*)?";
-
         let with_format = if self.contains(FORMAT_VAR) {
             self
         } else {
             format!("{}(\\.{})?", self, FORMAT_VAR)
         };
 
-                                    // first mark all double wildcards for replacement.
-                                    // We can't directly replace them since the replacement
-                                    // does contain the * symbol as well, which would get
-                                    // overwritten with the next replace call
-        let wildcarded = with_format.replace("**", "___DOUBLE_WILDCARD___")
-                                    // then replace the regular wildcard symbols (*) with the
-                                    // appropriate regex
-                                    .replace("*", VAR_SEQ)
-                                    // now replace the previously marked double wild cards (**)
-                                    .replace("___DOUBLE_WILDCARD___", VAR_SEQ_WITH_SLASH);
+        // First mark all double wildcards for replacement. We can't directly
+        // replace them since the replacement does contain the * symbol as well,
+        // which would get overwritten with the next replace call
+        let with_placeholder = with_format.replace("**", "___DOUBLE_WILDCARD___");
+
+        // Then replace the regular wildcard symbols (*) with the appropriate regex
+        let star_replaced = with_placeholder.replace("*", VAR_SEQ);
+
+        // Now replace the previously marked double wild cards (**)
+        let wildcarded = star_replaced.replace("___DOUBLE_WILDCARD___", VAR_SEQ_WITH_SLASH);
 
         // Add a named capture for each :(variable) symbol
         let named_captures = REGEX_VAR_SEQ.replace_all(&wildcarded, |captures: &Captures| {
