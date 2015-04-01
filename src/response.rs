@@ -6,7 +6,7 @@ use std::path::Path;
 use serialize::Encodable;
 use hyper::status::StatusCode::{self, InternalServerError};
 use hyper::server::Response as HyperResponse;
-use hyper::header::{Date, Server, ContentType, ContentLength, Header, HeaderFormat};
+use hyper::header::{Date, HttpDate, Server, ContentType, ContentLength, Header, HeaderFormat};
 use hyper::net::{Fresh, Streaming};
 use time;
 use mimes::{get_media_type, MediaType};
@@ -131,7 +131,7 @@ impl<'a> Response<'a, Fresh> {
     //
     // Also, it should only set them if not already set.
     fn set_fallback_headers(&mut self) {
-        self.set_header_fallback(|| Date(time::now_utc()));
+        self.set_header_fallback(|| Date(HttpDate(time::now_utc())));
         self.set_header_fallback(|| Server("Nickel".to_string()));
         self.set_header_fallback(|| ContentType(get_media_type(MediaType::Html)));
     }
