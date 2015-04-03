@@ -13,12 +13,15 @@ pub struct Server {
     templates: response::TemplateCache
 }
 
-impl Handler for Arc<Server> {
+// FIXME: Any better coherence solutions?
+struct ArcServer(Arc<Server>);
+
+impl Handler for ArcServer {
     fn handle<'a, 'k>(&'a self, req: Request<'a, 'k>, res: Response<'a>) {
         let nickel_req = request::Request::from_internal(req);
-        let nickel_res = response::Response::from_internal(res, &self.templates);
+        let nickel_res = response::Response::from_internal(res, &self.0.templates);
 
-        self.middleware_stack.invoke(nickel_req, nickel_res);
+        self.0.middleware_stack.invoke(nickel_req, nickel_res);
     }
 }
 
@@ -31,7 +34,7 @@ impl Server {
     }
 
     pub fn serve<T: ToSocketAddrs>(self, addr: T) {
-        let arc = Arc::new(self);
+        let arc = ArcServer(Arc::new(self));
         let server = HyperServer::http(arc);
         let _ = server.listen(addr);
     }

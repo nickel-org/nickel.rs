@@ -1,6 +1,6 @@
 #![crate_name = "nickel"]
 #![crate_type = "rlib"]
-#![feature(plugin, core, io, path_ext, into_cow, convert)]
+#![feature(plugin, core, path_ext)]
 #![plugin(regex_macros)]
 
 //!Nickel is supposed to be a simple and lightweight foundation for web applications written in Rust. Its API is inspired by the popular express framework for JavaScript.

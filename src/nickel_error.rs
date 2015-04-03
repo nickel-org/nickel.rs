@@ -1,4 +1,4 @@
-use std::borrow::{IntoCow, Cow};
+use std::borrow::Cow;
 use hyper::status::StatusCode;
 use std::io;
 use response::Response;
@@ -32,14 +32,14 @@ impl<'a> NickelError<'a> {
     pub fn new<T>(mut stream: Response<'a, Fresh>,
                   message: T,
                   status_code: StatusCode) -> NickelError<'a>
-            where T: IntoCow<'static, str> {
+            where T: Into<Cow<'static, str>> {
         stream.set_status(status_code);
 
         match stream.start() {
             Ok(stream) =>
                 NickelError {
                     stream: Some(stream),
-                    message: message.into_cow(),
+                    message: message.into(),
                 },
             Err(e) => e
         }
@@ -55,10 +55,10 @@ impl<'a> NickelError<'a> {
     /// This is considered `unsafe` as deadlock can occur if the `Response`
     /// does not have the underlying stream flushed when processing is finished.
     pub unsafe fn without_response<T>(message: T) -> NickelError<'a>
-            where T: IntoCow<'static, str> {
+            where T: Into<Cow<'static, str>> {
         NickelError {
             stream: None,
-            message: message.into_cow(),
+            message: message.into(),
         }
     }
 

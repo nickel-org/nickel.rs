@@ -21,10 +21,6 @@ path = "src/lib.rs"
 
 git = "https://github.com/nickel-org/rust-mustache.git"
 
-[dependencies.groupable]
-
-git = "https://github.com/nickel-org/groupable-rs"
-
 [dependencies.nickel_macros]
 
 path = "nickel_macros"
@@ -39,12 +35,12 @@ regex_macros = "*"
 rustc-serialize = "*"
 log = "*"
 hyper = "*"
+groupable = "*"
 
 [[example]]
 
 name = "example"
 path = "examples/example.rs"
-
 
 [[example]]
 
