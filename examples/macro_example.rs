@@ -60,7 +60,7 @@ fn main() {
         // go to http://localhost:6767/bar to see this route in action
         get "/bar" => |request, response| {
             // returning a http status code and a static string
-            (200usize, "This is the /bar handler")
+            (200u16, "This is the /bar handler")
         }
 
         // FIXME
