@@ -1,25 +1,12 @@
 [package]
 
 name = "nickel"
-version = "0.1.0"
-authors = [ "christoph@thoughtram.io" ]
+version = "0.2.0"
+authors = [ "Christoph Burgdorf <christoph@thoughtram.io>",
+            "Kevin Butler <haqkrs@gmail.com>",
+            "Simon Persson <simon@flaskpost.org>" ]
 description = "An express.js inspired web framework"
 license = "MIT"
-
-[profile.dev]
-debug = false
-
-[profile.test]
-debug = false
-
-[lib]
-
-name = "nickel"
-path = "src/lib.rs"
-
-[dependencies.rust-mustache]
-
-git = "https://github.com/nickel-org/rust-mustache.git"
 
 [dependencies.nickel_macros]
 
@@ -36,6 +23,7 @@ rustc-serialize = "*"
 log = "*"
 hyper = "*"
 groupable = "*"
+mustache = "*"
 
 [[example]]
 
