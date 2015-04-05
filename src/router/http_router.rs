@@ -1,5 +1,6 @@
 use hyper::method::Method;
 use middleware::Middleware;
+use router::IntoMatcher;
 
 pub trait HttpRouter {
     /// Registers a handler to be used for a specified method.
@@ -10,10 +11,12 @@ pub trait HttpRouter {
     /// ```{rust}
     /// extern crate hyper;
     /// extern crate nickel;
+    /// extern crate regex;
     /// #[macro_use] extern crate nickel_macros;
     ///
     /// use nickel::{Nickel, HttpRouter};
     /// use hyper::method::Method::{Get, Post, Put, Delete};
+    /// use regex::Regex;
     ///
     /// fn main() {
     ///     let read_handler = middleware! { "Get request! "};
@@ -27,9 +30,13 @@ pub trait HttpRouter {
     ///     server.add_route(Post, "/foo", modify_handler);
     ///     server.add_route(Put, "/foo", modify_handler);
     ///     server.add_route(Delete, "/foo", modify_handler);
+    ///
+    ///     // Regex path
+    ///     let regex = Regex::new("/(foo|bar)").unwrap();
+    ///     server.add_route(Get, regex, read_handler);
     /// }
     /// ```
-    fn add_route<H: Middleware>(&mut self, Method, &str, H);
+    fn add_route<M: IntoMatcher, H: Middleware>(&mut self, Method, M, H);
 
     /// Registers a handler to be used for a specific GET request.
     /// Handlers are assigned to paths and paths are allowed to contain
@@ -71,7 +78,6 @@ pub trait HttpRouter {
     /// # router! macro example
     ///
     /// ```{rust}
-    /// #![feature(plugin)]
     /// #[macro_use] extern crate nickel_macros;
     /// extern crate nickel;
     /// use nickel::Nickel;
@@ -102,8 +108,8 @@ pub trait HttpRouter {
     ///     server.utilize(router);
     /// }
     /// ```
-    fn get<H: Middleware>(&mut self, uri: &str, handler: H) {
-        self.add_route(Method::Get, uri, handler);
+    fn get<M: IntoMatcher, H: Middleware>(&mut self, matcher: M, handler: H) {
+        self.add_route(Method::Get, matcher, handler);
     }
 
     /// Registers a handler to be used for a specific POST request.
@@ -125,8 +131,8 @@ pub trait HttpRouter {
     /// });
     /// # }
     /// ```
-    fn post<H: Middleware>(&mut self, uri: &str, handler: H) {
-        self.add_route(Method::Post, uri, handler);
+    fn post<M: IntoMatcher, H: Middleware>(&mut self, matcher: M, handler: H) {
+        self.add_route(Method::Post, matcher, handler);
     }
 
     /// Registers a handler to be used for a specific PUT request.
@@ -148,8 +154,8 @@ pub trait HttpRouter {
     /// });
     /// # }
     /// ```
-    fn put<H: Middleware>(&mut self, uri: &str, handler: H) {
-        self.add_route(Method::Put, uri, handler);
+    fn put<M: IntoMatcher, H: Middleware>(&mut self, matcher: M, handler: H) {
+        self.add_route(Method::Put, matcher, handler);
     }
 
     /// Registers a handler to be used for a specific DELETE request.
@@ -170,7 +176,7 @@ pub trait HttpRouter {
     /// });
     /// # }
     /// ```
-    fn delete<H: Middleware>(&mut self, uri: &str, handler: H) {
-        self.add_route(Method::Delete, uri, handler);
+    fn delete<M: IntoMatcher, H: Middleware>(&mut self, matcher: M, handler: H) {
+        self.add_route(Method::Delete, matcher, handler);
     }
 }
