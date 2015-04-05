@@ -1,4 +1,4 @@
-use std::borrow::{IntoCow, Cow};
+use std::borrow::Cow;
 use std::ops::Deref;
 use regex::Regex;
 
@@ -8,9 +8,9 @@ pub struct Matcher {
 }
 
 impl Matcher {
-    pub fn new<P: IntoCow<'static, str>>(path: P, regex: Regex) -> Matcher {
+    pub fn new<P: Into<Cow<'static, str>>>(path: P, regex: Regex) -> Matcher {
         Matcher {
-            path: path.into_cow(),
+            path: path.into(),
             regex: regex
         }
     }

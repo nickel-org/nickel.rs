@@ -78,7 +78,6 @@ pub trait HttpRouter {
     /// # router! macro example
     ///
     /// ```{rust}
-    /// #![feature(plugin)]
     /// #[macro_use] extern crate nickel_macros;
     /// extern crate nickel;
     /// use nickel::Nickel;
