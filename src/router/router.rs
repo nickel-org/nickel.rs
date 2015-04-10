@@ -55,7 +55,7 @@ impl Router {
 
     pub fn match_route<'a>(&'a self, method: &Method, path: &str) -> Option<RouteResult<'a>> {
         // Strip off the querystring when matching a route
-        let path = path.splitn(1, '?').next().unwrap();
+        let path = path.splitn(2, '?').next().unwrap();
 
         self.routes
             .iter()
