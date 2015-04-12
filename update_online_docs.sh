@@ -8,12 +8,12 @@ git branch -D docs
 git checkout -b docs
 
 # Build the docs
-make doc
+cargo doc --no-deps
 
-echo docs.nickel.rs > doc/CNAME
+echo docs.nickel.rs > target/doc/CNAME
 
 # Add changes to git.
-git add -A -f doc
+git add -A -f target/doc
 
 # Commit changes.
 msg="doc(*): rebuilding docs `date`"
@@ -22,7 +22,7 @@ if [ $# -eq 1 ]
 fi
 git commit -m "$msg"
 
-git subtree split -P doc -b docs-deploy
+git subtree split -P target/doc -b docs-deploy
 
 # Push source and build repos.
 git push -f docs docs-deploy:master
