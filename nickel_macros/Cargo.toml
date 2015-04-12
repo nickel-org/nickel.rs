@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = [ "christoph@thoughtram.io" ]
 repository = "https://github.com/nickel-org/nickel.rs"
 readme = "../README.md"
-keywords = ["nickel", "web server"]
+keywords = ["nickel"]
 license = "MIT"
 description = "Macros for nickel.rs"
 
