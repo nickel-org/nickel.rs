@@ -8,11 +8,13 @@ authors = [ "Christoph Burgdorf <christoph@thoughtram.io>",
 description = "An express.js inspired web framework"
 license = "MIT"
 
-[dependencies.nickel_macros]
+repository = "https://github.com/nickel-org/nickel.rs"
+readme = "README.md"
+keywords = ["nickel", "server", "web", "express"]
 
-path = "nickel_macros"
 
 [dependencies]
+nickel_macros = "*"
 url = "*"
 time = "*"
 typemap = "*"
