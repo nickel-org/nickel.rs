@@ -1,3 +1,15 @@
+<a name="0.2.1"></a>
+## 0.2.1 (2015-04-13)
+
+
+#### Bug Fixes
+
+* **docs**  fix doc generation script ([cee6a43a](https://github.com/nickel-org/nickel.rs/commit/cee6a43a9de3f2b18616f3f6bb0e365b19e68516))
+* **rustup**  adjust for splitn change ([9a4bd5fe](https://github.com/nickel-org/nickel.rs/commit/9a4bd5fea96f13acae6c1ca690e2bb541f588d7f))
+* **macros**  remove nickel_macros crate ([60ad3e2f](https://github.com/nickel-org/nickel.rs/commit/60ad3e2f06c9a5e885f547b1e3186c630648c750))
+
+
+
 <a name="0.2.0"></a>
 ## 0.2.0 (2015-04-12)
 
