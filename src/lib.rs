@@ -24,7 +24,6 @@ extern crate groupable;
 
 #[macro_use] extern crate log;
 #[macro_use] extern crate lazy_static;
-#[macro_use] extern crate nickel_macros;
 
 pub use nickel::Nickel;
 pub use request::Request;
@@ -40,6 +39,8 @@ pub use nickel_error::NickelError;
 pub use mimes::{get_media_type, MediaType};
 pub use middleware_handler::ResponseFinalizer;
 pub use as_bytes::AsBytes;
+
+#[macro_use] pub mod macros;
 
 mod as_bytes;
 pub mod router;

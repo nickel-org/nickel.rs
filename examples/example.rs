@@ -1,7 +1,6 @@
+#[macro_use] extern crate nickel;
 extern crate rustc_serialize;
-extern crate nickel;
 extern crate regex;
-#[macro_use] extern crate nickel_macros;
 
 use std::collections::BTreeMap;
 use std::io::Write;

@@ -1,5 +1,4 @@
-#[macro_use] extern crate nickel_macros;
-extern crate nickel;
+#[macro_use] extern crate nickel;
 
 use nickel::Nickel;
 

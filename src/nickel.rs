@@ -6,11 +6,6 @@ use server::Server;
 use hyper::method::Method;
 use hyper::status::StatusCode;
 
-// Re-exports so that we can use nickel_macros within nickel
-// as they use the path `nickel::foo` which resolves to this module
-// rather than an external crate.
-pub use {MiddlewareResult, ResponseFinalizer, Request, Response};
-
 //pre defined middleware
 use default_error_handler::DefaultErrorHandler;
 
@@ -53,8 +48,7 @@ impl Nickel {
     ///
     /// # Examples
     /// ```{rust}
-    /// # extern crate nickel;
-    /// # #[macro_use] extern crate nickel_macros;
+    /// # #[macro_use] extern crate nickel;
     /// # fn main() {
     /// use nickel::Nickel;
     /// let mut server = Nickel::new();
@@ -110,8 +104,7 @@ impl Nickel {
     ///
     /// # Examples
     /// ```{rust}
-    /// extern crate nickel;
-    /// #[macro_use] extern crate nickel_macros;
+    /// #[macro_use] extern crate nickel;
     /// use nickel::{Nickel, HttpRouter};
     ///
     /// fn main() {
