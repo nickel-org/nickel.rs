@@ -1,6 +1,6 @@
 use std::fmt::Display;
 use std::net::ToSocketAddrs;
-use router::{Router, HttpRouter, IntoMatcher};
+use router::{Router, HttpRouter, Matcher};
 use middleware::{MiddlewareStack, Middleware, ErrorHandler};
 use server::Server;
 use hyper::method::Method;
@@ -16,7 +16,7 @@ pub struct Nickel{
 }
 
 impl HttpRouter for Nickel {
-    fn add_route<M: IntoMatcher, H: Middleware>(&mut self, method: Method, matcher: M, handler: H) {
+    fn add_route<M: Into<Matcher>, H: Middleware>(&mut self, method: Method, matcher: M, handler: H) {
         let mut router = Router::new();
         router.add_route(method, matcher, handler);
         self.utilize(router);

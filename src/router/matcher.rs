@@ -3,8 +3,8 @@ use std::ops::Deref;
 use regex::Regex;
 
 pub struct Matcher {
-    pub path: Cow<'static, str>,
-    pub regex: Regex
+    path: Cow<'static, str>,
+    regex: Regex
 }
 
 impl Matcher {

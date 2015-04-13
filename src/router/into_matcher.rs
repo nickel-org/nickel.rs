@@ -1,20 +1,16 @@
 use super::Matcher;
 use regex::{Regex, Captures};
 
-pub trait IntoMatcher {
-    fn into_matcher(self) -> Matcher;
-}
-
-impl IntoMatcher for Regex {
-    fn into_matcher(self) -> Matcher {
-        let path = self.as_str().to_string();
-        Matcher::new(path, self)
+impl From<Regex> for Matcher {
+    fn from(regex: Regex) -> Matcher {
+        let path = regex.as_str().to_string();
+        Matcher::new(path, regex)
     }
 }
 
-impl<'a> IntoMatcher for &'a str {
-    fn into_matcher(self) -> Matcher {
-        self.to_string().into_matcher()
+impl<'a> From<&'a str> for Matcher {
+    fn from(s: &'a str) -> Matcher {
+        From::from(s.to_string())
     }
 }
 
@@ -30,12 +26,12 @@ static VAR_SEQ_WITH_SLASH:    &'static str = "[,/a-zA-Z0-9_-]*";
 // matches request params (e.g. ?foo=true&bar=false)
 static REGEX_PARAM_SEQ:       &'static str = "(\\?[a-zA-Z0-9%_=&-]*)?";
 
-impl IntoMatcher for String {
-    fn into_matcher(self) -> Matcher {
-        let with_format = if self.contains(FORMAT_VAR) {
-            self
+impl From<String> for Matcher {
+    fn from(s: String) -> Matcher {
+        let with_format = if s.contains(FORMAT_VAR) {
+            s
         } else {
-            format!("{}(\\.{})?", self, FORMAT_VAR)
+            format!("{}(\\.{})?", s, FORMAT_VAR)
         };
 
         // First mark all double wildcards for replacement. We can't directly

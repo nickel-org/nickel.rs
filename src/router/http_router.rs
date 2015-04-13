@@ -1,6 +1,6 @@
 use hyper::method::Method;
 use middleware::Middleware;
-use router::IntoMatcher;
+use router::Matcher;
 
 pub trait HttpRouter {
     /// Registers a handler to be used for a specified method.
@@ -35,7 +35,7 @@ pub trait HttpRouter {
     ///     server.add_route(Get, regex, read_handler);
     /// }
     /// ```
-    fn add_route<M: IntoMatcher, H: Middleware>(&mut self, Method, M, H);
+    fn add_route<M: Into<Matcher>, H: Middleware>(&mut self, Method, M, H);
 
     /// Registers a handler to be used for a specific GET request.
     /// Handlers are assigned to paths and paths are allowed to contain
@@ -105,7 +105,7 @@ pub trait HttpRouter {
     ///     server.utilize(router);
     /// }
     /// ```
-    fn get<M: IntoMatcher, H: Middleware>(&mut self, matcher: M, handler: H) {
+    fn get<M: Into<Matcher>, H: Middleware>(&mut self, matcher: M, handler: H) {
         self.add_route(Method::Get, matcher, handler);
     }
 
@@ -127,7 +127,7 @@ pub trait HttpRouter {
     /// });
     /// # }
     /// ```
-    fn post<M: IntoMatcher, H: Middleware>(&mut self, matcher: M, handler: H) {
+    fn post<M: Into<Matcher>, H: Middleware>(&mut self, matcher: M, handler: H) {
         self.add_route(Method::Post, matcher, handler);
     }
 
@@ -149,7 +149,7 @@ pub trait HttpRouter {
     /// });
     /// # }
     /// ```
-    fn put<M: IntoMatcher, H: Middleware>(&mut self, matcher: M, handler: H) {
+    fn put<M: Into<Matcher>, H: Middleware>(&mut self, matcher: M, handler: H) {
         self.add_route(Method::Put, matcher, handler);
     }
 
@@ -170,7 +170,7 @@ pub trait HttpRouter {
     /// });
     /// # }
     /// ```
-    fn delete<M: IntoMatcher, H: Middleware>(&mut self, matcher: M, handler: H) {
+    fn delete<M: Into<Matcher>, H: Middleware>(&mut self, matcher: M, handler: H) {
         self.add_route(Method::Delete, matcher, handler);
     }
 }

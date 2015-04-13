@@ -5,7 +5,7 @@ use response::Response;
 use router::HttpRouter;
 use hyper::method::Method;
 use hyper::status::StatusCode;
-use router::{IntoMatcher, Matcher, FORMAT_PARAM};
+use router::{Matcher, FORMAT_PARAM};
 
 /// A Route is the basic data structure that stores both the path
 /// and the handler that gets executed for the route.
@@ -55,7 +55,7 @@ impl Router {
 
     pub fn match_route<'a>(&'a self, method: &Method, path: &str) -> Option<RouteResult<'a>> {
         // Strip off the querystring when matching a route
-        let path = path.splitn(1, '?').next().unwrap();
+        let path = path.splitn(2, '?').next().unwrap();
 
         self.routes
             .iter()
@@ -83,9 +83,9 @@ fn extract_params(route: &Route, path: &str) -> Vec<(String, String)> {
 }
 
 impl HttpRouter for Router {
-    fn add_route<M: IntoMatcher, H: Middleware>(&mut self, method: Method, matcher: M, handler: H) {
+    fn add_route<M: Into<Matcher>, H: Middleware>(&mut self, method: Method, matcher: M, handler: H) {
         let route = Route {
-            matcher: matcher.into_matcher(),
+            matcher: matcher.into(),
             method: method,
             handler: Box::new(handler),
         };
@@ -118,28 +118,28 @@ impl Middleware for Router {
 
 #[test]
 fn creates_regex_with_captures () {
-    let matcher = "foo/:uid/bar/:groupid".into_matcher();
+    let matcher: Matcher = "foo/:uid/bar/:groupid".into();
     let caps = matcher.captures("foo/4711/bar/5490").unwrap();
 
     assert_eq!(matcher.path(), "foo/:uid/bar/:groupid(\\.:format)?");
     assert_eq!(caps.at(1).unwrap(), "4711");
     assert_eq!(caps.at(2).unwrap(), "5490");
 
-    let matcher = "foo/*/:uid/bar/:groupid".into_matcher();
+    let matcher: Matcher = "foo/*/:uid/bar/:groupid".into();
     let caps = matcher.captures("foo/test/4711/bar/5490").unwrap();
 
     assert_eq!(matcher.path(), "foo/*/:uid/bar/:groupid(\\.:format)?");
     assert_eq!(caps.at(1).unwrap(), "4711");
     assert_eq!(caps.at(2).unwrap(), "5490");
 
-    let matcher = "foo/**/:uid/bar/:groupid".into_matcher();
+    let matcher: Matcher = "foo/**/:uid/bar/:groupid".into();
     let caps = matcher.captures("foo/test/another/4711/bar/5490").unwrap();
 
     assert_eq!(matcher.path(), "foo/**/:uid/bar/:groupid(\\.:format)?");
     assert_eq!(caps.at(1).unwrap(), "4711");
     assert_eq!(caps.at(2).unwrap(), "5490");
 
-    let matcher = "foo/**/:format/bar/:groupid".into_matcher();
+    let matcher: Matcher = "foo/**/:format/bar/:groupid".into();
     let caps = matcher.captures("foo/test/another/4711/bar/5490").unwrap();
 
     assert_eq!(matcher.path(), "foo/**/:format/bar/:groupid");
@@ -149,9 +149,9 @@ fn creates_regex_with_captures () {
 
 #[test]
 fn creates_valid_regex_for_routes () {
-    let regex1 = "foo/:uid/bar/:groupid".into_matcher();
-    let regex2 = "foo/*/bar".into_matcher();
-    let regex3 = "foo/**/bar".into_matcher();
+    let regex1: Matcher = "foo/:uid/bar/:groupid".into();
+    let regex2: Matcher = "foo/*/bar".into();
+    let regex3: Matcher = "foo/**/bar".into();
 
     assert_eq!(regex1.is_match("foo/4711/bar/5490"), true);
     assert_eq!(regex1.is_match("foo/4711/bar/5490?foo=true&bar=false"), true);
