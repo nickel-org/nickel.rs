@@ -1,8 +1,7 @@
+#[macro_use] extern crate nickel;
 extern crate url;
-extern crate nickel;
 extern crate regex;
 extern crate rustc_serialize;
-#[macro_use] extern crate nickel_macros;
 
 use std::io::Write;
 use nickel::status::StatusCode::{self, NotFound};

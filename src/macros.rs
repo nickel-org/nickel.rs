@@ -1,10 +1,9 @@
-
 #[macro_export]
 macro_rules! router {
     ($($method:ident $path:expr => |$req:ident, $res:ident| $b:block)+) => (
         {
-            use nickel::HttpRouter;
-            let mut router = nickel::Router::new();
+            use $crate::HttpRouter;
+            let mut router = $crate::Router::new();
 
             $( router.$method($path, middleware!(|$req, $res| $b)); )+
 
@@ -21,7 +20,7 @@ macro_rules! middleware {
         f
     }};
     (|$req:ident, $res:ident| $($b:tt)+) => {{
-        use nickel::{MiddlewareResult,ResponseFinalizer, Response, Request};
+        use $crate::{MiddlewareResult,ResponseFinalizer, Response, Request};
 
         #[inline(always)]
         fn restrict<'a, R: ResponseFinalizer>(r: R, res: Response<'a>)

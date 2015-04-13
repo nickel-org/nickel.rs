@@ -9,10 +9,9 @@ pub trait HttpRouter {
     /// # Examples
     ///
     /// ```{rust}
+    /// #[macro_use] extern crate nickel;
     /// extern crate hyper;
-    /// extern crate nickel;
     /// extern crate regex;
-    /// #[macro_use] extern crate nickel_macros;
     ///
     /// use nickel::{Nickel, HttpRouter};
     /// use hyper::method::Method::{Get, Post, Put, Delete};
@@ -48,8 +47,7 @@ pub trait HttpRouter {
     /// # Examples
     ///
     /// ```{rust}
-    /// extern crate nickel;
-    /// #[macro_use] extern crate nickel_macros;
+    /// #[macro_use] extern crate nickel;
     /// use nickel::{Nickel, Request, Response, HttpRouter};
     ///
     /// fn main() {
@@ -78,8 +76,7 @@ pub trait HttpRouter {
     /// # router! macro example
     ///
     /// ```{rust}
-    /// #[macro_use] extern crate nickel_macros;
-    /// extern crate nickel;
+    /// #[macro_use] extern crate nickel;
     /// use nickel::Nickel;
     ///
     /// fn main() {
@@ -120,8 +117,7 @@ pub trait HttpRouter {
     /// # Examples
     ///
     /// ```{rust}
-    /// # extern crate nickel;
-    /// # #[macro_use] extern crate nickel_macros;
+    /// # #[macro_use] extern crate nickel;
     /// # fn main() {
     /// use nickel::{Nickel, HttpRouter};
     ///
@@ -143,8 +139,7 @@ pub trait HttpRouter {
     /// # Examples
     ///
     /// ```{rust}
-    /// # extern crate nickel;
-    /// # #[macro_use] extern crate nickel_macros;
+    /// # #[macro_use] extern crate nickel;
     /// # fn main() {
     /// use nickel::{Nickel, HttpRouter};
     ///
@@ -165,8 +160,7 @@ pub trait HttpRouter {
     /// Take a look at `get(...)` for a more detailed description.
     /// # Examples
     /// ```{rust}
-    /// # extern crate nickel;
-    /// # #[macro_use] extern crate nickel_macros;
+    /// # #[macro_use] extern crate nickel;
     /// # fn main() {
     /// use nickel::{Nickel, HttpRouter};
     ///
