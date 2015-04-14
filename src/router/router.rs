@@ -159,23 +159,31 @@ fn creates_valid_regex_for_routes () {
     assert_eq!(regex1.is_match("foo/4711/bar?foo=true&bar=false"), false);
     assert_eq!(regex1.is_match("foo/4711/bar/test%20spacing"), true);
     assert_eq!(regex1.is_match("foo/4711/bar/5281?foo=test%20spacing&bar=false"), true);
+    assert_eq!(regex1.is_match("foo/alice/bar/bob"), true);
 
     assert_eq!(regex2.is_match("foo/4711/bar"), true);
     assert_eq!(regex2.is_match("foo/4711/barr"), false);
     assert_eq!(regex2.is_match("foo/4711/bar?foo=true&bar=false"), true);
     assert_eq!(regex2.is_match("foo/4711/4712/bar"), false);
     assert_eq!(regex2.is_match("foo/4711/4712/bar?foo=true&bar=false"), false);
+    assert_eq!(regex2.is_match("foo/alice/bar/bob"), false);
+    assert_eq!(regex2.is_match("foo/alice/bar"), true);
 
     assert_eq!(regex3.is_match("foo/4711/bar"), true);
     assert_eq!(regex3.is_match("foo/4711/bar?foo=true&bar=false"), true);
     assert_eq!(regex3.is_match("foo/4711/4712/bar"), true);
     assert_eq!(regex3.is_match("foo/4711/4712/bar?foo=true&bar=false"), true);
+    assert_eq!(regex3.is_match("foo/alice/bar/bob"), false);
 
     //ensure that this works with commas too
     assert_eq!(regex1.is_match("foo/4711/bar/5490,1234"), true);
     assert_eq!(regex1.is_match("foo/4711/bar/5490,1234?foo=true&bar=false"), true);
     assert_eq!(regex1.is_match("foo/4711/bar"), false);
     assert_eq!(regex1.is_match("foo/4711/bar?foo=1,2,3&bar=false"), false);
+
+    //ensure that this works with hyphens too
+    assert_eq!(regex1.is_match("foo/alice-anne/bar/bob-gates"), true);
+
 }
 
 #[test]
