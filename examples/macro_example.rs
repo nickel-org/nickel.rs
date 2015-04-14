@@ -1,14 +1,15 @@
+#[macro_use] extern crate nickel;
 extern crate url;
-extern crate nickel;
+extern crate regex;
 extern crate rustc_serialize;
-#[macro_use] extern crate nickel_macros;
 
+use std::io::Write;
 use nickel::status::StatusCode::{self, NotFound};
 use nickel::{
     Nickel, NickelError, Continue, Halt, Request, Response,
     QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter, Action
 };
-use std::io::Write;
+use regex::Regex;
 
 #[derive(RustcDecodable, RustcEncodable)]
 struct Person {
@@ -43,6 +44,8 @@ fn main() {
     // go to http://localhost:6767/thoughtram_logo_brain.png to see static file serving in action
     server.utilize(StaticFilesHandler::new("examples/assets/"));
 
+    let hello_regex = Regex::new("/hello/(?P<name>[a-zA-Z]+)").unwrap();
+
     // The return type for a route can be anything that implements `ResponseFinalizer`
     server.utilize(router!(
         // go to http://localhost:6767/user/4711 to see this route in action
@@ -60,7 +63,12 @@ fn main() {
         // go to http://localhost:6767/bar to see this route in action
         get "/bar" => |request, response| {
             // returning a http status code and a static string
-            (200usize, "This is the /bar handler")
+            (200u16, "This is the /bar handler")
+        }
+
+        // go to http://localhost:6767/hello/moomah to see this route in action
+        get hello_regex => |request, response| {
+            format!("Hello {}", request.param("name"))
         }
 
         // FIXME

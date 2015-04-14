@@ -1,4 +1,4 @@
-use std::borrow::IntoCow;
+use std::borrow::Cow;
 use std::sync::RwLock;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
@@ -139,7 +139,7 @@ impl<'a> Response<'a, Fresh> {
     /// Return an error with the appropriate status code for error handlers to
     /// provide output for.
     pub fn error<T>(self, status: StatusCode, message: T) -> MiddlewareResult<'a>
-            where T: IntoCow<'static, str> {
+            where T: Into<Cow<'static, str>> {
         Err(NickelError::new(self, message, status))
     }
 
@@ -253,7 +253,7 @@ impl<'a, 'b> Response<'a, Streaming> {
     /// error has occurred. `bail` will drop the connection and log an error
     /// message.
     pub fn bail<T>(self, message: T) -> MiddlewareResult<'a>
-            where T: IntoCow<'static, str> {
+            where T: Into<Cow<'static, str>> {
         let _ = self.end();
         unsafe { Err(NickelError::without_response(message)) }
     }

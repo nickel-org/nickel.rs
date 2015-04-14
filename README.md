@@ -1,6 +1,8 @@
 nickel.rs
 =======
 
+[![Join the chat at https://gitter.im/nickel-org/nickel.rs](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nickel-org/nickel.rs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 nickel is supposed to be a simple and lightweight foundation for web applications written in Rust. It's API is inspired by the popular express framework for JavaScript.
 
 Some of the features are:
@@ -55,16 +57,17 @@ Here is how sample server in `example.rs` looks like:
 ```rust
 extern crate rustc_serialize;
 extern crate nickel;
+extern crate regex;
 #[macro_use] extern crate nickel_macros;
 
+use std::collections::BTreeMap;
+use std::io::Write;
 use nickel::status::StatusCode::{self, NotFound, BadRequest};
 use nickel::{
     Nickel, NickelError, Continue, Halt, Request,
     QueryString, JsonBody, StaticFilesHandler, HttpRouter, Action
 };
-
-use std::collections::BTreeMap;
-use std::io::Write;
+use regex::Regex;
 use rustc_serialize::json::{Json, ToJson};
 
 #[derive(RustcDecodable, RustcEncodable)]
@@ -103,6 +106,13 @@ fn main() {
 
     // go to http://localhost:6767/bar to see this route in action
     router.get("/bar", middleware!("This is the /bar handler"));
+
+    let hello_regex = Regex::new("/hello/(?P<name>[a-zA-Z]+)").unwrap();
+
+    // go to http://localhost:6767/hello/moomah to see this route in action
+    router.get(hello_regex, middleware! { |request|
+        format!("Hello {}", request.param("name"))
+    });
 
     // go to http://localhost:6767/some/crazy/route to see this route in action
     router.get("/some/*/route", middleware! {

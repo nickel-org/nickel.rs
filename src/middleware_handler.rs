@@ -14,7 +14,6 @@ use request::Request;
 use response::Response;
 use hyper::status::StatusCode;
 use std::fmt::Display;
-use std::num::FromPrimitive;
 use hyper::header;
 use hyper::net;
 use middleware::{Middleware, MiddlewareResult, Halt, Continue};
@@ -113,19 +112,13 @@ dual_impl!((StatusCode, &'a str),
                 res.send(data)
             });
 
-dual_impl!((usize, &'a str),
-           (usize, String),
+dual_impl!((u16, &'a str),
+           (u16, String),
            |self, res| {
                 maybe_set_type(&mut res, MediaType::Html);
                 let (status, data) = self;
-                match FromPrimitive::from_usize(status) {
-                    Some(status) => {
-                        res.set_status(status);
-                        res.send(data)
-                    }
-                    // This is a logic error
-                    None => panic!("Bad status code")
-                }
+                res.set_status(StatusCode::from_u16(status));
+                res.send(data)
             });
 
 // FIXME: Hyper uses traits for headers, so this needs to be a Vec of

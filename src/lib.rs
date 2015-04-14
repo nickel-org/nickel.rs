@@ -1,7 +1,5 @@
 #![crate_name = "nickel"]
 #![crate_type = "rlib"]
-#![feature(plugin, core, io, path_ext, into_cow, convert)]
-#![plugin(regex_macros)]
 
 //!Nickel is supposed to be a simple and lightweight foundation for web applications written in Rust. Its API is inspired by the popular express framework for JavaScript.
 //!
@@ -25,7 +23,7 @@ extern crate mustache;
 extern crate groupable;
 
 #[macro_use] extern crate log;
-#[macro_use] extern crate nickel_macros;
+#[macro_use] extern crate lazy_static;
 
 pub use nickel::Nickel;
 pub use request::Request;
@@ -41,6 +39,8 @@ pub use nickel_error::NickelError;
 pub use mimes::{get_media_type, MediaType};
 pub use middleware_handler::ResponseFinalizer;
 pub use as_bytes::AsBytes;
+
+#[macro_use] pub mod macros;
 
 mod as_bytes;
 pub mod router;

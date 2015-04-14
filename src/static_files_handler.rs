@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
-use std::fs::PathExt;
+use std::io::ErrorKind::NotFound;
+use std::fs;
 
 use hyper::uri::RequestUri::AbsolutePath;
 use hyper::method::Method::{Get, Head};
@@ -63,8 +64,12 @@ impl StaticFilesHandler {
             -> MiddlewareResult<'a> where P: AsRef<Path> {
         if let Some(path) = relative_path {
             let path = self.root_path.join(path);
-            if path.exists() && path.is_file() {
-                return res.send_file(&path);
+            match fs::metadata(&path) {
+                Ok(ref attr) if attr.is_file() => return res.send_file(&path),
+                Err(ref e) if e.kind() != NotFound => debug!("Error getting metadata \
+                                                              for file '{:?}': {:?}",
+                                                              path, e),
+                _ => {}
             }
         };
 

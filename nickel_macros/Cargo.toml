@@ -1,9 +1,0 @@
-[package]
-name = "nickel_macros"
-version = "0.0.1"
-authors = [ "christoph@thoughtram.io" ]
-
-[lib]
-name = "nickel_macros"
-path = "src/macro.rs"
-plugin = true

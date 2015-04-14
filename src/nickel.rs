@@ -1,15 +1,10 @@
 use std::fmt::Display;
 use std::net::ToSocketAddrs;
-use router::{Router, HttpRouter};
+use router::{Router, HttpRouter, Matcher};
 use middleware::{MiddlewareStack, Middleware, ErrorHandler};
 use server::Server;
 use hyper::method::Method;
 use hyper::status::StatusCode;
-
-// Re-exports so that we can use nickel_macros within nickel
-// as they use the path `nickel::foo` which resolves to this module
-// rather than an external crate.
-pub use {MiddlewareResult, ResponseFinalizer, Request, Response};
 
 //pre defined middleware
 use default_error_handler::DefaultErrorHandler;
@@ -21,10 +16,9 @@ pub struct Nickel{
 }
 
 impl HttpRouter for Nickel {
-    fn add_route<H: Middleware>(&mut self, method: Method, uri: &str, handler: H) {
+    fn add_route<M: Into<Matcher>, H: Middleware>(&mut self, method: Method, matcher: M, handler: H) {
         let mut router = Router::new();
-        // FIXME: Inference failure in nightly 22/10/2014
-        router.add_route::<H>(method, uri, handler);
+        router.add_route(method, matcher, handler);
         self.utilize(router);
     }
 }
@@ -54,8 +48,7 @@ impl Nickel {
     ///
     /// # Examples
     /// ```{rust}
-    /// # extern crate nickel;
-    /// # #[macro_use] extern crate nickel_macros;
+    /// # #[macro_use] extern crate nickel;
     /// # fn main() {
     /// use nickel::Nickel;
     /// let mut server = Nickel::new();
@@ -111,8 +104,7 @@ impl Nickel {
     ///
     /// # Examples
     /// ```{rust}
-    /// extern crate nickel;
-    /// #[macro_use] extern crate nickel_macros;
+    /// #[macro_use] extern crate nickel;
     /// use nickel::{Nickel, HttpRouter};
     ///
     /// fn main() {

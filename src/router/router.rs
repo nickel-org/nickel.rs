@@ -1,23 +1,19 @@
 use middleware::{Middleware, Continue, MiddlewareResult};
-use super::path_utils;
 use hyper::uri::RequestUri::AbsolutePath;
 use request::Request;
 use response::Response;
 use router::HttpRouter;
 use hyper::method::Method;
 use hyper::status::StatusCode;
-use regex::Regex;
-use std::collections::HashMap;
+use router::{Matcher, FORMAT_PARAM};
 
 /// A Route is the basic data structure that stores both the path
 /// and the handler that gets executed for the route.
 /// The path can contain variable pattern such as `user/:userid/invoices`
 pub struct Route {
-    pub path: String,
     pub method: Method,
     pub handler: Box<Middleware + Send + Sync + 'static>,
-    pub variables: HashMap<String, usize>,
-    matcher: Regex
+    matcher: Matcher
 }
 
 /// A RouteResult is what the router returns when `match_route` is called.
@@ -26,13 +22,20 @@ pub struct Route {
 /// evaluated string
 pub struct RouteResult<'a> {
     pub route: &'a Route,
-    params: Vec<String>
+    params: Vec<(String, String)>
 }
 
 impl<'a> RouteResult<'a> {
     pub fn param(&self, key: &str) -> &str {
-        let idx = self.route.variables.get(key).unwrap();
-        &*self.params[*idx]
+        for &(ref k, ref v) in &self.params {
+            if k == &key {
+                return &v[..]
+            }
+        }
+
+        // FIXME: should have a default format
+        if key == FORMAT_PARAM { return "" }
+        panic!("unknown param: {}", key)
     }
 }
 
@@ -43,56 +46,50 @@ pub struct Router {
     routes: Vec<Route>,
 }
 
-impl<'a> Router {
+impl Router {
     pub fn new () -> Router {
         Router {
             routes: Vec::new()
         }
     }
 
-    pub fn match_route(&'a self, method: &Method, path: &str) -> Option<RouteResult<'a>> {
+    pub fn match_route<'a>(&'a self, method: &Method, path: &str) -> Option<RouteResult<'a>> {
+        // Strip off the querystring when matching a route
+        let path = path.splitn(2, '?').next().unwrap();
+
         self.routes
             .iter()
             .find(|item| item.method == *method && item.matcher.is_match(path))
-            .map(|route| {
-                let vec = match route.matcher.captures(path) {
-                    Some(captures) => {
-                        (0..route.variables.len())
-                            .filter_map(|pos| {
-                                captures.at(pos + 1).map(|c| c.to_string())
-                            })
-                            .collect()
-                    },
-                    None => vec![],
-                };
+            .map(|route|
                 RouteResult {
-                    route: route,
-                    params: vec
+                    params: extract_params(route, path),
+                    route: route
                 }
-            })
+            )
+    }
+}
+
+fn extract_params(route: &Route, path: &str) -> Vec<(String, String)> {
+    match route.matcher.captures(path) {
+        Some(captures) => {
+            captures.iter_named()
+                    .filter_map(|(name, subcap)| {
+                        subcap.map(|cap| (name.to_string(), cap.to_string()))
+                    })
+                    .collect()
+        }
+        None => vec![]
     }
 }
 
 impl HttpRouter for Router {
-    fn add_route<H: Middleware>(&mut self, method: Method, path: &str, handler: H) {
-        static FORMAT_VAR: &'static str = ":format";
-
-        let with_format = if path.contains(FORMAT_VAR) {
-            path.to_string()
-        } else {
-            format!("{}(\\.{})?", path, FORMAT_VAR)
-        };
-
-        let matcher = path_utils::create_regex(&with_format);
-        let variable_infos = path_utils::get_variable_info(&with_format);
-
+    fn add_route<M: Into<Matcher>, H: Middleware>(&mut self, method: Method, matcher: M, handler: H) {
         let route = Route {
-            path: with_format,
+            matcher: matcher.into(),
             method: method,
-            matcher: matcher,
             handler: Box::new(handler),
-            variables: variable_infos
         };
+
         self.routes.push(route);
     }
 }
@@ -105,7 +102,7 @@ impl Middleware for Router {
             AbsolutePath(ref url) => self.match_route(&req.origin.method, &**url),
             _ => None
         };
-        debug!("route_result.route.path: {:?}", route_result.as_ref().map(|r| &*r.route.path));
+        debug!("route_result.route.path: {:?}", route_result.as_ref().map(|r| r.route.matcher.path()));
 
         match route_result {
             Some(route_result) => {
@@ -120,40 +117,41 @@ impl Middleware for Router {
 }
 
 #[test]
-fn creates_map_with_var_variable_infos () {
-    let map = path_utils::get_variable_info("foo/:uid/bar/:groupid");
-
-    assert_eq!(map.len(), 2);
-    assert_eq!(map["uid"], 0);
-    assert_eq!(map["groupid"], 1);
-}
-
-#[test]
 fn creates_regex_with_captures () {
-    let regex = path_utils::create_regex("foo/:uid/bar/:groupid");
-    let caps = regex.captures("foo/4711/bar/5490").unwrap();
+    let matcher: Matcher = "foo/:uid/bar/:groupid".into();
+    let caps = matcher.captures("foo/4711/bar/5490").unwrap();
 
+    assert_eq!(matcher.path(), "foo/:uid/bar/:groupid(\\.:format)?");
     assert_eq!(caps.at(1).unwrap(), "4711");
     assert_eq!(caps.at(2).unwrap(), "5490");
 
-    let regex = path_utils::create_regex("foo/*/:uid/bar/:groupid");
-    let caps = regex.captures("foo/test/4711/bar/5490").unwrap();
+    let matcher: Matcher = "foo/*/:uid/bar/:groupid".into();
+    let caps = matcher.captures("foo/test/4711/bar/5490").unwrap();
 
+    assert_eq!(matcher.path(), "foo/*/:uid/bar/:groupid(\\.:format)?");
     assert_eq!(caps.at(1).unwrap(), "4711");
     assert_eq!(caps.at(2).unwrap(), "5490");
 
-    let regex = path_utils::create_regex("foo/**/:uid/bar/:groupid");
-    let caps = regex.captures("foo/test/another/4711/bar/5490").unwrap();
+    let matcher: Matcher = "foo/**/:uid/bar/:groupid".into();
+    let caps = matcher.captures("foo/test/another/4711/bar/5490").unwrap();
 
+    assert_eq!(matcher.path(), "foo/**/:uid/bar/:groupid(\\.:format)?");
     assert_eq!(caps.at(1).unwrap(), "4711");
     assert_eq!(caps.at(2).unwrap(), "5490");
+
+    let matcher: Matcher = "foo/**/:format/bar/:groupid".into();
+    let caps = matcher.captures("foo/test/another/4711/bar/5490").unwrap();
+
+    assert_eq!(matcher.path(), "foo/**/:format/bar/:groupid");
+    assert_eq!(caps.name("format").unwrap(), "4711");
+    assert_eq!(caps.name("groupid").unwrap(), "5490");
 }
 
 #[test]
 fn creates_valid_regex_for_routes () {
-    let regex1 = path_utils::create_regex("foo/:uid/bar/:groupid");
-    let regex2 = path_utils::create_regex("foo/*/bar");
-    let regex3 = path_utils::create_regex("foo/**/bar");
+    let regex1: Matcher = "foo/:uid/bar/:groupid".into();
+    let regex2: Matcher = "foo/*/bar".into();
+    let regex3: Matcher = "foo/**/bar".into();
 
     assert_eq!(regex1.is_match("foo/4711/bar/5490"), true);
     assert_eq!(regex1.is_match("foo/4711/bar/5490?foo=true&bar=false"), true);
@@ -182,8 +180,6 @@ fn creates_valid_regex_for_routes () {
 
 #[test]
 fn can_match_var_routes () {
-    use hyper::method::Method;
-
     let route_store = &mut Router::new();
     let handler = middleware! { "hello from foo" };
 
@@ -192,15 +188,7 @@ fn can_match_var_routes () {
     route_store.add_route(Method::Get, "/file/:format/:file", handler);
 
     let route_result = route_store.match_route(&Method::Get, "/foo/4711").unwrap();
-    let route = route_result.route;
-
     assert_eq!(route_result.param("userid"), "4711");
-
-    // assert the route has identified the variable
-    assert_eq!(route.variables.len(), 2);
-    assert_eq!(route.variables["userid"], 0);
-    // routes have an implicit format variable
-    assert_eq!(route.variables["format"], 1);
 
     let route_result = route_store.match_route(&Method::Get, "/bar/4711");
     assert!(route_result.is_none());
@@ -228,7 +216,7 @@ fn can_match_var_routes () {
 
     let route_result = route_result.unwrap();
     assert_eq!(route_result.param("userid"), "John%20Doe");
-    assert_eq!(route_result.param("format"), ".json");
+    assert_eq!(route_result.param("format"), "json");
 
     // ensure format works with queries
     let route_result = route_store.match_route(&Method::Get,
@@ -238,7 +226,13 @@ fn can_match_var_routes () {
     let route_result = route_result.unwrap();
     // NOTE: `.param` doesn't cover query params currently
     assert_eq!(route_result.param("userid"), "5490,1234");
-    assert_eq!(route_result.param("format"), ".csv");
+    assert_eq!(route_result.param("format"), "csv");
+
+    // ensure format works with no format
+    let route_result = route_store.match_route(&Method::Get,
+                                               "/foo/5490,1234?foo=true&bar=false").unwrap();
+
+    assert_eq!(route_result.param("format"), "");
 
     // ensure format works if defined by user
     let route_result = route_store.match_route(&Method::Get, "/file/markdown/something?foo=true");
@@ -250,3 +244,76 @@ fn can_match_var_routes () {
     assert_eq!(route_result.param("format"), "markdown");
 }
 
+#[test]
+fn regex_path() {
+    use regex::Regex;
+
+    let route_store = &mut Router::new();
+    let handler = middleware! { "hello from foo" };
+
+    let regex = Regex::new("/(foo|bar)").unwrap();
+    route_store.add_route(Method::Get, regex, handler);
+
+    let route_result = route_store.match_route(&Method::Get, "/foo");
+    assert!(route_result.is_some());
+
+    let route_result = route_store.match_route(&Method::Get, "/bar");
+    assert!(route_result.is_some());
+
+    let route_result = route_store.match_route(&Method::Get, "/bar?foo");
+    assert!(route_result.is_some());
+
+    let route_result = route_store.match_route(&Method::Get, "/baz");
+    assert!(route_result.is_none());
+}
+
+#[test]
+fn regex_path_named() {
+    use regex::Regex;
+
+    let route_store = &mut Router::new();
+    let handler = middleware! { "hello from foo" };
+
+    let regex = Regex::new("/(?P<a>foo|bar)/b").unwrap();
+    route_store.add_route(Method::Get, regex, handler);
+
+    let route_result = route_store.match_route(&Method::Get, "/foo/b");
+    assert!(route_result.is_some());
+
+    let route_result = route_result.unwrap();
+    assert_eq!(route_result.param("a"), "foo");
+
+    let route_result = route_store.match_route(&Method::Get, "/bar/b");
+    assert!(route_result.is_some());
+
+    let route_result = route_result.unwrap();
+    assert_eq!(route_result.param("a"), "bar");
+
+    let route_result = route_store.match_route(&Method::Get, "/baz/b");
+    assert!(route_result.is_none());
+}
+
+#[test]
+fn ignores_querystring() {
+    use regex::Regex;
+
+    let route_store = &mut Router::new();
+    let handler = middleware! { "hello from foo" };
+
+    let regex = Regex::new("/(?P<a>foo|bar)/b").unwrap();
+    route_store.add_route(Method::Get, regex, handler);
+    route_store.add_route(Method::Get, "/:foo", handler);
+
+    // Should ignore the querystring
+    let route_result = route_store.match_route(&Method::Get, "/moo?foo");
+    assert!(route_result.is_some());
+
+    let route_result = route_result.unwrap();
+    assert_eq!(route_result.param("foo"), "moo");
+
+    let route_result = route_store.match_route(&Method::Get, "/bar/b?foo");
+    assert!(route_result.is_some());
+
+    let route_result = route_result.unwrap();
+    assert_eq!(route_result.param("a"), "bar");
+}

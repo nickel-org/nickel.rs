@@ -1,33 +1,17 @@
 [package]
 
 name = "nickel"
-version = "0.1.0"
-authors = [ "christoph@thoughtram.io" ]
+version = "0.2.1"
+authors = [ "Christoph Burgdorf <christoph@thoughtram.io>",
+            "Kevin Butler <haqkrs@gmail.com>",
+            "Simon Persson <simon@flaskpost.org>" ]
 description = "An express.js inspired web framework"
 license = "MIT"
 
-[profile.dev]
-debug = false
+repository = "https://github.com/nickel-org/nickel.rs"
+readme = "README.md"
+keywords = ["nickel", "server", "web", "express"]
 
-[profile.test]
-debug = false
-
-[lib]
-
-name = "nickel"
-path = "src/lib.rs"
-
-[dependencies.rust-mustache]
-
-git = "https://github.com/nickel-org/rust-mustache.git"
-
-[dependencies.groupable]
-
-git = "https://github.com/nickel-org/groupable-rs"
-
-[dependencies.nickel_macros]
-
-path = "nickel_macros"
 
 [dependencies]
 url = "*"
@@ -35,16 +19,17 @@ time = "*"
 typemap = "*"
 plugin = "*"
 regex = "*"
-regex_macros = "*"
 rustc-serialize = "*"
 log = "*"
 hyper = "*"
+groupable = "*"
+mustache = "*"
+lazy_static = "*"
 
 [[example]]
 
 name = "example"
 path = "examples/example.rs"
-
 
 [[example]]
 
