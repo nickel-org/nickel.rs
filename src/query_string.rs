@@ -10,36 +10,47 @@ use typemap::Key;
 
 type QueryStore = HashMap<String, Vec<String>>;
 
+#[derive(Debug, PartialEq, Eq)]
+pub struct Query(QueryStore);
+
+impl Query {
+    pub fn get(&self, key: &str) -> Option<&[String]> {
+        self.0.get(key).map(|v| &**v)
+    }
+
+    pub fn get_or(&self, key: &str, default: &str) -> Cow<[String]> {
+        match self.0.get(key) {
+            Some(result) => Cow::Borrowed(result),
+            None => Cow::Owned(vec![default.to_string()])
+        }
+    }
+}
+
 // Plugin boilerplate
 struct QueryStringParser;
-impl Key for QueryStringParser { type Value = QueryStore; }
+impl Key for QueryStringParser { type Value = Query; }
 
 impl<'a, 'b, 'k> Plugin<Request<'a, 'b, 'k>> for QueryStringParser {
     type Error = ();
 
-    fn eval(req: &mut Request) -> Result<QueryStore, ()> {
+    fn eval(req: &mut Request) -> Result<Query, ()> {
         Ok(parse(&req.origin.uri))
     }
 }
 
 pub trait QueryString {
-    fn query(&mut self, key: &str, default: &str) -> Cow<[String]>;
+    fn query(&mut self) -> &Query;
 }
 
 impl<'a, 'b, 'k> QueryString for Request<'a, 'b, 'k> {
-    fn query(&mut self, key: &str, default: &str) -> Cow<[String]> {
-        let store = self.get_ref::<QueryStringParser>()
-                        .ok()
-                        .expect("Bug: QueryStringParser returned None");
-
-        match store.get(key) {
-            Some(result) => Cow::Borrowed(result),
-            _ => Cow::Owned(vec![default.to_string()])
-        }
+    fn query(&mut self) -> &Query {
+        self.get_ref::<QueryStringParser>()
+            .ok()
+            .expect("Bug: QueryStringParser returned None")
     }
 }
 
-fn parse(origin: &RequestUri) -> QueryStore {
+fn parse(origin: &RequestUri) -> Query {
     let f = |query: Option<&String>| query.map(|q| urlencoded::parse(&*q));
 
     let result = match *origin {
@@ -53,7 +64,7 @@ fn parse(origin: &RequestUri) -> QueryStore {
         Star | Authority(..) => None
     };
 
-    result.unwrap_or_else(|| HashMap::new())
+    Query(result.unwrap_or_else(|| HashMap::new()))
 }
 
 #[test]
@@ -61,9 +72,11 @@ fn splits_and_parses_an_url() {
     use url::Url;
     let t = |url| {
         let store = parse(&url);
-        assert_eq!(store["foo"], vec!["bar".to_string()]);
-        assert_eq!(store["message"],
-                        vec!["hello".to_string(), "world".to_string()]);
+        assert_eq!(store.get("foo"), Some(&["bar".to_string()][..]));
+        assert_eq!(store.get_or("foo", "other"), &["bar".to_string()][..]);
+        assert_eq!(store.get_or("bar", "other"), &["other".to_string()][..]);
+        assert_eq!(store.get("message"),
+                        Some(&["hello".to_string(), "world".to_string()][..]));
     };
 
     let raw = "http://www.foo.bar/query/test?foo=bar&message=hello&message=world";
@@ -71,8 +84,8 @@ fn splits_and_parses_an_url() {
 
     t(AbsolutePath("/query/test?foo=bar&message=hello&message=world".to_string()));
 
-    assert_eq!(parse(&Star), HashMap::new());
+    assert_eq!(parse(&Star), Query(HashMap::new()));
 
     let store = parse(&Authority("host.com".to_string()));
-    assert_eq!(store, HashMap::new());
+    assert_eq!(store, Query(HashMap::new()));
 }

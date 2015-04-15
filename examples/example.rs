@@ -85,13 +85,13 @@ fn main() {
     // try calling http://localhost:6767/query?foo=bar
     router.get("/query", middleware! { |request|
         format!("Your foo values in the query string are: {:?}",
-                request.query("foo", "This is only a default value!"))
+                request.query().get_or("foo", "This is only a default value!"))
     });
 
     // try calling http://localhost:6767/strict?state=valid
     // then try calling http://localhost:6767/strict?state=invalid
     router.get("/strict", middleware! { |request|
-        if &*request.query("state", "invalid")[0] != "valid" {
+        if &*request.query().get_or("state", "invalid")[0] != "valid" {
             (BadRequest, "Error Parsing JSON")
         } else {
             (StatusCode::Ok, "Congratulations on conforming!")
