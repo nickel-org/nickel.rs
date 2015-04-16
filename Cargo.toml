@@ -12,6 +12,8 @@ repository = "https://github.com/nickel-org/nickel.rs"
 readme = "README.md"
 keywords = ["nickel", "server", "web", "express"]
 
+[features]
+"nightly" = ["hyper/nightly"]
 
 [dependencies]
 url = "*"
