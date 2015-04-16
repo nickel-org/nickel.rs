@@ -12,7 +12,7 @@
 
 use request::Request;
 use response::Response;
-use hyper::status::StatusCode;
+use hyper::status::{StatusCode, StatusClass};
 use std::fmt::Display;
 use hyper::header;
 use hyper::net;
@@ -84,10 +84,12 @@ impl<'a, S: Display> ResponseFinalizer for &'a [S] {
 macro_rules! dual_impl {
     ($view:ty, $alloc:ty, |$s:ident, $res:ident| $b:block) => (
         impl<'a> ResponseFinalizer for $view {
+            #[allow(unused_mut)]
             fn respond<'c>($s, mut $res: Response<'c>) -> MiddlewareResult<'c> $b
         }
 
         impl ResponseFinalizer for $alloc {
+            #[allow(unused_mut)]
             fn respond<'c>($s, mut $res: Response<'c>) -> MiddlewareResult<'c> $b
         }
     )
@@ -102,14 +104,22 @@ dual_impl!(&'a str,
                 res.send(self)
             });
 
-dual_impl!((StatusCode, &'a str),
+dual_impl!((StatusCode, &'static str),
            (StatusCode, String),
             |self, res| {
                 maybe_set_type(&mut res, MediaType::Html);
-                let (status, data) = self;
+                let (status, message) = self;
 
-                res.set_status(status);
-                res.send(data)
+                match status.class() {
+                    StatusClass::ClientError
+                    | StatusClass::ServerError => {
+                        res.error(status, message)
+                    },
+                    _ => {
+                        res.set_status(status);
+                        res.send(message)
+                    }
+                }
             });
 
 dual_impl!((u16, &'a str),
