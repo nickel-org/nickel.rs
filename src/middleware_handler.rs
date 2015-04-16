@@ -95,13 +95,10 @@ macro_rules! dual_impl {
     )
 }
 
-dual_impl!(&'a str,
+dual_impl!(&'static str,
            String,
             |self, res| {
-                maybe_set_type(&mut res, MediaType::Html);
-
-                res.set_status(StatusCode::Ok);
-                res.send(self)
+                (StatusCode::Ok, self).respond(res)
             });
 
 dual_impl!((StatusCode, &'static str),
@@ -122,13 +119,11 @@ dual_impl!((StatusCode, &'static str),
                 }
             });
 
-dual_impl!((u16, &'a str),
+dual_impl!((u16, &'static str),
            (u16, String),
            |self, res| {
-                maybe_set_type(&mut res, MediaType::Html);
-                let (status, data) = self;
-                res.set_status(StatusCode::from_u16(status));
-                res.send(data)
+                let (status, message) = self;
+                (StatusCode::from_u16(status), message).respond(res)
             });
 
 // FIXME: Hyper uses traits for headers, so this needs to be a Vec of
