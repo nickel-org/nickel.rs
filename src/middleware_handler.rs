@@ -61,7 +61,13 @@ impl ResponseFinalizer for () {
 impl ResponseFinalizer for json::Json {
     fn respond<'a>(self, mut res: Response<'a>) -> MiddlewareResult<'a> {
         maybe_set_type(&mut res, MediaType::Json);
-        res.send(json::encode(&self).unwrap())
+        let result = match json::encode(&self) {
+            Ok(data) => (StatusCode::Ok, data),
+            Err(e) => (StatusCode::InternalServerError,
+                       format!("Failed to parse JSON: {}", e))
+        };
+
+        result.respond(res)
     }
 }
 
