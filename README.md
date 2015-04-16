@@ -1,6 +1,6 @@
 nickel.rs
 =======
-
+[![](http://meritbadge.herokuapp.com/nickel)](https://crates.io/crates/nickel)
 [![Join the chat at https://gitter.im/nickel-org/nickel.rs](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nickel-org/nickel.rs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 nickel is supposed to be a simple and lightweight foundation for web applications written in Rust. It's API is inspired by the popular express framework for JavaScript.
