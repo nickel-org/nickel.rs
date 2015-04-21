@@ -31,9 +31,8 @@ impl<'a, 'b, 'k> JsonBody for Request<'a, 'b, 'k> {
         self.get::<JsonBodyParser>().and_then(|parsed|
             json::decode::<T>(&*parsed).map_err(|_err|
                 Rc::new(io::Error::new(ErrorKind::Other,
-                               "Failed to parse JSON"))
-                               // FIXME: change to below when rust#23979 lands
-                               //format!("Failed to parse JSON: {}", err)
+                                   format!("Failed to parse JSON: {}", _err)))
+                               
             )
         )
     }
