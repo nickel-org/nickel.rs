@@ -31,15 +31,18 @@ macro_rules! middleware {
         #[inline(always)]
         fn ignore_unused(_: &Request, _: &Response) {}
 
-        let f: Box<for<'r, 'b, 'a> Fn(&'r mut Request<'b, 'a, 'b>, Response<'a>)
-                                        -> MiddlewareResult<'a> + Send + Sync>
-                    = Box::new(move |$req, $res| {
-                          ignore_unused($req, &$res);
-                          restrict(as_block!({$($b)+}), $res)
-                      });
+        // Inference fails due to thinking it's a (&Request, Response) with
+        // different mutability requirements
+        #[inline(always)]
+        fn restrict_closure<F>(f: F) -> F
+            where F: for<'r, 'b, 'a>
+                        Fn(&'r mut Request<'b, 'a, 'b>, Response<'a>)
+                            -> MiddlewareResult<'a> + Send + Sync { f }
 
-        f
-
+        restrict_closure(move |$req, $res| {
+            ignore_unused($req, &$res);
+            restrict(as_block!({$($b)+}), $res)
+        })
     }};
     (|$req:ident| $($b:tt)+) => { middleware!(|$req, res| $($b)+) };
     ($($b:tt)+) => { middleware!(|req, res| $($b)+) };

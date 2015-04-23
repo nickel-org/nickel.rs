@@ -22,13 +22,7 @@ use mimes::{MediaType, get_media_type};
 use std::io::Write;
 use std::ops::Fn;
 
-impl Middleware for for<'a> fn(&mut Request, Response<'a>) -> MiddlewareResult<'a> {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a, 'b>, res: Response<'a>) -> MiddlewareResult<'a> {
-        (*self)(req, res)
-    }
-}
-
-impl Middleware for Box<for<'r, 'b, 'a> Fn(&'r mut Request<'b, 'a, 'b>, Response<'a>) -> MiddlewareResult<'a> + Send + Sync> {
+impl<T> Middleware for T where T: for<'r, 'b, 'a> Fn(&'r mut Request<'b, 'a, 'b>, Response<'a>) -> MiddlewareResult<'a> + Send + Sync + 'static {
     fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a, 'b>, res: Response<'a>) -> MiddlewareResult<'a> {
         (*self)(req, res)
     }
