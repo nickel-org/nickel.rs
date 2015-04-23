@@ -12,7 +12,7 @@
 
 use request::Request;
 use response::Response;
-use hyper::status::StatusCode;
+use hyper::status::{StatusCode, StatusClass};
 use std::fmt::Display;
 use hyper::header;
 use hyper::net;
@@ -61,7 +61,13 @@ impl ResponseFinalizer for () {
 impl ResponseFinalizer for json::Json {
     fn respond<'a>(self, mut res: Response<'a>) -> MiddlewareResult<'a> {
         maybe_set_type(&mut res, MediaType::Json);
-        res.send(json::encode(&self).unwrap())
+        let result = match json::encode(&self) {
+            Ok(data) => (StatusCode::Ok, data),
+            Err(e) => (StatusCode::InternalServerError,
+                       format!("Failed to parse JSON: {}", e))
+        };
+
+        result.respond(res)
     }
 }
 
@@ -84,41 +90,46 @@ impl<'a, S: Display> ResponseFinalizer for &'a [S] {
 macro_rules! dual_impl {
     ($view:ty, $alloc:ty, |$s:ident, $res:ident| $b:block) => (
         impl<'a> ResponseFinalizer for $view {
+            #[allow(unused_mut)]
             fn respond<'c>($s, mut $res: Response<'c>) -> MiddlewareResult<'c> $b
         }
 
         impl ResponseFinalizer for $alloc {
+            #[allow(unused_mut)]
             fn respond<'c>($s, mut $res: Response<'c>) -> MiddlewareResult<'c> $b
         }
     )
 }
 
-dual_impl!(&'a str,
+dual_impl!(&'static str,
            String,
             |self, res| {
-                maybe_set_type(&mut res, MediaType::Html);
-
-                res.set_status(StatusCode::Ok);
-                res.send(self)
+                (StatusCode::Ok, self).respond(res)
             });
 
-dual_impl!((StatusCode, &'a str),
+dual_impl!((StatusCode, &'static str),
            (StatusCode, String),
             |self, res| {
                 maybe_set_type(&mut res, MediaType::Html);
-                let (status, data) = self;
+                let (status, message) = self;
 
-                res.set_status(status);
-                res.send(data)
+                match status.class() {
+                    StatusClass::ClientError
+                    | StatusClass::ServerError => {
+                        res.error(status, message)
+                    },
+                    _ => {
+                        res.set_status(status);
+                        res.send(message)
+                    }
+                }
             });
 
-dual_impl!((u16, &'a str),
+dual_impl!((u16, &'static str),
            (u16, String),
            |self, res| {
-                maybe_set_type(&mut res, MediaType::Html);
-                let (status, data) = self;
-                res.set_status(StatusCode::from_u16(status));
-                res.send(data)
+                let (status, message) = self;
+                (StatusCode::from_u16(status), message).respond(res)
             });
 
 // FIXME: Hyper uses traits for headers, so this needs to be a Vec of

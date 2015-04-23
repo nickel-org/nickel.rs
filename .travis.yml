@@ -4,3 +4,7 @@ sudo: false
 cache:
   directories:
       - target
+
+script:
+    - cargo build --features nightly
+    - cargo test --features nightly
