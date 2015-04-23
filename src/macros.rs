@@ -28,13 +28,18 @@ macro_rules! middleware {
             r.respond(res)
         }
 
-        #[allow(unused_variables)]
-        fn f<'a>($req: &mut Request, $res: Response<'a>)
-                -> MiddlewareResult<'a> {
-            restrict(as_block!({$($b)+}), $res)
-        }
+        #[inline(always)]
+        fn ignore_unused(_: &Request, _: &Response) {}
 
-        middleware!(@f)
+        let f: Box<for<'r, 'b, 'a> Fn(&'r mut Request<'b, 'a, 'b>, Response<'a>)
+                                        -> MiddlewareResult<'a> + Send + Sync>
+                    = Box::new(move |$req, $res| {
+                          ignore_unused($req, &$res);
+                          restrict(as_block!({$($b)+}), $res)
+                      });
+
+        f
+
     }};
     (|$req:ident| $($b:tt)+) => { middleware!(|$req, res| $($b)+) };
     ($($b:tt)+) => { middleware!(|req, res| $($b)+) };

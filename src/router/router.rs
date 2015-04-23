@@ -181,11 +181,10 @@ fn creates_valid_regex_for_routes () {
 #[test]
 fn can_match_var_routes () {
     let route_store = &mut Router::new();
-    let handler = middleware! { "hello from foo" };
 
-    route_store.add_route(Method::Get, "/foo/:userid", handler);
-    route_store.add_route(Method::Get, "/bar", handler);
-    route_store.add_route(Method::Get, "/file/:format/:file", handler);
+    route_store.add_route(Method::Get, "/foo/:userid", middleware! { "hello from foo" });
+    route_store.add_route(Method::Get, "/bar", middleware! { "hello from foo" });
+    route_store.add_route(Method::Get, "/file/:format/:file", middleware! { "hello from foo" });
 
     let route_result = route_store.match_route(&Method::Get, "/foo/4711").unwrap();
     assert_eq!(route_result.param("userid"), "4711");
@@ -249,10 +248,9 @@ fn regex_path() {
     use regex::Regex;
 
     let route_store = &mut Router::new();
-    let handler = middleware! { "hello from foo" };
 
     let regex = Regex::new("/(foo|bar)").unwrap();
-    route_store.add_route(Method::Get, regex, handler);
+    route_store.add_route(Method::Get, regex, middleware! { "hello from foo" });
 
     let route_result = route_store.match_route(&Method::Get, "/foo");
     assert!(route_result.is_some());
@@ -272,10 +270,9 @@ fn regex_path_named() {
     use regex::Regex;
 
     let route_store = &mut Router::new();
-    let handler = middleware! { "hello from foo" };
 
     let regex = Regex::new("/(?P<a>foo|bar)/b").unwrap();
-    route_store.add_route(Method::Get, regex, handler);
+    route_store.add_route(Method::Get, regex, middleware! { "hello from foo" });
 
     let route_result = route_store.match_route(&Method::Get, "/foo/b");
     assert!(route_result.is_some());
@@ -298,11 +295,10 @@ fn ignores_querystring() {
     use regex::Regex;
 
     let route_store = &mut Router::new();
-    let handler = middleware! { "hello from foo" };
 
     let regex = Regex::new("/(?P<a>foo|bar)/b").unwrap();
-    route_store.add_route(Method::Get, regex, handler);
-    route_store.add_route(Method::Get, "/:foo", handler);
+    route_store.add_route(Method::Get, regex, middleware! { "hello from foo" });
+    route_store.add_route(Method::Get, "/:foo", middleware! { "hello from foo" });
 
     // Should ignore the querystring
     let route_result = route_store.match_route(&Method::Get, "/moo?foo");
