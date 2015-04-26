@@ -36,7 +36,12 @@ impl Server {
     pub fn serve<T: ToSocketAddrs>(self, addr: T) {
         let arc = ArcServer(Arc::new(self));
         let server = HyperServer::http(arc);
-        let _ = server.listen(addr);
+        let _ = server.listen(addr).unwrap();
     }
 }
 
+#[test]
+#[should_panic]
+fn invalid_listen_addr() {
+    Server::new(MiddlewareStack::new()).serve("invalid_addr");
+}
