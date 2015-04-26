@@ -20,18 +20,11 @@ use middleware::{Middleware, MiddlewareResult, Halt, Continue};
 use serialize::json;
 use mimes::{MediaType, get_media_type};
 use std::io::Write;
+use std::ops::Fn;
 
-impl Middleware for for<'a> fn(&mut Request, Response<'a>) -> MiddlewareResult<'a> {
+impl<T> Middleware for T where T: for<'r, 'b, 'a> Fn(&'r mut Request<'b, 'a, 'b>, Response<'a>) -> MiddlewareResult<'a> + Send + Sync + 'static {
     fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a, 'b>, res: Response<'a>) -> MiddlewareResult<'a> {
         (*self)(req, res)
-    }
-}
-
-impl<T> Middleware for (for <'a> fn(&mut Request, Response<'a>, &T) -> MiddlewareResult<'a>, T)
-        where T: Send + Sync + 'static {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a, 'b>, res: Response<'a>) -> MiddlewareResult<'a> {
-        let (f, ref data) = *self;
-        f(req, res, data)
     }
 }
 

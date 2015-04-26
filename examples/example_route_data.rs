@@ -1,25 +1,13 @@
-extern crate nickel;
+#[macro_use] extern crate nickel;
 
-use nickel::{Nickel, Request, Response, HttpRouter, MiddlewareResult};
+use nickel::{Nickel, HttpRouter};
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering::Relaxed;
 
-struct Logger {
-    visits: AtomicUsize
-}
-
 fn main() {
     let mut server = Nickel::new();
+    let visits = AtomicUsize::new(0);
 
-    fn root_handler<'a>(_: &mut Request, response: Response<'a>, logger: &Logger)
-            -> MiddlewareResult<'a> {
-        let text = format!("{}", logger.visits.fetch_add(1, Relaxed));
-        response.send(text)
-    }
-
-    // issue #20178
-    let rhandler: for <'a> fn(&mut Request, Response<'a>, &Logger) -> MiddlewareResult<'a> = root_handler;
-
-    server.get("/", (rhandler, Logger{visits: AtomicUsize::new(0)}));
+    server.get("/", middleware! { format!("{}", visits.fetch_add(1, Relaxed)) });
     server.listen("127.0.0.1:6767");
 }

@@ -18,21 +18,22 @@ pub trait HttpRouter {
     /// use regex::Regex;
     ///
     /// fn main() {
-    ///     let read_handler = middleware! { "Get request! "};
-    ///     let modify_handler = middleware! { |request|
-    ///         format!("Method is: {}", request.origin.method)
-    ///     };
-    ///
     ///     let mut server = Nickel::new();
     ///
-    ///     server.add_route(Get, "/foo", read_handler);
-    ///     server.add_route(Post, "/foo", modify_handler);
-    ///     server.add_route(Put, "/foo", modify_handler);
-    ///     server.add_route(Delete, "/foo", modify_handler);
+    ///     server.add_route(Get, "/foo", middleware! { "Get request! "});
+    ///     server.add_route(Post, "/foo", middleware! { |request|
+    ///         format!("Method is: {}", request.origin.method)
+    ///     });
+    ///     server.add_route(Put, "/foo", middleware! { |request|
+    ///         format!("Method is: {}", request.origin.method)
+    ///     });
+    ///     server.add_route(Delete, "/foo", middleware! { |request|
+    ///         format!("Method is: {}", request.origin.method)
+    ///     });
     ///
     ///     // Regex path
     ///     let regex = Regex::new("/(foo|bar)").unwrap();
-    ///     server.add_route(Get, regex, read_handler);
+    ///     server.add_route(Get, regex, middleware! { "Regex Get request! "});
     /// }
     /// ```
     fn add_route<M: Into<Matcher>, H: Middleware>(&mut self, Method, M, H);
