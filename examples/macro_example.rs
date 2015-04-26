@@ -39,7 +39,7 @@ fn main() {
     let mut server = Nickel::new();
 
     // middleware is optional and can be registered with `utilize`
-    server.utilize(middleware!(@logger));
+    server.utilize(logger);
 
     // go to http://localhost:6767/thoughtram_logo_brain.png to see static file serving in action
     server.utilize(StaticFilesHandler::new("examples/assets/"));

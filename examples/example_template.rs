@@ -12,7 +12,7 @@ fn main() {
         res.render("examples/assets/template.tpl", &data)
     }
 
-    server.get("/", middleware!(@handler));
+    server.get("/", handler);
 
     server.listen("127.0.0.1:6767");
 }

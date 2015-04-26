@@ -39,11 +39,6 @@ macro_rules! router {
 /// ```
 #[macro_export]
 macro_rules! middleware {
-    (@$f:ident) => {{
-        // issue #20178 with a lame interaction from #23630. *grumble*
-        let f : for<'a> fn(&mut Request, Response<'a>) -> MiddlewareResult<'a> = $f;
-        f
-    }};
     (|$req:ident, $res:ident| $($b:tt)+) => {{
         use $crate::{MiddlewareResult,ResponseFinalizer, Response, Request};
 
