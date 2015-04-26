@@ -12,6 +12,31 @@ macro_rules! router {
     )
 }
 
+/// Macro to reduce the boilerplate required for using unboxed
+/// closures as `Middleware` due to current type inference behaviour.
+///
+/// In future, the macro should hopefully be able to be removed while
+/// having minimal changes to the closure's code.
+///
+/// # Examples
+/// ```rust,no_run
+/// # #[macro_use] extern crate nickel;
+/// # fn main() {
+/// use nickel::{Nickel, HttpRouter};
+/// use std::sync::atomic::{AtomicUsize, Ordering};
+///
+/// let mut server = Nickel::new();
+///
+/// // Some shared resource between requests, must be `Sync + Send`
+/// let visits = AtomicUsize::new(0);
+///
+/// server.get("/", middleware! { |_req, _res|
+///     format!("{}", visits.fetch_add(1, Ordering::Relaxed))
+/// });
+///
+/// server.listen("127.0.0.1:6767");
+/// # }
+/// ```
 #[macro_export]
 macro_rules! middleware {
     (@$f:ident) => {{
@@ -48,4 +73,6 @@ macro_rules! middleware {
     ($($b:tt)+) => { middleware!(|req, res| $($b)+) };
 }
 
-#[macro_export] macro_rules! as_block { ($b:block) => ( $b ) }
+#[doc(hidden)]
+#[macro_export]
+macro_rules! as_block { ($b:block) => ( $b ) }
