@@ -55,7 +55,7 @@ mod static_files_handler;
 mod json_body_parser;
 pub mod mimes;
 mod query_string;
-mod urlencoded;
+pub mod urlencoded;
 mod nickel_error;
 mod default_error_handler;
 
