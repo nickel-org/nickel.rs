@@ -107,8 +107,8 @@ fn main() {
         // try calling http://localhost:6767/query?foo=bar
         get "/query" => |request, response| {
             let query = request.query();
-            let foo = query.get_or("foo", "This is only a default value");
-            let bar = query.get_or("bar", "This is only a default value");
+            let foo = query.get("foo").unwrap_or("This is only a default value");
+            let bar = query.get("bar").unwrap_or("This is only a default value");
             let text = format!("<p>Your foo values in the query string are: {:?}\
                                 <p>Your bar values are: {:?}",
                                foo, bar);

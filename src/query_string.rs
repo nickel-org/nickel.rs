@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::collections::HashMap;
 use request::Request;
 use urlencoded;
@@ -14,15 +13,19 @@ type QueryStore = HashMap<String, Vec<String>>;
 pub struct Query(QueryStore);
 
 impl Query {
-    pub fn get(&self, key: &str) -> Option<&[String]> {
-        self.0.get(key).map(|v| &**v)
+    /// Retrieves the first value from the query for `key`, or `None` if not present.
+    ///
+    /// # Notes
+    /// There may be multiple values per key, if all of the values for a given
+    /// `key` are required, then use `all`.
+    //FIXME: Implement via Indexing whenever IndexGet is supported
+    pub fn get(&self, key: &str) -> Option<&str> {
+        self.0.get(key).and_then(|v| v.first().map(|s| &**s))
     }
 
-    pub fn get_or(&self, key: &str, default: &str) -> Cow<[String]> {
-        match self.0.get(key) {
-            Some(result) => Cow::Borrowed(result),
-            None => Cow::Owned(vec![default.to_string()])
-        }
+    /// Retrieve all values from the query for `key`, or `None` if none are present.
+    pub fn all(&self, key: &str) -> Option<&[String]> {
+        self.0.get(key).map(|v| &**v)
     }
 }
 
@@ -39,6 +42,7 @@ impl<'a, 'b, 'k> Plugin<Request<'a, 'b, 'k>> for QueryStringParser {
 }
 
 pub trait QueryString {
+    /// Retrieve the query from the current `Request`.
     fn query(&mut self) -> &Query;
 }
 
@@ -72,11 +76,12 @@ fn splits_and_parses_an_url() {
     use url::Url;
     let t = |url| {
         let store = parse(&url);
-        assert_eq!(store.get("foo"), Some(&["bar".to_string()][..]));
-        assert_eq!(store.get_or("foo", "other"), &["bar".to_string()][..]);
-        assert_eq!(store.get_or("bar", "other"), &["other".to_string()][..]);
-        assert_eq!(store.get("message"),
+        assert_eq!(store.get("foo"), Some("bar"));
+        assert_eq!(store.get("foo").unwrap_or("other"), "bar");
+        assert_eq!(store.get("bar").unwrap_or("other"), "other");
+        assert_eq!(store.all("message"),
                         Some(&["hello".to_string(), "world".to_string()][..]));
+        assert_eq!(store.all("car"), None);
     };
 
     let raw = "http://www.foo.bar/query/test?foo=bar&message=hello&message=world";
