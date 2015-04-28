@@ -33,7 +33,7 @@ pub use static_files_handler::StaticFilesHandler;
 pub use favicon_handler::FaviconHandler;
 pub use default_error_handler::DefaultErrorHandler;
 pub use json_body_parser::JsonBody;
-pub use query_string::QueryString;
+pub use query_string::{QueryString, Query};
 pub use router::{Router, Route, RouteResult, HttpRouter};
 pub use nickel_error::NickelError;
 pub use mimes::{get_media_type, MediaType};
