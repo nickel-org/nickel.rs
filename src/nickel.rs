@@ -148,7 +148,7 @@ impl Nickel {
             (StatusCode::NotFound, "File Not Found")
         });
 
-        println!("Listening on http://{}", addr);
+        println!("Listening on https://{}", addr);
         println!("Ctrl-C to shutdown server");
 
         Server::new(self.middleware_stack).serve_https(addr, cert, key);
