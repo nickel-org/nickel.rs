@@ -43,5 +43,5 @@ impl Server {
 #[test]
 #[should_panic]
 fn invalid_listen_addr() {
-    Server::new(MiddlewareStack::new()).serve("invalid_addr");
+    Server::new(MiddlewareStack::new()).serve("127.0.0.1.6667");
 }

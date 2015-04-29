@@ -122,7 +122,11 @@ impl Nickel {
         Router::new()
     }
 
-    /// Bind and listen for connections on the given host and port
+    /// Bind and listen for connections on the given host and port.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `addr` is an invalid `SocketAddr`.
     ///
     /// # Examples
     /// ```{rust,no_run}
