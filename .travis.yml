@@ -5,6 +5,17 @@ cache:
   directories:
       - target
 
+rust:
+  - nightly
+  - beta
+
+before_script:
+  - git clone --depth 1 https://github.com/huonw/travis-cargo
+  - ln -s ./travis-cargo/travis-cargo.py tc
+
 script:
-    - cargo build --features nightly
-    - cargo test --features nightly
+  - |
+      ./tc cargo build &&
+      ./tc cargo test &&
+      ./tc cargo bench &&
+      ./tc cargo doc

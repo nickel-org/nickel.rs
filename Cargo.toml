@@ -13,7 +13,7 @@ readme = "README.md"
 keywords = ["nickel", "server", "web", "express"]
 
 [features]
-"nightly" = ["hyper/nightly"]
+unstable = ["hyper/nightly"]
 
 [dependencies]
 url = "*"
