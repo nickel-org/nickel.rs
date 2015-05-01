@@ -1,3 +1,24 @@
+<a name="v0.3.0"></a>
+## v0.3.0 (2015-05-01)
+
+
+#### Bug Fixes
+
+* **query**  allow multiple query params alive at once ([1e453409](https://github.com/nickel-org/nickel.rs/commit/1e453409ffbefddcb6015fb47ab388c7bc21c698))
+* **json**  return descriptive errors on failures in json_as ([b4309bec](https://github.com/nickel-org/nickel.rs/commit/b4309beceb2d9abdb255665fcf95d7d923183e0b))
+* **nightly**  add nightly feature flag ([4bcd44aa](https://github.com/nickel-org/nickel.rs/commit/4bcd44aaa558751d070c1d598963362abbea56f4))
+* **macros**  allow middleware! to bind response mutably ([136d4557](https://github.com/nickel-org/nickel.rs/commit/136d4557d26d40d2a2231effa72a739b73e94c27))
+* **server**  ensure panic on invalid listen addr ([e218287c](https://github.com/nickel-org/nickel.rs/commit/e218287c96064ee7af4e5f899ae186b048696048))
+* **travis**  update for breaking change to travis-cargo ([7cb48149](https://github.com/nickel-org/nickel.rs/commit/7cb48149ae1b6ce46654f467f3f6644913b8b531))
+* **middleware**  fix the default handler so that custom error handlers are used ([45036f75](https://github.com/nickel-org/nickel.rs/commit/45036f75f23c1760c9f7c2f3bae71cfb40c04b56))
+
+#### Features
+
+* **unboxed_closures**  allow unboxed closures via middleware macro ([c635813a](https://github.com/nickel-org/nickel.rs/commit/c635813aad9ec3016171b936f694f46dcb725ef6))
+* **travis**  test beta and nightly on travis ([efcb1604](https://github.com/nickel-org/nickel.rs/commit/efcb1604f0e58711f60713916e929c34cb7c4368))
+
+
+
 <a name="0.2.1"></a>
 ## 0.2.1 (2015-04-13)
 
