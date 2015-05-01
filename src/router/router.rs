@@ -244,6 +244,24 @@ fn can_match_var_routes () {
 }
 
 #[test]
+fn params_lifetime() {
+    let route_store = &mut Router::new();
+    let handler = middleware! { "hello from foo" };
+
+    route_store.add_route(Method::Get, "/file/:format/:file", handler);
+
+    let route_result = route_store.match_route(&Method::Get, "/file/txt/manual");
+    assert!(route_result.is_some());
+
+    // Ensure two params can live without borrowck problems
+    let route_result = route_result.unwrap();
+    let format = route_result.param("format");
+    let file = route_result.param("file");
+    assert_eq!(format, "txt");
+    assert_eq!(file, "manual");
+}
+
+#[test]
 fn regex_path() {
     use regex::Regex;
 
