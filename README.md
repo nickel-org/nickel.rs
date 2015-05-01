@@ -1,5 +1,6 @@
 nickel.rs
 =======
+[![Build Status](https://travis-ci.org/nickel-org/nickel.rs.png?branch=master)](https://travis-ci.org/nickel-org/nickel.rs)
 [![](http://meritbadge.herokuapp.com/nickel)](https://crates.io/crates/nickel)
 [![Join the chat at https://gitter.im/nickel-org/nickel.rs](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nickel-org/nickel.rs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
@@ -14,10 +15,6 @@ Some of the features are:
 * double wildcard routes: `/a/**/route`
 * middleware
     * static file support
-
-
-### Status
-[![Build Status](https://travis-ci.org/nickel-org/nickel.rs.png?branch=master)](https://travis-ci.org/nickel-org/nickel.rs)
 
 ##[Jump to the nickel.rs website](http://nickel.rs)
 
