@@ -17,7 +17,7 @@ use std::io::{Read, Write, copy};
 use std::fs::File;
 use {NickelError, Halt, MiddlewareResult, AsBytes};
 
-pub type TemplateCache = RwLock<HashMap<&'static str, Template>>;
+pub type TemplateCache = RwLock<HashMap<String, Template>>;
 
 ///A container for the response
 pub struct Response<'a, T=Fresh> {
@@ -186,8 +186,8 @@ impl<'a> Response<'a, Fresh> {
     ///     res.render("examples/assets/template.tpl", &data)
     /// }
     /// ```
-    pub fn render<T>(self, path: &'static str, data: &T) -> MiddlewareResult<'a>
-            where T: Encodable {
+    pub fn render<T, P>(self, path: P, data: &T) -> MiddlewareResult<'a>
+            where T: Encodable, P: AsRef<str> + Into<String> {
         fn render<'a, T>(res: Response<'a>, template: &Template, data: &T)
                 -> MiddlewareResult<'a> where T: Encodable {
             let mut stream = try!(res.start());
@@ -198,21 +198,25 @@ impl<'a> Response<'a, Fresh> {
         }
 
         // Fast path doesn't need writer lock
-        if let Some(t) = self.templates.read().unwrap().get(&path) {
+        if let Some(t) = self.templates.read().unwrap().get(path.as_ref()) {
             return render(self, t, data);
         }
 
         // We didn't find the template, get writers lock
         let mut templates = self.templates.write().unwrap();
+
+        // Additional clone required for now as the entry api doesn't give us a key ref
+        let path = path.into();
+
         // Search again incase there was a race to compile the template
-        let template = match templates.entry(path) {
+        let template = match templates.entry(path.clone()) {
             Vacant(entry) => {
-                let mut file = File::open(&Path::new(path))
-                                     .ok().expect(&*format!("Couldn't open the template file: {}", path));
+                let mut file = File::open(&Path::new(&path))
+                                     .ok().expect(&*format!("Couldn't open the template file: {}", &path));
                 let mut raw_template = String::new();
 
                 file.read_to_string(&mut raw_template)
-                    .ok().expect(&*format!("Couldn't open the template file: {}", path));
+                    .ok().expect(&*format!("Couldn't open the template file: {}", &path));
 
                 entry.insert(mustache::compile_str(&*raw_template))
             },
