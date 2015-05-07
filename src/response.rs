@@ -211,14 +211,13 @@ impl<'a> Response<'a, Fresh> {
         // Search again incase there was a race to compile the template
         let template = match templates.entry(path.clone()) {
             Vacant(entry) => {
-                let mut file = File::open(&Path::new(&path))
-                                     .ok().expect(&*format!("Couldn't open the template file: {}", &path));
-                let mut raw_template = String::new();
-
-                file.read_to_string(&mut raw_template)
-                    .ok().expect(&*format!("Couldn't open the template file: {}", &path));
-
-                entry.insert(mustache::compile_str(&*raw_template))
+                match mustache::compile_path(&path) {
+                    Ok(template) => entry.insert(template),
+                    Err(e) => return self.error(InternalServerError,
+                                                format!("Failed to compile template: \
+                                                        {}.\nReason: {:?}",
+                                                        &path, e))
+                }
             },
             Occupied(entry) => entry.into_mut()
         };
