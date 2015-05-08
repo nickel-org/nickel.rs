@@ -49,13 +49,7 @@ Then try `localhost:6767/user/4711` and `localhost:6767/bar`
 
 ### Note about nightly
 
-To build on nightly, you will need to add `--features nightly` to the end of the above commands. Alternatively, if depending on the library you will need to add the following to your `Cargo.toml`.
-
-```
-[dependencies.nickel]
-version = "*"
-features = ["nightly"]
-```
+You no longer need to add `--features nightly` to the end of the above commands or `features = ["nightly"]` to your `Cargo.toml`.
 
 ##Take a look at the example code
 Here is how sample server in `example.rs` looks like:
