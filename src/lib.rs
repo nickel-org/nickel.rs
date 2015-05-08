@@ -38,11 +38,9 @@ pub use router::{Router, Route, RouteResult, HttpRouter};
 pub use nickel_error::NickelError;
 pub use mimes::{get_media_type, MediaType};
 pub use middleware_handler::ResponseFinalizer;
-pub use as_bytes::AsBytes;
 
 #[macro_use] pub mod macros;
 
-mod as_bytes;
 pub mod router;
 mod server;
 mod nickel;
