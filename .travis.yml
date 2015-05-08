@@ -17,4 +17,6 @@ script:
       travis-cargo build &&
       travis-cargo test &&
       travis-cargo bench &&
-      travis-cargo doc
+      travis-cargo doc &&
+      echo "Testing README" &&
+      rustdoc --test README.md -L dependency=./target/debug/deps --extern nickel=./target/debug/libnickel.rlib
