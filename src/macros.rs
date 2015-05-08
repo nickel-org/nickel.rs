@@ -1,15 +1,37 @@
 #[macro_export]
 macro_rules! router {
-    ($($method:ident $path:expr => |$req:ident, $res:ident| $b:block)+) => (
-        {
+    ($($input:tt)*) => {{
             use $crate::HttpRouter;
             let mut router = $crate::Router::new();
 
-            $( router.$method($path, middleware!(|$req, $res| $b)); )+
+            _router_inner!(router $($input)*)
+    }}
+}
 
-            router
-        }
-    )
+#[macro_export]
+macro_rules! _router_inner {
+    ($router:ident)
+        => { $router }; // Base case
+    ($router:ident $method:ident $path:expr => |$req:ident, mut $res:ident| { $($b:tt)* } $($rest:tt)*)
+        => {{
+            $router.$method($path, middleware!(|$req, mut $res| $($b)*));
+
+            _router_inner!($router $($rest)*)
+        }};
+    ($router:ident $method:ident $path:expr => |$req:ident, $res:ident| { $($b:tt)* } $($rest:tt)*)
+        => {{
+            $router.$method($path, middleware!(|$req, $res| $($b)*));
+
+            _router_inner!($router $($rest)*)
+        }};
+    ($router:ident $method:ident $path:expr => |$req:ident| { $($b:tt)* } $($rest:tt)*)
+        => {
+            _router_inner!($router $method $path => |$req, res| { $($b)* } $($rest)*)
+        };
+    ($router:ident $method:ident $path:expr => { $($b:tt)* } $($rest:tt)*)
+        => {
+            _router_inner!($router $method $path => |req, res| { $($b)* } $($rest)*)
+        };
 }
 
 /// Macro to reduce the boilerplate required for using unboxed

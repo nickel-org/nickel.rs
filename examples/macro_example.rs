@@ -6,7 +6,7 @@ extern crate rustc_serialize;
 use std::io::Write;
 use nickel::status::StatusCode::{self, NotFound};
 use nickel::{
-    Nickel, NickelError, Continue, Halt, Request, Response,
+    Nickel, NickelError, Continue, Halt, Request, Response, MediaType,
     QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter, Action
 };
 use regex::Regex;
@@ -49,7 +49,7 @@ fn main() {
     // The return type for a route can be anything that implements `ResponseFinalizer`
     server.utilize(router!(
         // go to http://localhost:6767/user/4711 to see this route in action
-        get "/user/:userid" => |request, response| {
+        get "/user/:userid" => |request| {
             // returning a String
             format!("This is user: {}", request.param("userid"))
         }
@@ -64,6 +64,12 @@ fn main() {
         get "/bar" => |request, response| {
             // returning a http status code and a static string
             (200u16, "This is the /bar handler")
+        }
+
+        // go to http://localhost:6767/content-type to see this route in action
+        get "/content-type" => |request, mut response| {
+            response.content_type(MediaType::Json);
+            "{'foo':'bar'}"
         }
 
         // go to http://localhost:6767/hello/moomah to see this route in action
