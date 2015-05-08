@@ -111,67 +111,37 @@ pub trait HttpRouter {
     }
 
     /// Registers a handler to be used for a specific POST request.
-    /// A handler added through this API will be attached to the default router.
-    /// Consider creating the router middleware manually for advanced functionality.
     ///
     /// Take a look at `get(...)` for a more detailed description.
-    /// # Examples
-    ///
-    /// ```{rust}
-    /// # #[macro_use] extern crate nickel;
-    /// # fn main() {
-    /// use nickel::{Nickel, HttpRouter};
-    ///
-    /// let mut server = Nickel::new();
-    /// server.post("/a/post/request", middleware! {
-    ///     "This matches a POST request to /a/post/request"
-    /// });
-    /// # }
-    /// ```
     fn post<M: Into<Matcher>, H: Middleware>(&mut self, matcher: M, handler: H) {
         self.add_route(Method::Post, matcher, handler);
     }
 
     /// Registers a handler to be used for a specific PUT request.
-    /// A handler added through this API will be attached to the default router.
-    /// Consider creating the router middleware manually for advanced functionality.
     ///
     /// Take a look at `get(...)` for a more detailed description.
-    /// # Examples
-    ///
-    /// ```{rust}
-    /// # #[macro_use] extern crate nickel;
-    /// # fn main() {
-    /// use nickel::{Nickel, HttpRouter};
-    ///
-    /// let mut server = Nickel::new();
-    /// server.put("/a/put/request", middleware! {
-    ///     "This matches a PUT request to /a/put/request"
-    /// });
-    /// # }
-    /// ```
     fn put<M: Into<Matcher>, H: Middleware>(&mut self, matcher: M, handler: H) {
         self.add_route(Method::Put, matcher, handler);
     }
 
     /// Registers a handler to be used for a specific DELETE request.
-    /// A handler added through this API will be attached to the default router.
-    /// Consider creating the router middleware manually for advanced functionality.
     ///
     /// Take a look at `get(...)` for a more detailed description.
-    /// # Examples
-    /// ```{rust}
-    /// # #[macro_use] extern crate nickel;
-    /// # fn main() {
-    /// use nickel::{Nickel, HttpRouter};
-    ///
-    /// let mut server = Nickel::new();
-    /// server.delete("/a/delete/request", middleware! {
-    ///     "This matches a DELETE request to /a/delete/request"
-    /// });
-    /// # }
-    /// ```
     fn delete<M: Into<Matcher>, H: Middleware>(&mut self, matcher: M, handler: H) {
         self.add_route(Method::Delete, matcher, handler);
+    }
+
+    /// Registers a handler to be used for a specific OPTIONS request.
+    ///
+    /// Take a look at `get(...)` for a more detailed description.
+    fn options<M: Into<Matcher>, H: Middleware>(&mut self, matcher: M, handler: H) {
+        self.add_route(Method::Options, matcher, handler);
+    }
+
+    /// Registers a handler to be used for a specific PATCH request.
+    ///
+    /// Take a look at `get(...)` for a more detailed description.
+    fn patch<M: Into<Matcher>, H: Middleware>(&mut self, matcher: M, handler: H) {
+        self.add_route(Method::Patch, matcher, handler);
     }
 }
