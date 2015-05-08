@@ -1,7 +1,8 @@
 use std::net::ToSocketAddrs;
 use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
-use hyper::server::{Request, Response, Handler};
+use hyper::HttpResult;
+use hyper::server::{Request, Response, Handler, Listening};
 use hyper::server::Server as HyperServer;
 
 use middleware::MiddlewareStack;
@@ -33,15 +34,9 @@ impl Server {
         }
     }
 
-    pub fn serve<T: ToSocketAddrs>(self, addr: T) {
+    pub fn serve<T: ToSocketAddrs>(self, addr: T) -> HttpResult<Listening> {
         let arc = ArcServer(Arc::new(self));
         let server = HyperServer::http(arc);
-        let _ = server.listen(addr).unwrap();
+        server.listen(addr)
     }
-}
-
-#[test]
-#[should_panic]
-fn invalid_listen_addr() {
-    Server::new(MiddlewareStack::new()).serve("127.0.0.1.6667");
 }
