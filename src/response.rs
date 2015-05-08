@@ -15,7 +15,7 @@ use mustache::Template;
 use std::io;
 use std::io::{Read, Write, copy};
 use std::fs::File;
-use {NickelError, Halt, MiddlewareResult, AsBytes};
+use {NickelError, Halt, MiddlewareResult, ResponseFinalizer};
 
 pub type TemplateCache = RwLock<HashMap<String, Template>>;
 
@@ -81,12 +81,9 @@ impl<'a> Response<'a, Fresh> {
     ///     res.send("hello world")
     /// }
     /// ```
-    pub fn send<T: AsBytes>(self, text: T) -> MiddlewareResult<'a> {
-        let mut stream = try!(self.start());
-        match stream.write_all(text.as_bytes()) {
-            Ok(()) => Ok(Halt(stream)),
-            Err(e) => stream.bail(format!("Failed to send: {}", e))
-        }
+    #[inline]
+    pub fn send<T: ResponseFinalizer>(self, data: T) -> MiddlewareResult<'a> {
+        data.respond(self)
     }
 
     /// Writes a file to the output.
@@ -244,6 +241,7 @@ impl<'a, 'b> Write for Response<'a, Streaming> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.origin.write(buf)
     }
+
     #[inline(always)]
     fn flush(&mut self) -> io::Result<()> {
         self.origin.flush()

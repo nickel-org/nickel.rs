@@ -54,7 +54,7 @@ macro_rules! middleware__inner {
         #[inline(always)]
         fn restrict<'a, R: ResponseFinalizer>(r: R, res: Response<'a>)
                 -> MiddlewareResult<'a> {
-            r.respond(res)
+            res.send(r)
         }
 
         #[inline(always)]
