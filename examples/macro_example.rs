@@ -61,19 +61,19 @@ fn main() {
         }
 
         // go to http://localhost:6767/bar to see this route in action
-        get "/bar" => |request, response| {
+        get "/bar" => {
             // returning a http status code and a static string
             (200u16, "This is the /bar handler")
         }
 
         // go to http://localhost:6767/content-type to see this route in action
-        get "/content-type" => |request, mut response| {
+        get "/content-type" => |_request, mut response| {
             response.content_type(MediaType::Json);
             "{'foo':'bar'}"
         }
 
         // go to http://localhost:6767/hello/moomah to see this route in action
-        get hello_regex => |request, response| {
+        get hello_regex => |request| {
             format!("Hello {}", request.param("name"))
         }
 
@@ -87,31 +87,31 @@ fn main() {
         // }
 
         // go to http://localhost:6767/private to see this route in action
-        get "/private" => |request, response| {
+        get "/private" => {
             // returning a typed http status and a response body
             (StatusCode::Unauthorized, "This is a private place")
         }
 
         // go to http://localhost:6767/some/crazy/route to see this route in action
-        get "/some/*/route" => |request, response| {
+        get "/some/*/route" => {
             // returning a static string
             "This matches /some/crazy/route but not /some/super/crazy/route"
         }
 
         // go to http://localhost:6767/some/crazy/route to see this route in action
-        get "/a/**/route" => |request, response| {
+        get "/a/**/route" => {
             "This matches /a/crazy/route and also /a/super/crazy/route"
         }
 
         // try it with curl
         // curl 'http://localhost:6767/a/post/request' -H 'Content-Type: application/json;charset=UTF-8'  --data-binary $'{ "firstname": "John","lastname": "Connor" }'
-        post "/a/post/request" => |request, response| {
+        post "/a/post/request" => |request| {
             let person = request.json_as::<Person>().unwrap();
             format!("Hello {} {}", person.firstname, person.lastname)
         }
 
         // try calling http://localhost:6767/query?foo=bar
-        get "/query" => |request, response| {
+        get "/query" => |request| {
             let query = request.query();
             let foo = query.get("foo").unwrap_or("This is only a default value");
             let bar = query.get("bar").unwrap_or("This is only a default value");

@@ -26,11 +26,11 @@ macro_rules! _router_inner {
         }};
     ($router:ident $method:ident $path:expr => |$req:ident| { $($b:tt)* } $($rest:tt)*)
         => {
-            _router_inner!($router $method $path => |$req, res| { $($b)* } $($rest)*)
+            _router_inner!($router $method $path => |$req, _res| { $($b)* } $($rest)*)
         };
     ($router:ident $method:ident $path:expr => { $($b:tt)* } $($rest:tt)*)
         => {
-            _router_inner!($router $method $path => |req, res| { $($b)* } $($rest)*)
+            _router_inner!($router $method $path => |_req, _res| { $($b)* } $($rest)*)
         };
 }
 
@@ -63,8 +63,8 @@ macro_rules! _router_inner {
 macro_rules! middleware {
     (|$req:ident, mut $res:ident| $($b:tt)+) => { middleware__inner!($req, $res, mut $res, $($b)+) };
     (|$req:ident, $res:ident| $($b:tt)+) => { middleware__inner!($req, $res, $res, $($b)+) };
-    (|$req:ident| $($b:tt)+) => { middleware!(|$req, res| $($b)+) };
-    ($($b:tt)+) => { middleware!(|req, res| $($b)+) };
+    (|$req:ident| $($b:tt)+) => { middleware!(|$req, _res| $($b)+) };
+    ($($b:tt)+) => { middleware!(|_req, _res| $($b)+) };
 }
 
 #[doc(hidden)]
@@ -79,9 +79,6 @@ macro_rules! middleware__inner {
             res.send(r)
         }
 
-        #[inline(always)]
-        fn ignore_unused(_: &Request, _: &Response) {}
-
         // Inference fails due to thinking it's a (&Request, Response) with
         // different mutability requirements
         #[inline(always)]
@@ -91,7 +88,6 @@ macro_rules! middleware__inner {
                             -> MiddlewareResult<'a> + Send + Sync { f }
 
         restrict_closure(move |$req, $res_binding| {
-            ignore_unused($req, &$res);
             restrict(as_block!({$($b)+}), $res)
         })
     }};
