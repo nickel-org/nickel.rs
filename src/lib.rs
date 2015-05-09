@@ -37,7 +37,7 @@ pub use query_string::{QueryString, Query};
 pub use router::{Router, Route, RouteResult, HttpRouter};
 pub use nickel_error::NickelError;
 pub use mimes::{get_media_type, MediaType};
-pub use middleware_handler::ResponseFinalizer;
+pub use middleware_handler::Responder;
 
 #[macro_use] pub mod macros;
 

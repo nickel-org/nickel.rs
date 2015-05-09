@@ -46,7 +46,7 @@ fn main() {
 
     let hello_regex = Regex::new("/hello/(?P<name>[a-zA-Z]+)").unwrap();
 
-    // The return type for a route can be anything that implements `ResponseFinalizer`
+    // The return type for a route can be anything that implements `Responder`
     server.utilize(router!(
         // go to http://localhost:6767/user/4711 to see this route in action
         get "/user/:userid" => |request| {

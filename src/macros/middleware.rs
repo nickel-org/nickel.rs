@@ -35,10 +35,10 @@ macro_rules! middleware {
 #[macro_export]
 macro_rules! _middleware_inner {
     ($req:tt, $res:ident, $res_binding:pat, $($b:tt)+) => {{
-        use $crate::{MiddlewareResult,ResponseFinalizer, Response, Request};
+        use $crate::{MiddlewareResult,Responder, Response, Request};
 
         #[inline(always)]
-        fn restrict<'a, R: ResponseFinalizer>(r: R, res: Response<'a>)
+        fn restrict<'a, R: Responder>(r: R, res: Response<'a>)
                 -> MiddlewareResult<'a> {
             res.send(r)
         }
