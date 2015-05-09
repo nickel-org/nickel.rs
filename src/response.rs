@@ -6,7 +6,9 @@ use std::path::Path;
 use serialize::Encodable;
 use hyper::status::StatusCode::{self, InternalServerError};
 use hyper::server::Response as HyperResponse;
-use hyper::header::{Date, HttpDate, Server, ContentType, ContentLength, Header, HeaderFormat};
+use hyper::header::{
+    Headers, Date, HttpDate, Server, ContentType, ContentLength, Header, HeaderFormat
+};
 use hyper::net::{Fresh, Streaming};
 use time;
 use mimes::{get_media_type, MediaType};
@@ -266,9 +268,14 @@ impl<'a, 'b> Response<'a, Streaming> {
 }
 
 impl <'a, T> Response<'a, T> {
-    /// Gets the current status code for this response
+    /// The status of this response.
     pub fn status(&self) -> StatusCode {
         self.origin.status()
+    }
+
+    /// The headers of this response.
+    pub fn headers(&self) -> &Headers {
+        self.origin.headers()
     }
 }
 
