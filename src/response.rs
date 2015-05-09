@@ -15,7 +15,7 @@ use mustache::Template;
 use std::io;
 use std::io::{Read, Write, copy};
 use std::fs::File;
-use {NickelError, Halt, MiddlewareResult, ResponseFinalizer};
+use {NickelError, Halt, MiddlewareResult, Responder};
 
 pub type TemplateCache = RwLock<HashMap<String, Template>>;
 
@@ -82,7 +82,7 @@ impl<'a> Response<'a, Fresh> {
     /// }
     /// ```
     #[inline]
-    pub fn send<T: ResponseFinalizer>(self, data: T) -> MiddlewareResult<'a> {
+    pub fn send<T: Responder>(self, data: T) -> MiddlewareResult<'a> {
         data.respond(self)
     }
 

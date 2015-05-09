@@ -1,10 +1,10 @@
 //! Blanket impls for Middleware.
 //! This is pre-implemented for any function which takes a
 //! `Request` and `Response` parameter and returns anything
-//! implementing the `ResponseFinalizer` trait. It is also
+//! implementing the `Responder` trait. It is also
 //! implemented for a tuple of a function and a type `T`.
 //! The function must take a `Request`, a `Response` and a
-//! `T`, returning anything that implements `ResponseFinalizer`.
+//! `T`, returning anything that implements `Responder`.
 //! The data of type `T` will then be shared and available
 //! in any request.
 //!
@@ -14,7 +14,6 @@ use request::Request;
 use response::Response;
 use hyper::status::{StatusCode, StatusClass};
 use hyper::header;
-use hyper::net;
 use middleware::{Middleware, MiddlewareResult, Halt, Continue};
 use serialize::json;
 use mimes::{MediaType, get_media_type};
@@ -33,17 +32,17 @@ impl<T> Middleware for T where T: for<'r, 'b, 'a> Fn(&'r mut Request<'b, 'a, 'b>
 /// also modifying the `Response` as required.
 ///
 /// Please see the examples for some uses.
-pub trait ResponseFinalizer<T=net::Fresh> {
-    fn respond<'a>(self, Response<'a, T>) -> MiddlewareResult<'a>;
+pub trait Responder {
+    fn respond<'a>(self, Response<'a>) -> MiddlewareResult<'a>;
 }
 
-impl ResponseFinalizer for () {
+impl Responder for () {
     fn respond<'a>(self, res: Response<'a>) -> MiddlewareResult<'a> {
         Ok(Continue(res))
     }
 }
 
-impl ResponseFinalizer for json::Json {
+impl Responder for json::Json {
     fn respond<'a>(self, mut res: Response<'a>) -> MiddlewareResult<'a> {
         maybe_set_type(&mut res, MediaType::Json);
         res.send(json::encode(&self)
@@ -51,8 +50,8 @@ impl ResponseFinalizer for json::Json {
     }
 }
 
-impl<T, E> ResponseFinalizer for Result<T, E>
-        where T: ResponseFinalizer, E: Debug {
+impl<T, E> Responder for Result<T, E>
+        where T: Responder, E: Debug {
     fn respond<'a>(self, res: Response<'a>) -> MiddlewareResult<'a> {
         match self {
             Ok(data) => res.send(data),
@@ -64,13 +63,13 @@ impl<T, E> ResponseFinalizer for Result<T, E>
 
 macro_rules! dual_impl {
     ($view:ty, $alloc:ty, |$s:ident, $res:ident| $b:block) => (
-        impl<'a> ResponseFinalizer for $view {
+        impl<'a> Responder for $view {
             #[allow(unused_mut)]
             #[inline]
             fn respond<'c>($s, mut $res: Response<'c>) -> MiddlewareResult<'c> $b
         }
 
-        impl<'a> ResponseFinalizer for $alloc {
+        impl<'a> Responder for $alloc {
             #[allow(unused_mut)]
             #[inline]
             fn respond<'c>($s, mut $res: Response<'c>) -> MiddlewareResult<'c> $b
