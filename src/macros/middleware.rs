@@ -25,15 +25,15 @@
 /// ```
 #[macro_export]
 macro_rules! middleware {
-    (|$req:tt, mut $res:ident| $($b:tt)+) => { middleware__inner!($req, $res, mut $res, $($b)+) };
-    (|$req:tt, $res:ident| $($b:tt)+) => { middleware__inner!($req, $res, $res, $($b)+) };
+    (|$req:tt, mut $res:ident| $($b:tt)+) => { _middleware_inner!($req, $res, mut $res, $($b)+) };
+    (|$req:tt, $res:ident| $($b:tt)+) => { _middleware_inner!($req, $res, $res, $($b)+) };
     (|$req:tt| $($b:tt)+) => { middleware!(|$req, _res| $($b)+) };
     ($($b:tt)+) => { middleware!(|_, _res| $($b)+) };
 }
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! middleware__inner {
+macro_rules! _middleware_inner {
     ($req:tt, $res:ident, $res_binding:pat, $($b:tt)+) => {{
         use $crate::{MiddlewareResult,ResponseFinalizer, Response, Request};
 

@@ -8,6 +8,7 @@ macro_rules! router {
     }}
 }
 
+#[doc(hidden)]
 #[macro_export]
 macro_rules! _router_inner {
     ($router:ident)
