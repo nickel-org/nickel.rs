@@ -6,7 +6,7 @@ use std::collections::HashMap;
 fn main() {
     let mut server = Nickel::new();
 
-    server.get("/", middleware! { |_req, res|
+    server.get("/", middleware! { |_, res|
         let mut data = HashMap::<&str, &str>::new();
         data.insert("name", "user");
         return res.render("examples/assets/template.tpl", &data)
