@@ -22,6 +22,12 @@ pub trait Middleware: Send + 'static + Sync {
     }
 }
 
+impl<T> Middleware for T where T: for<'r, 'b, 'a> Fn(&'r mut Request<'b, 'a, 'b>, Response<'a>) -> MiddlewareResult<'a> + Send + Sync + 'static {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a, 'b>, res: Response<'a>) -> MiddlewareResult<'a> {
+        (*self)(req, res)
+    }
+}
+
 pub trait ErrorHandler: Send + 'static + Sync {
     fn handle_error(&self, &mut NickelError, &mut Request) -> Action;
 }
