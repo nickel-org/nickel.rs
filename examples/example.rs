@@ -50,7 +50,7 @@ fn main() {
     router.get("/bar", middleware!("This is the /bar handler"));
 
     // go to http://localhost:6767/content-type to see this route in action
-    router.get("/content-type", middleware! { |request, mut response|
+    router.get("/content-type", middleware! { |_, mut response|
         response.content_type(MediaType::Json);
         "{'foo':'bar'}"
     });

@@ -12,25 +12,25 @@ macro_rules! router {
 macro_rules! _router_inner {
     ($router:ident)
         => { $router }; // Base case
-    ($router:ident $method:ident $path:expr => |$req:ident, mut $res:ident| { $($b:tt)* } $($rest:tt)*)
+    ($router:ident $method:ident $path:expr => |$req:tt, mut $res:ident| { $($b:tt)* } $($rest:tt)*)
         => {{
             $router.$method($path, middleware!(|$req, mut $res| $($b)*));
 
             _router_inner!($router $($rest)*)
         }};
-    ($router:ident $method:ident $path:expr => |$req:ident, $res:ident| { $($b:tt)* } $($rest:tt)*)
+    ($router:ident $method:ident $path:expr => |$req:tt, $res:ident| { $($b:tt)* } $($rest:tt)*)
         => {{
             $router.$method($path, middleware!(|$req, $res| $($b)*));
 
             _router_inner!($router $($rest)*)
         }};
-    ($router:ident $method:ident $path:expr => |$req:ident| { $($b:tt)* } $($rest:tt)*)
+    ($router:ident $method:ident $path:expr => |$req:tt| { $($b:tt)* } $($rest:tt)*)
         => {
             _router_inner!($router $method $path => |$req, _res| { $($b)* } $($rest)*)
         };
     ($router:ident $method:ident $path:expr => { $($b:tt)* } $($rest:tt)*)
         => {
-            _router_inner!($router $method $path => |_req, _res| { $($b)* } $($rest)*)
+            _router_inner!($router $method $path => |_, _res| { $($b)* } $($rest)*)
         };
 }
 
@@ -52,7 +52,7 @@ macro_rules! _router_inner {
 /// // Some shared resource between requests, must be `Sync + Send`
 /// let visits = AtomicUsize::new(0);
 ///
-/// server.get("/", middleware! { |_req, _res|
+/// server.get("/", middleware! {
 ///     format!("{}", visits.fetch_add(1, Ordering::Relaxed))
 /// });
 ///
@@ -61,16 +61,16 @@ macro_rules! _router_inner {
 /// ```
 #[macro_export]
 macro_rules! middleware {
-    (|$req:ident, mut $res:ident| $($b:tt)+) => { middleware__inner!($req, $res, mut $res, $($b)+) };
-    (|$req:ident, $res:ident| $($b:tt)+) => { middleware__inner!($req, $res, $res, $($b)+) };
-    (|$req:ident| $($b:tt)+) => { middleware!(|$req, _res| $($b)+) };
-    ($($b:tt)+) => { middleware!(|_req, _res| $($b)+) };
+    (|$req:tt, mut $res:ident| $($b:tt)+) => { middleware__inner!($req, $res, mut $res, $($b)+) };
+    (|$req:tt, $res:ident| $($b:tt)+) => { middleware__inner!($req, $res, $res, $($b)+) };
+    (|$req:tt| $($b:tt)+) => { middleware!(|$req, _res| $($b)+) };
+    ($($b:tt)+) => { middleware!(|_, _res| $($b)+) };
 }
 
 #[doc(hidden)]
 #[macro_export]
 macro_rules! middleware__inner {
-    ($req:ident, $res:ident, $res_binding:pat, $($b:tt)+) => {{
+    ($req:tt, $res:ident, $res_binding:pat, $($b:tt)+) => {{
         use $crate::{MiddlewareResult,ResponseFinalizer, Response, Request};
 
         #[inline(always)]
@@ -87,7 +87,7 @@ macro_rules! middleware__inner {
                         Fn(&'r mut Request<'b, 'a, 'b>, Response<'a>)
                             -> MiddlewareResult<'a> + Send + Sync { f }
 
-        restrict_closure(move |$req, $res_binding| {
+        restrict_closure(move |as_pat!($req), $res_binding| {
             restrict(as_block!({$($b)+}), $res)
         })
     }};
@@ -96,3 +96,7 @@ macro_rules! middleware__inner {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! as_block { ($b:block) => ( $b ) }
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! as_pat { ($p:pat) => ( $p ) }
