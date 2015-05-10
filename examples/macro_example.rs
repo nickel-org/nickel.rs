@@ -1,6 +1,7 @@
 #[macro_use] extern crate nickel;
 extern crate regex;
 extern crate rustc_serialize;
+extern crate hyper;
 
 use std::io::Write;
 use nickel::status::StatusCode::{self, NotFound};
@@ -9,6 +10,7 @@ use nickel::{
     QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter, Action
 };
 use regex::Regex;
+use hyper::header::Location;
 
 #[derive(RustcDecodable, RustcEncodable)]
 struct Person {
@@ -76,14 +78,12 @@ fn main() {
             format!("Hello {}", request.param("name"))
         }
 
-        // FIXME
-        // // go to http://localhost:6767/redirect to see this route in action
-        // get "/redirect" => |request, response| {
-        //     use http::headers::response::Header::Location;
-        //     let root = url::Url::parse("http://www.rust-lang.org/").unwrap();
-        //     // returning a typed http status, a response body and some additional headers
-        //     (StatusCode::TemporaryRedirect, "Redirecting you to 'rust-lang.org'", vec![Location(root)])
-        // }
+        // go to http://localhost:6767/redirect to see this route in action
+        get "/redirect" => |_, mut response| {
+            response.set(Location("http://nickel.rs".into()));
+
+            (StatusCode::PermanentRedirect, "")
+        }
 
         // go to http://localhost:6767/private to see this route in action
         get "/private" => {
