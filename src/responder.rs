@@ -103,6 +103,13 @@ dual_impl!((StatusCode, &'static str),
                 }
             });
 
+impl<'a> Responder for StatusCode {
+    #[inline]
+    fn respond<'c>(self, res: Response<'c>) -> MiddlewareResult<'c> {
+        res.send((self, ""))
+    }
+}
+
 dual_impl!(&'a [&'a str],
            &'a [String],
             |self, res| {
