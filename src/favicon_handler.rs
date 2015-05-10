@@ -80,7 +80,7 @@ impl FaviconHandler {
 
     pub fn send_favicon<'a, 'b>(&self, req: &Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
         debug!("{:?} {:?}", req.origin.method, self.icon_path.display());
-        res.content_type(MediaType::Ico);
+        res.set(MediaType::Ico);
         res.send(&*self.icon)
     }
 }

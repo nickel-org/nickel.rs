@@ -11,7 +11,7 @@ use hyper::header::{
 };
 use hyper::net::{Fresh, Streaming};
 use time;
-use mimes::{get_media_type, MediaType};
+use mimes::MediaType;
 use mustache;
 use mustache::Template;
 use std::io::{self, Read, Write, copy};
@@ -39,24 +39,6 @@ impl<'a> Response<'a, Fresh> {
         }
     }
 
-    /// Sets the content type by it's short form.
-    /// Returns the response for chaining.
-    ///
-    /// # Examples
-    /// ```{rust}
-    /// use nickel::{Request, Response, MiddlewareResult, Continue};
-    /// use nickel::mimes::MediaType;
-    ///
-    /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
-    ///     res.content_type(MediaType::Html);
-    ///     Ok(Continue(res))
-    /// }
-    /// ```
-    pub fn content_type(&mut self, mt: MediaType) -> &mut Response<'a> {
-        self.origin.headers_mut().set(ContentType(get_media_type(mt)));
-        self
-    }
-
     /// Get a mutable reference to the status.
     pub fn status_mut(&mut self) -> &mut StatusCode {
         self.origin.status_mut()
@@ -74,19 +56,26 @@ impl<'a> Response<'a, Fresh> {
     /// extern crate hyper;
     /// #[macro_use] extern crate nickel;
     ///
-    /// use nickel::{Nickel, HttpRouter};
+    /// use nickel::{Nickel, HttpRouter, MediaType};
     /// use nickel::status::StatusCode;
     /// use hyper::header::Location;
     ///
     /// fn main() {
     ///     let mut server = Nickel::new();
-    ///     server.get("**", middleware! { |_, mut res|
+    ///     server.get("/a", middleware! { |_, mut res|
     ///             // set the Status
     ///         res.set(StatusCode::PermanentRedirect)
     ///             // update a Header value
     ///            .set(Location("http://nickel.rs".into()));
     ///
     ///         ""
+    ///     });
+    ///
+    ///     server.get("/b", middleware! { |_, mut res|
+    ///             // setting the content type
+    ///         res.set(MediaType::Json);
+    ///
+    ///         "{'foo': 'bar'}"
     ///     });
     ///
     ///     // ...
@@ -129,10 +118,8 @@ impl<'a> Response<'a, Fresh> {
         // Chunk the response
         self.origin.headers_mut().remove::<ContentLength>();
         // Determine content type by file extension or default to binary
-        self.content_type(path.extension()
-                              .and_then(|os| os.to_str())
-                              .and_then(|s| s.parse().ok())
-                              .unwrap_or(MediaType::Bin));
+        let mime = mime_from_filename(path).unwrap_or(MediaType::Bin);
+        self.set(mime);
 
         match File::open(path) {
             Ok(mut file) => {
@@ -156,7 +143,7 @@ impl<'a> Response<'a, Fresh> {
     fn set_fallback_headers(&mut self) {
         self.set_header_fallback(|| Date(HttpDate(time::now_utc())));
         self.set_header_fallback(|| Server("Nickel".to_string()));
-        self.set_header_fallback(|| ContentType(get_media_type(MediaType::Html)));
+        self.set_header_fallback(|| ContentType(MediaType::Html.into()));
     }
 
     /// Return an error with the appropriate status code for error handlers to
@@ -173,22 +160,26 @@ impl<'a> Response<'a, Fresh> {
     ///
     /// # Examples
     /// ```{rust}
-    /// # extern crate nickel;
-    /// # extern crate hyper;
+    /// #[macro_use] extern crate nickel;
+    /// extern crate hyper;
     ///
-    /// # fn main() {
-    /// use nickel::{Request, Response, MiddlewareResult, Halt, MediaType, get_media_type};
+    /// use nickel::{Nickel, HttpRouter, MediaType};
     /// use hyper::header::ContentType;
     ///
-    /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
-    ///     res.content_type(MediaType::Html);
-    ///     res.set_header_fallback(|| {
-    ///         panic!("Should not get called");
-    ///         ContentType(get_media_type(MediaType::Txt))
+    /// fn main() {
+    ///     let mut server = Nickel::new();
+    ///     server.get("/", middleware! { |_, mut res|
+    ///         res.set(MediaType::Html);
+    ///         res.set_header_fallback(|| {
+    ///             panic!("Should not get called");
+    ///             ContentType(MediaType::Txt.into())
+    ///         });
+    ///
+    ///         "<h1>Hello World</h1>"
     ///     });
-    ///     res.send("<h1>Hello World</h1>")
+    ///
+    ///     // ...
     /// }
-    /// # }
     /// ```
     pub fn set_header_fallback<F, H>(&mut self, f: F)
             where H: Header + HeaderFormat, F: FnOnce() -> H {
@@ -303,32 +294,36 @@ impl <'a, T: 'static + Any> Response<'a, T> {
     }
 }
 
+fn mime_from_filename<P: AsRef<Path>>(path: P) -> Option<MediaType> {
+    path.as_ref()
+        .extension()
+        .and_then(|os| os.to_str())
+        // Lookup mime from file extension
+        .and_then(|s| s.parse().ok())
+}
+
 #[test]
 fn matches_content_type () {
-    use hyper::mime::{Mime, TopLevel, SubLevel};
-    let path = &Path::new("test.txt");
-    let content_type = path.extension()
-                           .and_then(|os| os.to_str())
-                           .and_then(|s| s.parse().ok());
-
-    assert_eq!(content_type, Some(MediaType::Txt));
-    let content_type = content_type.map(get_media_type).unwrap();
-
-    match content_type {
-        Mime(TopLevel::Text, SubLevel::Plain, _) => {}, // OK
-        wrong => panic!("Wrong mime: {}", wrong)
-    }
+    assert_eq!(Some(MediaType::Txt), mime_from_filename("test.txt"));
+    assert_eq!(Some(MediaType::Json), mime_from_filename("test.json"));
+    assert_eq!(Some(MediaType::Bin), mime_from_filename("test.bin"));
 }
 
 mod modifier_impls {
     use hyper::header::*;
     use hyper::status::StatusCode;
     use modifier::Modifier;
-    use Response;
+    use {Response, MediaType};
 
     impl<'a> Modifier<Response<'a>> for StatusCode {
         fn modify(self, res: &mut Response<'a>) {
             *res.status_mut() = self
+        }
+    }
+
+    impl<'a> Modifier<Response<'a>> for MediaType {
+        fn modify(self, res: &mut Response<'a>) {
+            ContentType(self.into()).modify(res)
         }
     }
 

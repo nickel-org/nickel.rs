@@ -1,5 +1,4 @@
 #[macro_use] extern crate nickel;
-extern crate url;
 extern crate regex;
 extern crate rustc_serialize;
 
@@ -68,7 +67,7 @@ fn main() {
 
         // go to http://localhost:6767/content-type to see this route in action
         get "/content-type" => |_, mut response| {
-            response.content_type(MediaType::Json);
+            response.set(MediaType::Json);
             "{'foo':'bar'}"
         }
 

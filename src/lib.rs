@@ -37,7 +37,7 @@ pub use json_body_parser::JsonBody;
 pub use query_string::{QueryString, Query};
 pub use router::{Router, Route, RouteResult, HttpRouter};
 pub use nickel_error::NickelError;
-pub use mimes::{get_media_type, MediaType};
+pub use mimes::MediaType;
 pub use responder::Responder;
 
 #[macro_use] pub mod macros;

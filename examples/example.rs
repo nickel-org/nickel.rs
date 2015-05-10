@@ -51,7 +51,7 @@ fn main() {
 
     // go to http://localhost:6767/content-type to see this route in action
     router.get("/content-type", middleware! { |_, mut response|
-        response.content_type(MediaType::Json);
+        response.set(MediaType::Json);
         "{'foo':'bar'}"
     });
 

@@ -14,7 +14,7 @@ use hyper::status::{StatusCode, StatusClass};
 use hyper::header;
 use middleware::{MiddlewareResult, Halt, Continue};
 use serialize::json;
-use mimes::{MediaType, get_media_type};
+use mimes::MediaType;
 use std::io::Write;
 use std::fmt::Debug;
 
@@ -144,6 +144,6 @@ dual_impl!((u16, &'static str),
 //                 Ok(Halt)
 //             })
 
-fn maybe_set_type(res: &mut Response, ty: MediaType) {
-    res.set_header_fallback(|| header::ContentType(get_media_type(ty)));
+fn maybe_set_type(res: &mut Response, mime: MediaType) {
+    res.set_header_fallback(|| header::ContentType(mime.into()));
 }
