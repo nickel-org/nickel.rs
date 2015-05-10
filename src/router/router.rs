@@ -149,33 +149,42 @@ fn creates_regex_with_captures () {
 
 #[test]
 fn creates_valid_regex_for_routes () {
-    let regex1: Matcher = "foo/:uid/bar/:groupid".into();
-    let regex2: Matcher = "foo/*/bar".into();
-    let regex3: Matcher = "foo/**/bar".into();
+    let multi_params: Matcher = "foo/:uid/bar/:groupid".into();
 
-    assert_eq!(regex1.is_match("foo/4711/bar/5490"), true);
-    assert_eq!(regex1.is_match("foo/4711/bar/5490?foo=true&bar=false"), true);
-    assert_eq!(regex1.is_match("foo/4711/bar"), false);
-    assert_eq!(regex1.is_match("foo/4711/bar?foo=true&bar=false"), false);
-    assert_eq!(regex1.is_match("foo/4711/bar/test%20spacing"), true);
-    assert_eq!(regex1.is_match("foo/4711/bar/5281?foo=test%20spacing&bar=false"), true);
-
-    assert_eq!(regex2.is_match("foo/4711/bar"), true);
-    assert_eq!(regex2.is_match("foo/4711/barr"), false);
-    assert_eq!(regex2.is_match("foo/4711/bar?foo=true&bar=false"), true);
-    assert_eq!(regex2.is_match("foo/4711/4712/bar"), false);
-    assert_eq!(regex2.is_match("foo/4711/4712/bar?foo=true&bar=false"), false);
-
-    assert_eq!(regex3.is_match("foo/4711/bar"), true);
-    assert_eq!(regex3.is_match("foo/4711/bar?foo=true&bar=false"), true);
-    assert_eq!(regex3.is_match("foo/4711/4712/bar"), true);
-    assert_eq!(regex3.is_match("foo/4711/4712/bar?foo=true&bar=false"), true);
+    assert!(multi_params.is_match("foo/4711/bar/5490"));
+    assert!(multi_params.is_match("foo/4711/bar/5490?foo=true&bar=false"));
+    assert!(!multi_params.is_match("foo/4711/bar"));
+    assert!(!multi_params.is_match("foo/4711/bar?foo=true&bar=false"));
+    assert!(multi_params.is_match("foo/4711/bar/test%20spacing"));
+    assert!(multi_params.is_match("foo/4711/bar/5281?foo=test%20spacing&bar=false"));
+    assert!(multi_params.is_match("foo/alice/bar/bob"));
 
     //ensure that this works with commas too
-    assert_eq!(regex1.is_match("foo/4711/bar/5490,1234"), true);
-    assert_eq!(regex1.is_match("foo/4711/bar/5490,1234?foo=true&bar=false"), true);
-    assert_eq!(regex1.is_match("foo/4711/bar"), false);
-    assert_eq!(regex1.is_match("foo/4711/bar?foo=1,2,3&bar=false"), false);
+    assert!(multi_params.is_match("foo/4711/bar/5490,1234"));
+    assert!(multi_params.is_match("foo/4711/bar/5490,1234?foo=true&bar=false"));
+    assert!(!multi_params.is_match("foo/4711/bar"));
+    assert!(!multi_params.is_match("foo/4711/bar?foo=1,2,3&bar=false"));
+
+    //ensure that this works with hyphens too
+    assert!(multi_params.is_match("foo/alice-anne/bar/bob-gates"));
+
+    let single_asterisk: Matcher = "foo/*/bar".into();
+
+    assert!(single_asterisk.is_match("foo/4711/bar"));
+    assert!(!single_asterisk.is_match("foo/4711/barr"));
+    assert!(single_asterisk.is_match("foo/4711/bar?foo=true&bar=false"));
+    assert!(!single_asterisk.is_match("foo/4711/4712/bar"));
+    assert!(!single_asterisk.is_match("foo/4711/4712/bar?foo=true&bar=false"));
+    assert!(!single_asterisk.is_match("foo/alice/bar/bob"));
+    assert!(single_asterisk.is_match("foo/alice/bar"));
+
+    let double_asterisk: Matcher = "foo/**/bar".into();
+
+    assert!(double_asterisk.is_match("foo/4711/bar"));
+    assert!(double_asterisk.is_match("foo/4711/bar?foo=true&bar=false"));
+    assert!(double_asterisk.is_match("foo/4711/4712/bar"));
+    assert!(double_asterisk.is_match("foo/4711/4712/bar?foo=true&bar=false"));
+    assert!(!double_asterisk.is_match("foo/alice/bar/bob"));
 }
 
 #[test]
