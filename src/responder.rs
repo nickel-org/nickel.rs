@@ -97,7 +97,7 @@ dual_impl!((StatusCode, &'static str),
                         res.error(status, message)
                     },
                     _ => {
-                        res.set_status(status);
+                        res.set(status);
                         res.send(message)
                     }
                 }

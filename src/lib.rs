@@ -21,6 +21,7 @@ extern crate plugin;
 extern crate url;
 extern crate mustache;
 extern crate groupable;
+extern crate modifier;
 
 #[macro_use] extern crate log;
 #[macro_use] extern crate lazy_static;
