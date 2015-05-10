@@ -82,7 +82,7 @@ fn main() {
         get "/redirect" => |_, mut response| {
             response.set(Location("http://nickel.rs".into()));
 
-            (StatusCode::PermanentRedirect, "")
+            StatusCode::PermanentRedirect
         }
 
         // go to http://localhost:6767/private to see this route in action
