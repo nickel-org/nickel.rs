@@ -16,13 +16,15 @@ macro_rules! mimes {
         // FIXME: Should be less runtime cost to this, hyper's Mime type looks
         // slightly more robust than old-http, so could probably just re-export
         // that and depreciate this.
-        pub fn get_media_type(ty: MediaType) -> Mime {
-            match ty {
-                $(
+        impl From<MediaType> for Mime {
+            fn from(mt: MediaType) -> Mime {
+                match mt {
                     $(
-                        MediaType::$name => (concat!($t, "/", $subt)).parse().unwrap()
+                        $(
+                            MediaType::$name => (concat!($t, "/", $subt)).parse().unwrap()
+                        ),*
                     ),*
-                ),*
+                }
             }
         }
 
