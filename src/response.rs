@@ -14,10 +14,10 @@ use time;
 use mimes::{get_media_type, MediaType};
 use mustache;
 use mustache::Template;
-use std::io;
-use std::io::{Read, Write, copy};
+use std::io::{self, Read, Write, copy};
 use std::fs::File;
 use {NickelError, Halt, MiddlewareResult, Responder};
+use modifier::Modifier;
 
 pub type TemplateCache = RwLock<HashMap<String, Template>>;
 
@@ -56,23 +56,6 @@ impl<'a> Response<'a, Fresh> {
         self
     }
 
-    /// Sets the status code and returns the response for chaining
-    ///
-    /// # Examples
-    /// ```{rust}
-    /// use nickel::{Request, Response, MiddlewareResult, Continue};
-    /// use nickel::status::StatusCode;
-    ///
-    /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
-    ///     res.set_status(StatusCode::NotFound);
-    ///     Ok(Continue(res))
-    /// }
-    /// ```
-    pub fn set_status(&mut self, status: StatusCode) -> &mut Response<'a> {
-        *self.origin.status_mut() = status;
-        self
-    }
-
     /// Get a mutable reference to the status.
     pub fn status_mut(&mut self) -> &mut StatusCode {
         self.origin.status_mut()
@@ -81,6 +64,36 @@ impl<'a> Response<'a, Fresh> {
     /// Get a mutable reference to the Headers.
     pub fn headers_mut(&mut self) -> &mut Headers {
         self.origin.headers_mut()
+    }
+
+    /// Modify the response with the provided data.
+    ///
+    /// # Examples
+    /// ```{rust}
+    /// extern crate hyper;
+    /// #[macro_use] extern crate nickel;
+    ///
+    /// use nickel::{Nickel, HttpRouter};
+    /// use nickel::status::StatusCode;
+    /// use hyper::header::Location;
+    ///
+    /// fn main() {
+    ///     let mut server = Nickel::new();
+    ///     server.get("**", middleware! { |_, mut res|
+    ///             // set the Status
+    ///         res.set(StatusCode::PermanentRedirect)
+    ///             // update a Header value
+    ///            .set(Location("http://nickel.rs".into()));
+    ///
+    ///         ""
+    ///     });
+    ///
+    ///     // ...
+    /// }
+    /// ```
+    pub fn set<T: Modifier<Response<'a>>>(&mut self, attribute: T) -> &mut Response<'a> {
+        attribute.modify(self);
+        self
     }
 
     /// Writes a response
@@ -303,5 +316,77 @@ fn matches_content_type () {
     match content_type {
         Mime(TopLevel::Text, SubLevel::Plain, _) => {}, // OK
         wrong => panic!("Wrong mime: {}", wrong)
+    }
+}
+
+mod modifier_impls {
+    use hyper::header::*;
+    use hyper::status::StatusCode;
+    use modifier::Modifier;
+    use Response;
+
+    impl<'a> Modifier<Response<'a>> for StatusCode {
+        fn modify(self, res: &mut Response<'a>) {
+            *res.status_mut() = self
+        }
+    }
+
+    macro_rules! header_modifiers {
+        ($($t:ty),+) => (
+            $(
+                impl<'a> Modifier<Response<'a>> for $t {
+                    fn modify(self, res: &mut Response<'a>) {
+                        res.headers_mut().set(self)
+                    }
+                }
+            )+
+        )
+    }
+
+    header_modifiers! {
+        Accept,
+        AccessControlAllowHeaders,
+        AccessControlAllowMethods,
+        AccessControlAllowOrigin,
+        AccessControlMaxAge,
+        AccessControlRequestHeaders,
+        AccessControlRequestMethod,
+        AcceptCharset,
+        AcceptEncoding,
+        AcceptLanguage,
+        // FIXME: Re-add when updating to hyper 0.4
+        // AcceptRanges,
+        Allow,
+        Authorization<Basic>,
+        Authorization<String>,
+        CacheControl,
+        Cookie,
+        Connection,
+        ContentEncoding,
+        ContentLanguage,
+        ContentLength,
+        ContentType,
+        Date,
+        ETag,
+        Expect,
+        Expires,
+        // FIXME: Re-add when updating to hyper 0.4
+        // From,
+        Host,
+        IfMatch,
+        IfModifiedSince,
+        IfNoneMatch,
+        IfRange,
+        IfUnmodifiedSince,
+        LastModified,
+        Location,
+        Pragma,
+        Referer,
+        Server,
+        SetCookie,
+        TransferEncoding,
+        Upgrade,
+        UserAgent,
+        Vary
     }
 }

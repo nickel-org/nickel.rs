@@ -27,6 +27,7 @@ hyper = "=0.3"
 groupable = "*"
 mustache = "*"
 lazy_static = "*"
+modifier = "*"
 
 [[example]]
 

@@ -66,13 +66,13 @@ impl FaviconHandler {
                 self.send_favicon(req, res)
             },
             Options => {
-                res.set_status(StatusCode::Ok);
-                res.headers_mut().set(header::Allow(vec!(Get, Head, Options)));
+                res.set(StatusCode::Ok);
+                res.set(header::Allow(vec![Get, Head, Options]));
                 res.send("")
             },
             _ => {
-                res.set_status(StatusCode::MethodNotAllowed);
-                res.headers_mut().set(header::Allow(vec!(Get, Head, Options)));
+                res.set(StatusCode::MethodNotAllowed);
+                res.set(header::Allow(vec![Get, Head, Options]));
                 res.send("")
             }
         }
