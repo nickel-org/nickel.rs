@@ -16,13 +16,14 @@ use mustache;
 use mustache::Template;
 use std::io::{self, Read, Write, copy};
 use std::fs::File;
+use std::any::Any;
 use {NickelError, Halt, MiddlewareResult, Responder};
 use modifier::Modifier;
 
 pub type TemplateCache = RwLock<HashMap<String, Template>>;
 
 ///A container for the response
-pub struct Response<'a, T=Fresh> {
+pub struct Response<'a, T: 'static + Any = Fresh> {
     ///the original `hyper::server::Response`
     origin: HyperResponse<'a, T>,
     templates: &'a TemplateCache
@@ -290,7 +291,7 @@ impl<'a, 'b> Response<'a, Streaming> {
     }
 }
 
-impl <'a, T> Response<'a, T> {
+impl <'a, T: 'static + Any> Response<'a, T> {
     /// The status of this response.
     pub fn status(&self) -> StatusCode {
         self.origin.status()
@@ -354,8 +355,7 @@ mod modifier_impls {
         AcceptCharset,
         AcceptEncoding,
         AcceptLanguage,
-        // FIXME: Re-add when updating to hyper 0.4
-        // AcceptRanges,
+        AcceptRanges,
         Allow,
         Authorization<Basic>,
         Authorization<String>,
@@ -370,8 +370,7 @@ mod modifier_impls {
         ETag,
         Expect,
         Expires,
-        // FIXME: Re-add when updating to hyper 0.4
-        // From,
+        From,
         Host,
         IfMatch,
         IfModifiedSince,
