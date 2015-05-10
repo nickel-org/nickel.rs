@@ -60,7 +60,7 @@ impl MiddlewareStack {
                            req.origin.method,
                            req.origin.remote_addr,
                            req.origin.uri,
-                           res.origin.status());
+                           res.status());
                     let _ = res.end();
                     return
                 }
@@ -71,7 +71,7 @@ impl MiddlewareStack {
                           req.origin.remote_addr,
                           req.origin.uri,
                           err.message,
-                          err.stream.as_ref().map(|s| s.origin.status()));
+                          err.stream.as_ref().map(|s| s.status()));
 
                     for error_handler in self.error_handlers.iter().rev() {
                         if let Halt(()) = error_handler.handle_error(&mut err, &mut req) {
@@ -85,7 +85,7 @@ impl MiddlewareStack {
                           req.origin.remote_addr,
                           req.origin.uri,
                           err.message,
-                          err.stream.map(|s| s.origin.status()));
+                          err.stream.map(|s| s.status()));
                     return
                 }
             }
