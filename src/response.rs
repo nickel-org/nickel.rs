@@ -121,18 +121,12 @@ impl<'a> Response<'a, Fresh> {
         let mime = mime_from_filename(path).unwrap_or(MediaType::Bin);
         self.set(mime);
 
-        match File::open(path) {
-            Ok(mut file) => {
-                let mut stream = try!(self.start());
-                match copy(&mut file, &mut stream) {
-                    Ok(_) => Ok(Halt(stream)),
-                    Err(e) => stream.bail(format!("Failed to send file: {}", e))
-                }
-            }
-            Err(e) => {
-                self.error(InternalServerError,
-                           format!("Failed to send file '{:?}': {}", path, e))
-            }
+        let mut file = nickel_try!(self, File::open(path), "Failed to send file '{:?}'", path);
+
+        let mut stream = try!(self.start());
+        match copy(&mut file, &mut stream) {
+            Ok(_) => Ok(Halt(stream)),
+            Err(e) => stream.bail(format!("Failed to send file: {}", e))
         }
     }
 
@@ -225,13 +219,11 @@ impl<'a> Response<'a, Fresh> {
         // Search again incase there was a race to compile the template
         let template = match templates.entry(path.clone()) {
             Vacant(entry) => {
-                match mustache::compile_path(&path) {
-                    Ok(template) => entry.insert(template),
-                    Err(e) => return self.error(InternalServerError,
-                                                format!("Failed to compile template: \
-                                                        {}.\nReason: {:?}",
-                                                        &path, e))
-                }
+                let template = nickel_try!(self,
+                                           mustache::compile_path(&path),
+                                           "Failed to compile template: {} ",
+                                           path);
+                entry.insert(template)
             },
             Occupied(entry) => entry.into_mut()
         };
