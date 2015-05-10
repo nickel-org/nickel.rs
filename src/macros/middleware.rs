@@ -57,6 +57,24 @@ macro_rules! _middleware_inner {
     }};
 }
 
+//TODO: Expand on this to allow non-500 errors
+#[macro_export]
+macro_rules! nickel_try {
+    ($res:expr, $exp:expr, $format:expr, $($msg:expr),*) => {
+        match $exp {
+            ::std::result::Result::Ok(val) => val,
+            ::std::result::Result::Err(e) => {
+                use $crate::status::StatusCode;
+                return $res.error(StatusCode::InternalServerError,
+                                  format!(concat!($format, ": {:?}"), $($msg,)* e))
+            }
+        }
+    };
+    ($res:expr, $exp:expr) => {{
+        nickel_try!($res, $exp, "Error:{}:{}", file!(), line!())
+    }}
+}
+
 #[doc(hidden)]
 #[macro_export]
 macro_rules! as_block { ($b:block) => ( $b ) }

@@ -44,11 +44,8 @@ impl Responder for json::Json {
 impl<T, E> Responder for Result<T, E>
         where T: Responder, E: Debug {
     fn respond<'a>(self, res: Response<'a>) -> MiddlewareResult<'a> {
-        match self {
-            Ok(data) => res.send(data),
-            Err(e) => res.error(StatusCode::InternalServerError,
-                                format!("{:?}", e))
-        }
+        let data = nickel_try!(res, self);
+        res.send(data)
     }
 }
 
