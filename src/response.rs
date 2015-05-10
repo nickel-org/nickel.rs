@@ -24,7 +24,7 @@ pub type TemplateCache = RwLock<HashMap<String, Template>>;
 ///A container for the response
 pub struct Response<'a, T=Fresh> {
     ///the original `hyper::server::Response`
-    pub origin: HyperResponse<'a, T>,
+    origin: HyperResponse<'a, T>,
     templates: &'a TemplateCache
 }
 
@@ -71,6 +71,16 @@ impl<'a> Response<'a, Fresh> {
     pub fn set_status(&mut self, status: StatusCode) -> &mut Response<'a> {
         *self.origin.status_mut() = status;
         self
+    }
+
+    /// Get a mutable reference to the status.
+    pub fn status_mut(&mut self) -> &mut StatusCode {
+        self.origin.status_mut()
+    }
+
+    /// Get a mutable reference to the Headers.
+    pub fn headers_mut(&mut self) -> &mut Headers {
+        self.origin.headers_mut()
     }
 
     /// Writes a response

@@ -67,12 +67,12 @@ impl FaviconHandler {
             },
             Options => {
                 res.set_status(StatusCode::Ok);
-                res.origin.headers_mut().set(header::Allow(vec!(Get, Head, Options)));
+                res.headers_mut().set(header::Allow(vec!(Get, Head, Options)));
                 res.send("")
             },
             _ => {
                 res.set_status(StatusCode::MethodNotAllowed);
-                res.origin.headers_mut().set(header::Allow(vec!(Get, Head, Options)));
+                res.headers_mut().set(header::Allow(vec!(Get, Head, Options)));
                 res.send("")
             }
         }
