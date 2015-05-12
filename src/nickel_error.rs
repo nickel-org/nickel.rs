@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use hyper::status::StatusCode;
 use std::io;
+use std::error::Error;
 use response::Response;
 use hyper::net::{Fresh, Streaming};
 
@@ -64,5 +65,25 @@ impl<'a> NickelError<'a> {
 
     pub fn end(self) -> Option<io::Result<()>> {
         self.stream.map(|s| s.end())
+    }
+}
+
+impl<'a, T> From<(Response<'a>, (StatusCode, T))> for NickelError<'a>
+        where T: Into<Box<Error + 'static>> {
+    fn from((res, (errorcode, err)): (Response<'a>, (StatusCode, T))) -> NickelError<'a> {
+        let err = err.into();
+        NickelError::new(res, err.description().to_string(), errorcode)
+    }
+}
+
+impl<'a> From<(Response<'a>, String)> for NickelError<'a> {
+    fn from((res, msg): (Response<'a>, String)) -> NickelError<'a> {
+        NickelError::new(res, msg, StatusCode::InternalServerError)
+    }
+}
+
+impl<'a> From<(Response<'a>, StatusCode)> for NickelError<'a> {
+    fn from((res, code): (Response<'a>, StatusCode)) -> NickelError<'a> {
+        NickelError::new(res, "", code)
     }
 }

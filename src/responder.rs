@@ -9,14 +9,12 @@
 //! in any request.
 //!
 //! Please see the examples for usage.
-use response::Response;
+use {Response, NickelError, MiddlewareResult, Halt, Continue};
 use hyper::status::{StatusCode, StatusClass};
 use hyper::header;
-use middleware::{MiddlewareResult, Halt, Continue};
 use serialize::json;
 use mimes::MediaType;
 use std::io::Write;
-use std::fmt::Debug;
 
 /// This trait provides convenience for translating a number
 /// of common return types into a `MiddlewareResult` while
@@ -42,7 +40,8 @@ impl Responder for json::Json {
 }
 
 impl<T, E> Responder for Result<T, E>
-        where T: Responder, E: Debug {
+        where T: Responder,
+              for<'e> NickelError<'e>: From<(Response<'e>, E)> {
     fn respond<'a>(self, res: Response<'a>) -> MiddlewareResult<'a> {
         let data = nickel_try!(res, self);
         res.send(data)

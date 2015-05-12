@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::path::Path;
 use serialize::Encodable;
-use hyper::status::StatusCode::{self, InternalServerError};
+use hyper::status::StatusCode;
 use hyper::server::Response as HyperResponse;
 use hyper::header::{
     Headers, Date, HttpDate, Server, ContentType, ContentLength, Header, HeaderFormat
@@ -121,7 +121,10 @@ impl<'a> Response<'a, Fresh> {
         let mime = mime_from_filename(path).unwrap_or(MediaType::Bin);
         self.set(mime);
 
-        let mut file = nickel_try!(self, File::open(path), "Failed to send file '{:?}'", path);
+        let mut file = nickel_try!(self, {
+            File::open(path).map_err(|e| format!("Failed to send file '{:?}': {}",
+                                                 path, e))
+        });
 
         let mut stream = try!(self.start());
         match copy(&mut file, &mut stream) {
@@ -219,10 +222,11 @@ impl<'a> Response<'a, Fresh> {
         // Search again incase there was a race to compile the template
         let template = match templates.entry(path.clone()) {
             Vacant(entry) => {
-                let template = nickel_try!(self,
-                                           mustache::compile_path(&path),
-                                           "Failed to compile template: {} ",
-                                           path);
+                let template = nickel_try!(self, {
+                    mustache::compile_path(&path)
+                             .map_err(|e| format!("Failed to compile template '{}': {:?}",
+                                            path, e))
+                });
                 entry.insert(template)
             },
             Occupied(entry) => entry.into_mut()
