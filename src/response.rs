@@ -121,7 +121,7 @@ impl<'a> Response<'a, Fresh> {
         let mime = mime_from_filename(path).unwrap_or(MediaType::Bin);
         self.set(mime);
 
-        let mut file = nickel_try!(self, {
+        let mut file = try_with!(self, {
             File::open(path).map_err(|e| format!("Failed to send file '{:?}': {}",
                                                  path, e))
         });
@@ -222,7 +222,7 @@ impl<'a> Response<'a, Fresh> {
         // Search again incase there was a race to compile the template
         let template = match templates.entry(path.clone()) {
             Vacant(entry) => {
-                let template = nickel_try!(self, {
+                let template = try_with!(self, {
                     mustache::compile_path(&path)
                              .map_err(|e| format!("Failed to compile template '{}': {:?}",
                                             path, e))

@@ -43,7 +43,7 @@ impl<T, E> Responder for Result<T, E>
         where T: Responder,
               for<'e> NickelError<'e>: From<(Response<'e>, E)> {
     fn respond<'a>(self, res: Response<'a>) -> MiddlewareResult<'a> {
-        let data = nickel_try!(res, self);
+        let data = try_with!(res, self);
         res.send(data)
     }
 }
