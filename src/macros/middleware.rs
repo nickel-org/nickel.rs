@@ -57,18 +57,6 @@ macro_rules! _middleware_inner {
     }};
 }
 
-#[macro_export]
-macro_rules! nickel_try {
-    ($res:expr, $exp:expr) => {{
-        match $exp {
-            ::std::result::Result::Ok(val) => val,
-            ::std::result::Result::Err(e) => {
-                return Err(From::from(($res, e)))
-            }
-        }
-    }};
-}
-
 #[doc(hidden)]
 #[macro_export]
 macro_rules! as_block { ($b:block) => ( $b ) }
