@@ -13,7 +13,7 @@ readme = "README.md"
 keywords = ["nickel", "server", "web", "express"]
 
 [features]
-unstable = ["hyper/nightly"]
+unstable = ["hyper/nightly", "compiletest_rs"]
 
 [dependencies]
 url = "*"
@@ -28,6 +28,10 @@ groupable = "*"
 mustache = "*"
 lazy_static = "*"
 modifier = "*"
+
+[dependencies.compiletest_rs]
+version = "*"
+optional = true
 
 [[example]]
 
