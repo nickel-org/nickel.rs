@@ -1,31 +1,8 @@
 # [nickel.rs](http://nickel.rs) [![Build Status](https://travis-ci.org/nickel-org/nickel.rs.png?branch=master)](https://travis-ci.org/nickel-org/nickel.rs) [![](http://meritbadge.herokuapp.com/nickel)](https://crates.io/crates/nickel) [![Join the chat at https://gitter.im/nickel-org/nickel.rs](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nickel-org/nickel.rs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-[nickel.rs](http://nickel.rs) is a simple and lightweight foundation for web applications written in Rust. It's API is inspired by the popular express framework for JavaScript.
+[nickel.rs](http://nickel.rs) is a simple and lightweight foundation for web applications written in Rust. Its API is inspired by the popular express framework for JavaScript.
 
 ##Hello world
-
-### Dependencies
-
-You'll need to create a *Cargo.toml* that looks like this;
-
-```not_rust
-[package]
-
-name = "my-nickel-app"
-version = "0.0.1"
-authors = ["yourname"]
-
-[dependencies.nickel]
-version = "*"
-features = ["nightly"]
-
-[dependencies]
-rustc-serialize = "*"
-```
-
-### Code
-
-Add a file, *src/main.rs* that contains the following;
 
 ```rust,no_run
 #[macro_use] extern crate nickel;
@@ -45,6 +22,22 @@ fn main() {
 }
 ```
 
+### Dependencies
+
+You'll need to create a *Cargo.toml* that looks like this;
+
+```not_rust
+[package]
+
+name = "my-nickel-app"
+version = "0.0.1"
+authors = ["yourname"]
+
+[dependencies.nickel]
+version = "*"
+features = ["unstable"]
+```
+
 You can then compile this using *Cargo build* and run it using *Cargo run*. After it's running you should visit http://localhost:6767 to see your hello world!
 
 ## More examples
@@ -53,7 +46,7 @@ More examples can be found [in the examples directory](/examples/) and the full 
 
 ##License
 
-[nickel.rs](http://nickel.rs) is open source and licensed with the [MIT license](https://github.com/nickel-org/nickel/blob/master/LICENSE)
+[MIT license](https://github.com/nickel-org/nickel/blob/master/LICENSE)
 
 ##Contributing
 
