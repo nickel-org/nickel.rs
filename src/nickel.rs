@@ -123,7 +123,11 @@ impl Nickel {
         Router::new()
     }
 
-    /// Bind and listen for connections on the given host and port
+    /// Bind and listen for connections on the given host and port.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `addr` is an invalid `SocketAddr`.
     ///
     /// # Examples
     /// ```{rust,no_run}
@@ -132,15 +136,16 @@ impl Nickel {
     /// let mut server = Nickel::new();
     /// server.listen("127.0.0.1:6767");
     /// ```
-    pub fn listen<T: ToSocketAddrs + Display>(mut self, addr: T) {
+    pub fn listen<T: ToSocketAddrs>(mut self, addr: T) {
         self.middleware_stack.add_middleware(middleware! {
             (StatusCode::NotFound, "File Not Found")
         });
 
-        println!("Listening on http://{}", addr);
-        println!("Ctrl-C to shutdown server");
+        let server = Server::new(self.middleware_stack);
+        let listener = server.serve(addr).unwrap();
 
-        Server::new(self.middleware_stack).serve(addr);
+        println!("Listening on http://{}", listener.socket);
+        println!("Ctrl-C to shutdown server");
     }
     
     pub fn listen_https<T: ToSocketAddrs + Display>(mut self, addr: T, cert: &Path, key: &Path) {
@@ -153,4 +158,10 @@ impl Nickel {
 
         Server::new(self.middleware_stack).serve_https(addr, cert, key);
     }
+}
+
+#[test]
+#[should_panic]
+fn invalid_listen_addr() {
+    Nickel::new().listen("127.0.0.1.6667");
 }

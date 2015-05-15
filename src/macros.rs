@@ -39,7 +39,16 @@ macro_rules! router {
 /// ```
 #[macro_export]
 macro_rules! middleware {
-    (|$req:ident, $res:ident| $($b:tt)+) => {{
+    (|$req:ident, mut $res:ident| $($b:tt)+) => { middleware__inner!($req, $res, mut $res, $($b)+) };
+    (|$req:ident, $res:ident| $($b:tt)+) => { middleware__inner!($req, $res, $res, $($b)+) };
+    (|$req:ident| $($b:tt)+) => { middleware!(|$req, res| $($b)+) };
+    ($($b:tt)+) => { middleware!(|req, res| $($b)+) };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! middleware__inner {
+    ($req:ident, $res:ident, $res_binding:pat, $($b:tt)+) => {{
         use $crate::{MiddlewareResult,ResponseFinalizer, Response, Request};
 
         #[inline(always)]
@@ -59,13 +68,11 @@ macro_rules! middleware {
                         Fn(&'r mut Request<'b, 'a, 'b>, Response<'a>)
                             -> MiddlewareResult<'a> + Send + Sync { f }
 
-        restrict_closure(move |$req, $res| {
+        restrict_closure(move |$req, $res_binding| {
             ignore_unused($req, &$res);
             restrict(as_block!({$($b)+}), $res)
         })
     }};
-    (|$req:ident| $($b:tt)+) => { middleware!(|$req, res| $($b)+) };
-    ($($b:tt)+) => { middleware!(|req, res| $($b)+) };
 }
 
 #[doc(hidden)]

@@ -1,7 +1,7 @@
 [package]
 
 name = "nickel"
-version = "0.2.1"
+version = "0.3.0"
 authors = [ "Christoph Burgdorf <christoph@thoughtram.io>",
             "Kevin Butler <haqkrs@gmail.com>",
             "Simon Persson <simon@flaskpost.org>" ]
@@ -13,7 +13,7 @@ readme = "README.md"
 keywords = ["nickel", "server", "web", "express"]
 
 [features]
-"nightly" = ["hyper/nightly"]
+unstable = ["hyper/nightly"]
 
 [dependencies]
 url = "*"
@@ -23,7 +23,7 @@ plugin = "*"
 regex = "*"
 rustc-serialize = "*"
 log = "*"
-hyper = "*"
+hyper = "=0.3"
 groupable = "*"
 mustache = "*"
 lazy_static = "*"

@@ -5,6 +5,18 @@ cache:
   directories:
       - target
 
+rust:
+  - nightly
+  - beta
+
+before_script:
+  - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
+
 script:
-    - cargo build --features nightly
-    - cargo test --features nightly
+  - |
+      travis-cargo build &&
+      travis-cargo test &&
+      travis-cargo bench &&
+      travis-cargo doc &&
+      echo "Testing README" &&
+      rustdoc --test README.md -L dependency=./target/debug/deps --extern nickel=./target/debug/libnickel.rlib
