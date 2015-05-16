@@ -35,7 +35,9 @@ authors = ["yourname"]
 
 [dependencies.nickel]
 version = "*"
-features = ["unstable"]
+# If you are using the 'nightly' rust channel you can uncomment
+# the line below to activate unstable features
+# features = ["unstable"]
 ```
 
 You can then compile this using *Cargo build* and run it using *Cargo run*. After it's running you should visit http://localhost:6767 to see your hello world!
@@ -52,7 +54,7 @@ More examples can be found [in the examples directory](/examples/) and the full 
 
 [nickel.rs](http://nickel.rs) is a community effort. We welcome new contributors with open arms. Please read the [contributing guide here](/contributing.md) first.
 
-If you're looking for inspiration, there's list of [open issues](https://github.com/nickel-org/nickel/issues?state=open) right here on github. 
+If you're looking for inspiration, there's list of [open issues](https://github.com/nickel-org/nickel/issues?state=open) right here on github.
 
 If you need a helping hand reach out to [@cburgdorf](https://github.com/cburgdorf), [@Ryman](https://github.com/Ryman) or [@SimonPersson](https://github.com/SimonPersson).
 
