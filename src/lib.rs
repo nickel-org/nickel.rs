@@ -21,6 +21,7 @@ extern crate plugin;
 extern crate url;
 extern crate mustache;
 extern crate groupable;
+extern crate modifier;
 
 #[macro_use] extern crate log;
 #[macro_use] extern crate lazy_static;
@@ -36,20 +37,18 @@ pub use json_body_parser::JsonBody;
 pub use query_string::{QueryString, Query};
 pub use router::{Router, Route, RouteResult, HttpRouter};
 pub use nickel_error::NickelError;
-pub use mimes::{get_media_type, MediaType};
-pub use middleware_handler::ResponseFinalizer;
-pub use as_bytes::AsBytes;
+pub use mimes::MediaType;
+pub use responder::Responder;
 
 #[macro_use] pub mod macros;
 
-mod as_bytes;
 pub mod router;
 mod server;
 mod nickel;
 mod request;
 mod response;
 mod middleware;
-mod middleware_handler;
+mod responder;
 mod favicon_handler;
 mod static_files_handler;
 mod json_body_parser;

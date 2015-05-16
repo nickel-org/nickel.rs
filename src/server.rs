@@ -1,7 +1,7 @@
 use std::net::ToSocketAddrs;
 use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
-use hyper::HttpResult;
+use hyper::Result as HttpResult;
 use hyper::server::{Request, Response, Handler, Listening};
 use hyper::server::Server as HyperServer;
 

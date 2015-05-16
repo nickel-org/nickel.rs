@@ -1,17 +1,3 @@
-#[macro_export]
-macro_rules! router {
-    ($($method:ident $path:expr => |$req:ident, $res:ident| $b:block)+) => (
-        {
-            use $crate::HttpRouter;
-            let mut router = $crate::Router::new();
-
-            $( router.$method($path, middleware!(|$req, $res| $b)); )+
-
-            router
-        }
-    )
-}
-
 /// Macro to reduce the boilerplate required for using unboxed
 /// closures as `Middleware` due to current type inference behaviour.
 ///
@@ -30,7 +16,7 @@ macro_rules! router {
 /// // Some shared resource between requests, must be `Sync + Send`
 /// let visits = AtomicUsize::new(0);
 ///
-/// server.get("/", middleware! { |_req, _res|
+/// server.get("/", middleware! {
 ///     format!("{}", visits.fetch_add(1, Ordering::Relaxed))
 /// });
 ///
@@ -39,26 +25,23 @@ macro_rules! router {
 /// ```
 #[macro_export]
 macro_rules! middleware {
-    (|$req:ident, mut $res:ident| $($b:tt)+) => { middleware__inner!($req, $res, mut $res, $($b)+) };
-    (|$req:ident, $res:ident| $($b:tt)+) => { middleware__inner!($req, $res, $res, $($b)+) };
-    (|$req:ident| $($b:tt)+) => { middleware!(|$req, res| $($b)+) };
-    ($($b:tt)+) => { middleware!(|req, res| $($b)+) };
+    (|$req:tt, mut $res:ident| $($b:tt)+) => { _middleware_inner!($req, $res, mut $res, $($b)+) };
+    (|$req:tt, $res:ident| $($b:tt)+) => { _middleware_inner!($req, $res, $res, $($b)+) };
+    (|$req:tt| $($b:tt)+) => { middleware!(|$req, _res| $($b)+) };
+    ($($b:tt)+) => { middleware!(|_, _res| $($b)+) };
 }
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! middleware__inner {
-    ($req:ident, $res:ident, $res_binding:pat, $($b:tt)+) => {{
-        use $crate::{MiddlewareResult,ResponseFinalizer, Response, Request};
+macro_rules! _middleware_inner {
+    ($req:tt, $res:ident, $res_binding:pat, $($b:tt)+) => {{
+        use $crate::{MiddlewareResult,Responder, Response, Request};
 
         #[inline(always)]
-        fn restrict<'a, R: ResponseFinalizer>(r: R, res: Response<'a>)
+        fn restrict<'a, R: Responder>(r: R, res: Response<'a>)
                 -> MiddlewareResult<'a> {
-            r.respond(res)
+            res.send(r)
         }
-
-        #[inline(always)]
-        fn ignore_unused(_: &Request, _: &Response) {}
 
         // Inference fails due to thinking it's a (&Request, Response) with
         // different mutability requirements
@@ -68,8 +51,7 @@ macro_rules! middleware__inner {
                         Fn(&'r mut Request<'b, 'a, 'b>, Response<'a>)
                             -> MiddlewareResult<'a> + Send + Sync { f }
 
-        restrict_closure(move |$req, $res_binding| {
-            ignore_unused($req, &$res);
+        restrict_closure(move |as_pat!($req), $res_binding| {
             restrict(as_block!({$($b)+}), $res)
         })
     }};
@@ -78,3 +60,7 @@ macro_rules! middleware__inner {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! as_block { ($b:block) => ( $b ) }
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! as_pat { ($p:pat) => ( $p ) }

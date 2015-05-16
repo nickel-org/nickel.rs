@@ -4,25 +4,28 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::path::Path;
 use serialize::Encodable;
-use hyper::status::StatusCode::{self, InternalServerError};
+use hyper::status::StatusCode;
 use hyper::server::Response as HyperResponse;
-use hyper::header::{Date, HttpDate, Server, ContentType, ContentLength, Header, HeaderFormat};
+use hyper::header::{
+    Headers, Date, HttpDate, Server, ContentType, ContentLength, Header, HeaderFormat
+};
 use hyper::net::{Fresh, Streaming};
 use time;
-use mimes::{get_media_type, MediaType};
+use mimes::MediaType;
 use mustache;
 use mustache::Template;
-use std::io;
-use std::io::{Read, Write, copy};
+use std::io::{self, Read, Write, copy};
 use std::fs::File;
-use {NickelError, Halt, MiddlewareResult, AsBytes};
+use std::any::Any;
+use {NickelError, Halt, MiddlewareResult, Responder};
+use modifier::Modifier;
 
 pub type TemplateCache = RwLock<HashMap<String, Template>>;
 
 ///A container for the response
-pub struct Response<'a, T=Fresh> {
+pub struct Response<'a, T: 'static + Any = Fresh> {
     ///the original `hyper::server::Response`
-    pub origin: HyperResponse<'a, T>,
+    origin: HyperResponse<'a, T>,
     templates: &'a TemplateCache
 }
 
@@ -36,38 +39,50 @@ impl<'a> Response<'a, Fresh> {
         }
     }
 
-    /// Sets the content type by it's short form.
-    /// Returns the response for chaining.
-    ///
-    /// # Examples
-    /// ```{rust}
-    /// use nickel::{Request, Response, MiddlewareResult, Continue};
-    /// use nickel::mimes::MediaType;
-    ///
-    /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
-    ///     res.content_type(MediaType::Html);
-    ///     Ok(Continue(res))
-    /// }
-    /// ```
-    pub fn content_type(&mut self, mt: MediaType) -> &mut Response<'a> {
-        self.origin.headers_mut().set(ContentType(get_media_type(mt)));
-        self
+    /// Get a mutable reference to the status.
+    pub fn status_mut(&mut self) -> &mut StatusCode {
+        self.origin.status_mut()
     }
 
-    /// Sets the status code and returns the response for chaining
+    /// Get a mutable reference to the Headers.
+    pub fn headers_mut(&mut self) -> &mut Headers {
+        self.origin.headers_mut()
+    }
+
+    /// Modify the response with the provided data.
     ///
     /// # Examples
     /// ```{rust}
-    /// use nickel::{Request, Response, MiddlewareResult, Continue};
-    /// use nickel::status::StatusCode;
+    /// extern crate hyper;
+    /// #[macro_use] extern crate nickel;
     ///
-    /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
-    ///     res.set_status(StatusCode::NotFound);
-    ///     Ok(Continue(res))
+    /// use nickel::{Nickel, HttpRouter, MediaType};
+    /// use nickel::status::StatusCode;
+    /// use hyper::header::Location;
+    ///
+    /// fn main() {
+    ///     let mut server = Nickel::new();
+    ///     server.get("/a", middleware! { |_, mut res|
+    ///             // set the Status
+    ///         res.set(StatusCode::PermanentRedirect)
+    ///             // update a Header value
+    ///            .set(Location("http://nickel.rs".into()));
+    ///
+    ///         ""
+    ///     });
+    ///
+    ///     server.get("/b", middleware! { |_, mut res|
+    ///             // setting the content type
+    ///         res.set(MediaType::Json);
+    ///
+    ///         "{'foo': 'bar'}"
+    ///     });
+    ///
+    ///     // ...
     /// }
     /// ```
-    pub fn set_status(&mut self, status: StatusCode) -> &mut Response<'a> {
-        *self.origin.status_mut() = status;
+    pub fn set<T: Modifier<Response<'a>>>(&mut self, attribute: T) -> &mut Response<'a> {
+        attribute.modify(self);
         self
     }
 
@@ -81,12 +96,9 @@ impl<'a> Response<'a, Fresh> {
     ///     res.send("hello world")
     /// }
     /// ```
-    pub fn send<T: AsBytes>(self, text: T) -> MiddlewareResult<'a> {
-        let mut stream = try!(self.start());
-        match stream.write_all(text.as_bytes()) {
-            Ok(()) => Ok(Halt(stream)),
-            Err(e) => stream.bail(format!("Failed to send: {}", e))
-        }
+    #[inline]
+    pub fn send<T: Responder>(self, data: T) -> MiddlewareResult<'a> {
+        data.respond(self)
     }
 
     /// Writes a file to the output.
@@ -106,23 +118,18 @@ impl<'a> Response<'a, Fresh> {
         // Chunk the response
         self.origin.headers_mut().remove::<ContentLength>();
         // Determine content type by file extension or default to binary
-        self.content_type(path.extension()
-                              .and_then(|os| os.to_str())
-                              .and_then(|s| s.parse().ok())
-                              .unwrap_or(MediaType::Bin));
+        let mime = mime_from_filename(path).unwrap_or(MediaType::Bin);
+        self.set(mime);
 
-        match File::open(path) {
-            Ok(mut file) => {
-                let mut stream = try!(self.start());
-                match copy(&mut file, &mut stream) {
-                    Ok(_) => Ok(Halt(stream)),
-                    Err(e) => stream.bail(format!("Failed to send file: {}", e))
-                }
-            }
-            Err(e) => {
-                self.error(InternalServerError,
-                           format!("Failed to send file '{:?}': {}", path, e))
-            }
+        let mut file = try_with!(self, {
+            File::open(path).map_err(|e| format!("Failed to send file '{:?}': {}",
+                                                 path, e))
+        });
+
+        let mut stream = try!(self.start());
+        match copy(&mut file, &mut stream) {
+            Ok(_) => Ok(Halt(stream)),
+            Err(e) => stream.bail(format!("Failed to send file: {}", e))
         }
     }
 
@@ -133,7 +140,7 @@ impl<'a> Response<'a, Fresh> {
     fn set_fallback_headers(&mut self) {
         self.set_header_fallback(|| Date(HttpDate(time::now_utc())));
         self.set_header_fallback(|| Server("Nickel".to_string()));
-        self.set_header_fallback(|| ContentType(get_media_type(MediaType::Html)));
+        self.set_header_fallback(|| ContentType(MediaType::Html.into()));
     }
 
     /// Return an error with the appropriate status code for error handlers to
@@ -150,22 +157,26 @@ impl<'a> Response<'a, Fresh> {
     ///
     /// # Examples
     /// ```{rust}
-    /// # extern crate nickel;
-    /// # extern crate hyper;
+    /// #[macro_use] extern crate nickel;
+    /// extern crate hyper;
     ///
-    /// # fn main() {
-    /// use nickel::{Request, Response, MiddlewareResult, Halt, MediaType, get_media_type};
+    /// use nickel::{Nickel, HttpRouter, MediaType};
     /// use hyper::header::ContentType;
     ///
-    /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
-    ///     res.content_type(MediaType::Html);
-    ///     res.set_header_fallback(|| {
-    ///         panic!("Should not get called");
-    ///         ContentType(get_media_type(MediaType::Txt))
+    /// fn main() {
+    ///     let mut server = Nickel::new();
+    ///     server.get("/", middleware! { |_, mut res|
+    ///         res.set(MediaType::Html);
+    ///         res.set_header_fallback(|| {
+    ///             panic!("Should not get called");
+    ///             ContentType(MediaType::Txt.into())
+    ///         });
+    ///
+    ///         "<h1>Hello World</h1>"
     ///     });
-    ///     res.send("<h1>Hello World</h1>")
+    ///
+    ///     // ...
     /// }
-    /// # }
     /// ```
     pub fn set_header_fallback<F, H>(&mut self, f: F)
             where H: Header + HeaderFormat, F: FnOnce() -> H {
@@ -211,13 +222,12 @@ impl<'a> Response<'a, Fresh> {
         // Search again incase there was a race to compile the template
         let template = match templates.entry(path.clone()) {
             Vacant(entry) => {
-                match mustache::compile_path(&path) {
-                    Ok(template) => entry.insert(template),
-                    Err(e) => return self.error(InternalServerError,
-                                                format!("Failed to compile template: \
-                                                        {}.\nReason: {:?}",
-                                                        &path, e))
-                }
+                let template = try_with!(self, {
+                    mustache::compile_path(&path)
+                             .map_err(|e| format!("Failed to compile template '{}': {:?}",
+                                            path, e))
+                });
+                entry.insert(template)
             },
             Occupied(entry) => entry.into_mut()
         };
@@ -244,6 +254,7 @@ impl<'a, 'b> Write for Response<'a, Streaming> {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.origin.write(buf)
     }
+
     #[inline(always)]
     fn flush(&mut self) -> io::Result<()> {
         self.origin.flush()
@@ -267,26 +278,105 @@ impl<'a, 'b> Response<'a, Streaming> {
     }
 }
 
-impl <'a, T> Response<'a, T> {
-    /// Gets the current status code for this response
+impl <'a, T: 'static + Any> Response<'a, T> {
+    /// The status of this response.
     pub fn status(&self) -> StatusCode {
         self.origin.status()
     }
+
+    /// The headers of this response.
+    pub fn headers(&self) -> &Headers {
+        self.origin.headers()
+    }
+}
+
+fn mime_from_filename<P: AsRef<Path>>(path: P) -> Option<MediaType> {
+    path.as_ref()
+        .extension()
+        .and_then(|os| os.to_str())
+        // Lookup mime from file extension
+        .and_then(|s| s.parse().ok())
 }
 
 #[test]
 fn matches_content_type () {
-    use hyper::mime::{Mime, TopLevel, SubLevel};
-    let path = &Path::new("test.txt");
-    let content_type = path.extension()
-                           .and_then(|os| os.to_str())
-                           .and_then(|s| s.parse().ok());
+    assert_eq!(Some(MediaType::Txt), mime_from_filename("test.txt"));
+    assert_eq!(Some(MediaType::Json), mime_from_filename("test.json"));
+    assert_eq!(Some(MediaType::Bin), mime_from_filename("test.bin"));
+}
 
-    assert_eq!(content_type, Some(MediaType::Txt));
-    let content_type = content_type.map(get_media_type).unwrap();
+mod modifier_impls {
+    use hyper::header::*;
+    use hyper::status::StatusCode;
+    use modifier::Modifier;
+    use {Response, MediaType};
 
-    match content_type {
-        Mime(TopLevel::Text, SubLevel::Plain, _) => {}, // OK
-        wrong => panic!("Wrong mime: {}", wrong)
+    impl<'a> Modifier<Response<'a>> for StatusCode {
+        fn modify(self, res: &mut Response<'a>) {
+            *res.status_mut() = self
+        }
+    }
+
+    impl<'a> Modifier<Response<'a>> for MediaType {
+        fn modify(self, res: &mut Response<'a>) {
+            ContentType(self.into()).modify(res)
+        }
+    }
+
+    macro_rules! header_modifiers {
+        ($($t:ty),+) => (
+            $(
+                impl<'a> Modifier<Response<'a>> for $t {
+                    fn modify(self, res: &mut Response<'a>) {
+                        res.headers_mut().set(self)
+                    }
+                }
+            )+
+        )
+    }
+
+    header_modifiers! {
+        Accept,
+        AccessControlAllowHeaders,
+        AccessControlAllowMethods,
+        AccessControlAllowOrigin,
+        AccessControlMaxAge,
+        AccessControlRequestHeaders,
+        AccessControlRequestMethod,
+        AcceptCharset,
+        AcceptEncoding,
+        AcceptLanguage,
+        AcceptRanges,
+        Allow,
+        Authorization<Basic>,
+        Authorization<String>,
+        CacheControl,
+        Cookie,
+        Connection,
+        ContentEncoding,
+        ContentLanguage,
+        ContentLength,
+        ContentType,
+        Date,
+        ETag,
+        Expect,
+        Expires,
+        From,
+        Host,
+        IfMatch,
+        IfModifiedSince,
+        IfNoneMatch,
+        IfRange,
+        IfUnmodifiedSince,
+        LastModified,
+        Location,
+        Pragma,
+        Referer,
+        Server,
+        SetCookie,
+        TransferEncoding,
+        Upgrade,
+        UserAgent,
+        Vary
     }
 }

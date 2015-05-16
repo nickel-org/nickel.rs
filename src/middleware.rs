@@ -22,6 +22,12 @@ pub trait Middleware: Send + 'static + Sync {
     }
 }
 
+impl<T> Middleware for T where T: for<'r, 'b, 'a> Fn(&'r mut Request<'b, 'a, 'b>, Response<'a>) -> MiddlewareResult<'a> + Send + Sync + 'static {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a, 'b>, res: Response<'a>) -> MiddlewareResult<'a> {
+        (*self)(req, res)
+    }
+}
+
 pub trait ErrorHandler: Send + 'static + Sync {
     fn handle_error(&self, &mut NickelError, &mut Request) -> Action;
 }
@@ -54,7 +60,7 @@ impl MiddlewareStack {
                            req.origin.method,
                            req.origin.remote_addr,
                            req.origin.uri,
-                           res.origin.status());
+                           res.status());
                     let _ = res.end();
                     return
                 }
@@ -65,7 +71,7 @@ impl MiddlewareStack {
                           req.origin.remote_addr,
                           req.origin.uri,
                           err.message,
-                          err.stream.as_ref().map(|s| s.origin.status()));
+                          err.stream.as_ref().map(|s| s.status()));
 
                     for error_handler in self.error_handlers.iter().rev() {
                         if let Halt(()) = error_handler.handle_error(&mut err, &mut req) {
@@ -79,7 +85,7 @@ impl MiddlewareStack {
                           req.origin.remote_addr,
                           req.origin.uri,
                           err.message,
-                          err.stream.map(|s| s.origin.status()));
+                          err.stream.map(|s| s.status()));
                     return
                 }
             }
