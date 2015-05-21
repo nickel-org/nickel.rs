@@ -2,6 +2,7 @@ use router::RouteResult;
 use plugin::{Extensible, Pluggable};
 use typemap::TypeMap;
 use hyper::server::Request as HyperRequest;
+use hyper::uri::RequestUri::AbsolutePath;
 
 ///A container for all the request data
 pub struct Request<'a, 'b: 'k, 'k: 'a> {
@@ -24,6 +25,13 @@ impl<'a, 'b, 'k> Request<'a, 'b, 'k> {
 
     pub fn param(&self, key: &str) -> &str {
         self.route_result.as_ref().unwrap().param(key)
+    }
+
+    pub fn path_without_query(&self) -> Option<&str> {
+        match self.origin.uri {
+            AbsolutePath(ref path) => Some(path.splitn(2, '?').next().unwrap()),
+            _ => None
+        }
     }
 }
 
