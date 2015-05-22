@@ -11,9 +11,11 @@ fn main() {
     // Request hinted
     server.utilize(|_: &mut Request, res| res.send("Hello World!"));
     //~^ ERROR the type of this value must be known in this context
+    //~^^ ERROR type mismatch resolving `for<'r,'b,'a>
 
     server.get("**", |_: &mut Request, res| res.send("Hello World!"));
     //~^ ERROR the type of this value must be known in this context
+    //~^^ ERROR type mismatch resolving `for<'r,'b,'a>
 
     server.listen("127.0.0.1:6767");
 }
