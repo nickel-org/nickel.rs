@@ -1,5 +1,5 @@
 use middleware::{Middleware, Continue, MiddlewareResult};
-use hyper::uri::RequestUri::AbsolutePath;
+
 use request::Request;
 use response::Response;
 use router::HttpRouter;
@@ -54,9 +54,6 @@ impl Router {
     }
 
     pub fn match_route<'a>(&'a self, method: &Method, path: &str) -> Option<RouteResult<'a>> {
-        // Strip off the querystring when matching a route
-        let path = path.splitn(2, '?').next().unwrap();
-
         self.routes
             .iter()
             .find(|item| item.method == *method && item.matcher.is_match(path))
@@ -98,10 +95,11 @@ impl Middleware for Router {
     fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a, 'b>, mut res: Response<'a>)
                         -> MiddlewareResult<'a> {
         debug!("Router::invoke for '{:?}'", req.origin.uri);
-        let route_result = match req.origin.uri {
-            AbsolutePath(ref url) => self.match_route(&req.origin.method, &**url),
-            _ => None
-        };
+
+        // Strip off the querystring when matching a route
+        let route_result = req.path_without_query()
+                              .and_then(|path| self.match_route(&req.origin.method, path));
+
         debug!("route_result.route.path: {:?}", route_result.as_ref().map(|r| r.route.matcher.path()));
 
         match route_result {
