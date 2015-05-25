@@ -6,6 +6,7 @@ cache:
       - target
 
 rust:
+  - 1.0.0
   - nightly
   - beta
 
