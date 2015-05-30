@@ -1,3 +1,44 @@
+<a name="0.5.0"></a>
+## 0.5.0 (2015-05-20)
+
+
+#### Features
+
+* **middleware**  impl Responder for StatusCode ([2797359e](https://github.com/nickel-org/nickel.rs/commit/2797359e89421a9e5649325f092644bc216623ab))
+* **response**
+  *  allow `Response::set` to be used with MediaType ([24e218a0](https://github.com/nickel-org/nickel.rs/commit/24e218a07c5067d2f596abf779851ba280bcf5c8))
+  *  add generic `set` method ([182517b8](https://github.com/nickel-org/nickel.rs/commit/182517b89a232a715b2fde82efbe507cef96037e))
+  *  add `headers` to access current Response headers ([41b67346](https://github.com/nickel-org/nickel.rs/commit/41b67346a5a54fbbdbbd3b2f734952a34cd9c214))
+* **macro**
+  *  add basic nickel_try! macro ([a9705ad3](https://github.com/nickel-org/nickel.rs/commit/a9705ad388c5f9dc9b7b454989d67f99bbca708e))
+  *  allow _ pattern for request in macro parameters ([227d0828](https://github.com/nickel-org/nickel.rs/commit/227d0828fd500d157caecedc67b2d9a9b1b775a3))
+  *  stop ignoring unused macro parameters ([d4e2420e](https://github.com/nickel-org/nickel.rs/commit/d4e2420e82161fb2a4c21fa11e12def36b979f19))
+  *  make router! a recursive macro to increase flexibility ([ce218afd](https://github.com/nickel-org/nickel.rs/commit/ce218afdb84d5fe68ded56636c8029068f4f8f4d))
+* **Response**  Response::send can now take anything implementing ResponseFinalizer ([62a118b1](https://github.com/nickel-org/nickel.rs/commit/62a118b16023d2c06fe3a42b5ef1c35991b57070))
+* **hyper**  update to hyper 0.4 ([f35f7f06](https://github.com/nickel-org/nickel.rs/commit/f35f7f061cb3bbae7604975fc4ced7841de296c1))
+* **router**  add convenience methods for OPTIONS and PATCH ([471dc1bc](https://github.com/nickel-org/nickel.rs/commit/471dc1bc5f367a83bc77950402f04df69982f90a), closes [#202](https://github.com/nickel-org/nickel.rs/issues/202))
+* **travis**  test the README example in travis builds ([c5986a11](https://github.com/nickel-org/nickel.rs/commit/c5986a11797b0696bf3d47f3afc24714af1dfec4))
+
+
+
+<a name="v0.4.0"></a>
+## v0.4.0 (2015-05-16)
+
+
+#### Bug Fixes
+
+* **response**
+  *  fix template partials ([bd39ca50](https://github.com/nickel-org/nickel.rs/commit/bd39ca50eb00369a28acfc1fd92565b817a334ef), closes [#160](https://github.com/nickel-org/nickel.rs/issues/160))
+  *  loosen bounds for render path ([ffe1a0a3](https://github.com/nickel-org/nickel.rs/commit/ffe1a0a364c1b1afbf0632d9f3d4aa5716563919), closes [#209](https://github.com/nickel-org/nickel.rs/issues/209))
+* **server**  loosen bounds required for `listen` ([1f30e68a](https://github.com/nickel-org/nickel.rs/commit/1f30e68a941266a9bcae2b71e0923b8ab500f625))
+
+#### Features
+
+* **travis**  test the README example in travis builds ([c5986a11](https://github.com/nickel-org/nickel.rs/commit/c5986a11797b0696bf3d47f3afc24714af1dfec4))
+* **router**  add convenience methods for OPTIONS and PATCH ([471dc1bc](https://github.com/nickel-org/nickel.rs/commit/471dc1bc5f367a83bc77950402f04df69982f90a), closes [#202](https://github.com/nickel-org/nickel.rs/issues/202))
+
+
+
 <a name="v0.3.0"></a>
 ## v0.3.0 (2015-05-01)
 

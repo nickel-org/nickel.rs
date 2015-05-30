@@ -66,13 +66,13 @@ impl FaviconHandler {
                 self.send_favicon(req, res)
             },
             Options => {
-                res.set_status(StatusCode::Ok);
-                res.origin.headers_mut().set(header::Allow(vec!(Get, Head, Options)));
+                res.set(StatusCode::Ok);
+                res.set(header::Allow(vec![Get, Head, Options]));
                 res.send("")
             },
             _ => {
-                res.set_status(StatusCode::MethodNotAllowed);
-                res.origin.headers_mut().set(header::Allow(vec!(Get, Head, Options)));
+                res.set(StatusCode::MethodNotAllowed);
+                res.set(header::Allow(vec![Get, Head, Options]));
                 res.send("")
             }
         }
@@ -80,7 +80,7 @@ impl FaviconHandler {
 
     pub fn send_favicon<'a, 'b>(&self, req: &Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
         debug!("{:?} {:?}", req.origin.method, self.icon_path.display());
-        res.content_type(MediaType::Ico);
+        res.set(MediaType::Ico);
         res.send(&*self.icon)
     }
 }

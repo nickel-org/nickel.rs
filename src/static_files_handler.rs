@@ -2,7 +2,6 @@ use std::path::{Path, PathBuf};
 use std::io::ErrorKind::NotFound;
 use std::fs;
 
-use hyper::uri::RequestUri::AbsolutePath;
 use hyper::method::Method::{Get, Head};
 
 use request::Request;
@@ -45,17 +44,14 @@ impl StaticFilesHandler {
     }
 
     fn extract_path<'a>(&self, req: &'a mut Request) -> Option<&'a str> {
-        match req.origin.uri {
-            AbsolutePath(ref path) => {
-                debug!("{:?} {:?}{:?}", req.origin.method, self.root_path.display(), path);
+        req.path_without_query().map(|path| {
+            debug!("{:?} {:?}{:?}", req.origin.method, self.root_path.display(), path);
 
-                match &**path {
-                    "/" => Some("index.html"),
-                    path => Some(&path[1..]),
-                }
+            match path {
+                "/" => "index.html",
+                path => &path[1..],
             }
-            _ => None
-        }
+        })
     }
 
     fn with_file<'a, 'b, P>(&self,
