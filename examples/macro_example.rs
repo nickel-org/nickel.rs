@@ -97,7 +97,7 @@ fn main() {
             "This matches /some/crazy/route but not /some/super/crazy/route"
         }
 
-        // go to http://localhost:6767/some/crazy/route to see this route in action
+        // go to http://localhost:6767/a/some/crazy/route to see this route in action
         get "/a/**/route" => {
             "This matches /a/crazy/route and also /a/super/crazy/route"
         }
