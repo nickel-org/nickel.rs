@@ -26,16 +26,19 @@ pub struct RouteResult<'a> {
 }
 
 impl<'a> RouteResult<'a> {
-    pub fn param(&self, key: &str) -> &str {
+    pub fn param(&self, key: &str) -> Option<&str> {
         for &(ref k, ref v) in &self.params {
             if k == &key {
-                return &v[..]
+                return Some(&v[..])
             }
         }
 
         // FIXME: should have a default format
-        if key == FORMAT_PARAM { return "" }
-        panic!("unknown param: {}", key)
+        if key == FORMAT_PARAM {
+            Some("")
+        } else {
+            None
+        }
     }
 }
 
@@ -194,7 +197,7 @@ fn can_match_var_routes () {
     route_store.add_route(Method::Get, "/file/:format/:file", middleware! { "hello from foo" });
 
     let route_result = route_store.match_route(&Method::Get, "/foo/4711").unwrap();
-    assert_eq!(route_result.param("userid"), "4711");
+    assert_eq!(route_result.param("userid"), Some("4711"));
 
     let route_result = route_store.match_route(&Method::Get, "/bar/4711");
     assert!(route_result.is_none());
@@ -207,22 +210,22 @@ fn can_match_var_routes () {
     assert!(route_result.is_some());
 
     let route_result = route_result.unwrap();
-    assert_eq!(route_result.param("userid"), "123,456");
+    assert_eq!(route_result.param("userid"), Some("123,456"));
 
     // ensure that this will work with spacing too
     let route_result = route_store.match_route(&Method::Get, "/foo/John%20Doe");
     assert!(route_result.is_some());
 
     let route_result = route_result.unwrap();
-    assert_eq!(route_result.param("userid"), "John%20Doe");
+    assert_eq!(route_result.param("userid"), Some("John%20Doe"));
 
     // check for optional format param
     let route_result = route_store.match_route(&Method::Get, "/foo/John%20Doe.json");
     assert!(route_result.is_some());
 
     let route_result = route_result.unwrap();
-    assert_eq!(route_result.param("userid"), "John%20Doe");
-    assert_eq!(route_result.param("format"), "json");
+    assert_eq!(route_result.param("userid"), Some("John%20Doe"));
+    assert_eq!(route_result.param("format"), Some("json"));
 
     // ensure format works with queries
     let route_result = route_store.match_route(&Method::Get,
@@ -231,14 +234,14 @@ fn can_match_var_routes () {
 
     let route_result = route_result.unwrap();
     // NOTE: `.param` doesn't cover query params currently
-    assert_eq!(route_result.param("userid"), "5490,1234");
-    assert_eq!(route_result.param("format"), "csv");
+    assert_eq!(route_result.param("userid"), Some("5490,1234"));
+    assert_eq!(route_result.param("format"), Some("csv"));
 
     // ensure format works with no format
     let route_result = route_store.match_route(&Method::Get,
                                                "/foo/5490,1234?foo=true&bar=false").unwrap();
 
-    assert_eq!(route_result.param("format"), "");
+    assert_eq!(route_result.param("format"), Some(""));
 
     // ensure format works if defined by user
     let route_result = route_store.match_route(&Method::Get, "/file/markdown/something?foo=true");
@@ -246,8 +249,8 @@ fn can_match_var_routes () {
 
     let route_result = route_result.unwrap();
     // NOTE: `.param` doesn't cover query params currently
-    assert_eq!(route_result.param("file"), "something");
-    assert_eq!(route_result.param("format"), "markdown");
+    assert_eq!(route_result.param("file"), Some("something"));
+    assert_eq!(route_result.param("format"), Some("markdown"));
 }
 
 #[test]
@@ -264,8 +267,8 @@ fn params_lifetime() {
     let route_result = route_result.unwrap();
     let format = route_result.param("format");
     let file = route_result.param("file");
-    assert_eq!(format, "txt");
-    assert_eq!(file, "manual");
+    assert_eq!(format, Some("txt"));
+    assert_eq!(file, Some("manual"));
 }
 
 #[test]
@@ -303,13 +306,13 @@ fn regex_path_named() {
     assert!(route_result.is_some());
 
     let route_result = route_result.unwrap();
-    assert_eq!(route_result.param("a"), "foo");
+    assert_eq!(route_result.param("a"), Some("foo"));
 
     let route_result = route_store.match_route(&Method::Get, "/bar/b");
     assert!(route_result.is_some());
 
     let route_result = route_result.unwrap();
-    assert_eq!(route_result.param("a"), "bar");
+    assert_eq!(route_result.param("a"), Some("bar"));
 
     let route_result = route_store.match_route(&Method::Get, "/baz/b");
     assert!(route_result.is_none());
@@ -330,11 +333,11 @@ fn ignores_querystring() {
     assert!(route_result.is_some());
 
     let route_result = route_result.unwrap();
-    assert_eq!(route_result.param("foo"), "moo");
+    assert_eq!(route_result.param("foo"), Some("moo"));
 
     let route_result = route_store.match_route(&Method::Get, "/bar/b?foo");
     assert!(route_result.is_some());
 
     let route_result = route_result.unwrap();
-    assert_eq!(route_result.param("a"), "bar");
+    assert_eq!(route_result.param("a"), Some("bar"));
 }

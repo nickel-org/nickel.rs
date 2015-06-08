@@ -43,7 +43,7 @@ fn main() {
 
     // go to http://localhost:6767/user/4711 to see this route in action
     router.get("/user/:userid", middleware! { |request|
-        format!("This is user: {}", request.param("userid"))
+        format!("This is user: {}", request.param("userid").unwrap())
     });
 
     // go to http://localhost:6767/bar to see this route in action
@@ -59,7 +59,7 @@ fn main() {
 
     // go to http://localhost:6767/hello/moomah to see this route in action
     router.get(hello_regex, middleware! { |request|
-        format!("Hello {}", request.param("name"))
+        format!("Hello {}", request.param("name").unwrap())
     });
 
     // go to http://localhost:6767/some/crazy/route to see this route in action
