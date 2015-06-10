@@ -38,7 +38,7 @@ You can then compile this using *Cargo build* and run it using *Cargo run*. Afte
 
 ## More examples
 
-More examples can be found [in the examples directory](/examples/) and the full documentation can be [found here](http://nickel-org.github.io/nickel/).
+More examples can be found [in the examples directory](/examples/) and the full documentation can be [found here](http://docs.nickel.rs).
 
 ##License
 
