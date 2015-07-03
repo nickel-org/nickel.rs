@@ -4,22 +4,27 @@ use typemap::TypeMap;
 use hyper::server::Request as HyperRequest;
 use hyper::uri::RequestUri::AbsolutePath;
 
+//FIXME: Choose better lifetime names
 ///A container for all the request data
-pub struct Request<'a, 'b: 'k, 'k: 'a> {
+pub struct Request<'a, 'b: 'k, 'k: 'a, D: 'b> {
     ///the original `hyper::server::Request`
     pub origin: HyperRequest<'a, 'k>,
     ///a `HashMap<String, String>` holding all params with names and values
-    pub route_result: Option<RouteResult<'b>>,
+    pub route_result: Option<RouteResult<'b, D>>,
 
-    map: TypeMap
+    map: TypeMap,
+
+    data: &'a D,
 }
 
-impl<'a, 'b, 'k> Request<'a, 'b, 'k> {
-    pub fn from_internal(req: HyperRequest<'a, 'k>) -> Request<'a, 'b, 'k> {
+impl<'a, 'b, 'k, D> Request<'a, 'b, 'k, D> {
+    pub fn from_internal(req: HyperRequest<'a, 'k>,
+                         data: &'a D) -> Request<'a, 'b, 'k, D> {
         Request {
             origin: req,
             route_result: None,
-            map: TypeMap::new()
+            map: TypeMap::new(),
+            data: data
         }
     }
 
@@ -35,7 +40,7 @@ impl<'a, 'b, 'k> Request<'a, 'b, 'k> {
     }
 }
 
-impl<'a, 'b, 'k> Extensible for Request<'a, 'b, 'k> {
+impl<'a, 'b, 'k, D> Extensible for Request<'a, 'b, 'k, D> {
     fn extensions(&self) -> &TypeMap {
         &self.map
     }
@@ -45,4 +50,4 @@ impl<'a, 'b, 'k> Extensible for Request<'a, 'b, 'k> {
     }
 }
 
-impl<'a, 'b, 'k> Pluggable for Request<'a, 'b, 'k> {}
+impl<'a, 'b, 'k, D> Pluggable for Request<'a, 'b, 'k, D> {}
