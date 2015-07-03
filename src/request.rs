@@ -12,9 +12,9 @@ pub struct Request<'a, 'b: 'k, 'k: 'a, D: 'b> {
     ///a `HashMap<String, String>` holding all params with names and values
     pub route_result: Option<RouteResult<'b, D>>,
 
-    map: TypeMap,
-
     data: &'a D,
+
+    map: TypeMap,
 }
 
 impl<'a, 'b, 'k, D> Request<'a, 'b, 'k, D> {
@@ -37,6 +37,10 @@ impl<'a, 'b, 'k, D> Request<'a, 'b, 'k, D> {
             AbsolutePath(ref path) => Some(path.splitn(2, '?').next().unwrap()),
             _ => None
         }
+    }
+
+    pub fn data(&self) -> &D {
+        &self.data
     }
 }
 
