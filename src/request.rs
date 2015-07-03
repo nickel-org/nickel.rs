@@ -11,21 +11,25 @@ use hyper::uri::RequestUri::AbsolutePath;
 ///
 /// The lifetime `'server` represents the lifetime of data internal to
 /// the server. It is fixed and longer than `'mw`.
-pub struct Request<'mw, 'server: 'mw> {
+pub struct Request<'mw, 'server: 'mw, D: 'mw> {
     ///the original `hyper::server::Request`
     pub origin: HyperRequest<'mw, 'server>,
     ///a `HashMap<String, String>` holding all params with names and values
-    pub route_result: Option<RouteResult<'mw>>,
+    pub route_result: Option<RouteResult<'mw, D>>,
 
-    map: TypeMap
+    map: TypeMap,
+
+    data: &'mw D,
 }
 
-impl<'mw, 'server> Request<'mw, 'server> {
-    pub fn from_internal(req: HyperRequest<'mw, 'server>) -> Request<'mw, 'server> {
+impl<'mw, 'server, D> Request<'mw, 'server, D> {
+    pub fn from_internal(req: HyperRequest<'mw, 'server>,
+                         data: &'mw D) -> Request<'mw, 'server, D> {
         Request {
             origin: req,
             route_result: None,
-            map: TypeMap::new()
+            map: TypeMap::new(),
+            data: data
         }
     }
 
@@ -41,7 +45,7 @@ impl<'mw, 'server> Request<'mw, 'server> {
     }
 }
 
-impl<'mw, 'server> Extensible for Request<'mw, 'server> {
+impl<'mw, 'server, D> Extensible for Request<'mw, 'server, D> {
     fn extensions(&self) -> &TypeMap {
         &self.map
     }
@@ -51,4 +55,4 @@ impl<'mw, 'server> Extensible for Request<'mw, 'server> {
     }
 }
 
-impl<'mw, 'server> Pluggable for Request<'mw, 'server> {}
+impl<'mw, 'server, D> Pluggable for Request<'mw, 'server, D> {}
