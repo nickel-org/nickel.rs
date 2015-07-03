@@ -7,12 +7,12 @@ use hyper::uri::RequestUri::AbsolutePath;
 
 use std::mem;
 
-pub trait Mountable {
-    fn mount<S: Into<String>, M: Middleware>(&mut self, mount_point: S, middleware: M);
+pub trait Mountable<D> {
+    fn mount<S: Into<String>, M: Middleware<D>>(&mut self, mount_point: S, middleware: M);
 }
 
-impl Mountable for Nickel {
-    ///
+impl<D> Mountable<D> for Nickel<D>
+where D: Send + Sync + 'static {
     /// A trait that makes mounting more convenient. Works the same as
     /// manually adding a `Mount` middleware.
     ///
@@ -27,17 +27,17 @@ impl Mountable for Nickel {
     ///
     /// # Panics
     /// Panics if mount_point does not have a leading and trailing slash.
-    fn mount<S: Into<String>, M: Middleware>(&mut self, mount_point: S, middleware: M) {
+    fn mount<S: Into<String>, M: Middleware<D>>(&mut self, mount_point: S, middleware: M) {
         self.utilize(Mount::new(mount_point, middleware));
     }
 }
 
-pub struct Mount<M: Middleware> {
+pub struct Mount<M> {
     mount_point: String,
     middleware: M
 }
 
-impl<M: Middleware> Mount<M> {
+impl<M> Mount<M> {
     ///
     /// Creates a new middleware that mounts a middleware at a mount point.
     /// An incoming request that matches the mount point will be forwareded to
@@ -63,7 +63,7 @@ impl<M: Middleware> Mount<M> {
     pub fn new<S: Into<String>>(mount_point: S, middleware: M) -> Mount<M> {
         let mount_point: String = mount_point.into();
         match (mount_point.chars().last(), mount_point.chars().nth(0)) {
-            (Some('/'), Some('/')) => 
+            (Some('/'), Some('/')) =>
                 Mount {
                     mount_point: mount_point,
                     middleware: middleware
@@ -73,9 +73,9 @@ impl<M: Middleware> Mount<M> {
     }
 }
 
-impl<M: Middleware> Middleware for Mount<M> {
-    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, 'conn>, res: Response<'mw>)
-        -> MiddlewareResult<'mw> {
+impl<D, M: Middleware<D>> Middleware<D> for Mount<M> {
+    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, 'conn, D>, res: Response<'mw, D>)
+        -> MiddlewareResult<'mw, D> {
         let subpath = match req.origin.uri {
             AbsolutePath(ref path) if path.starts_with(&*self.mount_point) => {
                 AbsolutePath(format!("/{}", &path[self.mount_point.len()..]))
