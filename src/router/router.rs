@@ -10,9 +10,9 @@ use router::{Matcher, FORMAT_PARAM};
 /// A Route is the basic data structure that stores both the path
 /// and the handler that gets executed for the route.
 /// The path can contain variable pattern such as `user/:userid/invoices`
-pub struct Route {
+pub struct Route<D=()> {
     pub method: Method,
-    pub handler: Box<Middleware + Send + Sync + 'static>,
+    pub handler: Box<Middleware<D> + Send + Sync + 'static>,
     matcher: Matcher
 }
 
@@ -20,12 +20,12 @@ pub struct Route {
 /// It contains the matched `route` and also a `params` property holding
 /// a HashMap with the keys being the variable names and the value being the
 /// evaluated string
-pub struct RouteResult<'a> {
-    pub route: &'a Route,
+pub struct RouteResult<'a, D: 'a> {
+    pub route: &'a Route<D>,
     params: Vec<(String, String)>
 }
 
-impl<'a> RouteResult<'a> {
+impl<'a, D> RouteResult<'a, D> {
     pub fn param(&self, key: &str) -> &str {
         for &(ref k, ref v) in &self.params {
             if k == &key {
@@ -42,18 +42,18 @@ impl<'a> RouteResult<'a> {
 /// The Router's job is it to hold routes and to resolve them later against
 /// concrete URLs. The router is also a regular middleware and needs to be
 /// added to the middleware stack with `server.utilize(router)`.
-pub struct Router {
-    routes: Vec<Route>,
+pub struct Router<D=()> {
+    routes: Vec<Route<D>>,
 }
 
-impl Router {
-    pub fn new () -> Router {
+impl<D=()> Router<D> {
+    pub fn new() -> Router<D> {
         Router {
             routes: Vec::new()
         }
     }
 
-    pub fn match_route<'a>(&'a self, method: &Method, path: &str) -> Option<RouteResult<'a>> {
+    pub fn match_route<'a>(&'a self, method: &Method, path: &str) -> Option<RouteResult<'a, D>> {
         self.routes
             .iter()
             .find(|item| item.method == *method && item.matcher.is_match(path))
@@ -66,7 +66,7 @@ impl Router {
     }
 }
 
-fn extract_params(route: &Route, path: &str) -> Vec<(String, String)> {
+fn extract_params<D>(route: &Route<D>, path: &str) -> Vec<(String, String)> {
     match route.matcher.captures(path) {
         Some(captures) => {
             captures.iter_named()
@@ -79,8 +79,8 @@ fn extract_params(route: &Route, path: &str) -> Vec<(String, String)> {
     }
 }
 
-impl HttpRouter for Router {
-    fn add_route<M: Into<Matcher>, H: Middleware>(&mut self, method: Method, matcher: M, handler: H) {
+impl<D> HttpRouter<D> for Router<D> {
+    fn add_route<M: Into<Matcher>, H: Middleware<D>>(&mut self, method: Method, matcher: M, handler: H) {
         let route = Route {
             matcher: matcher.into(),
             method: method,
@@ -91,9 +91,9 @@ impl HttpRouter for Router {
     }
 }
 
-impl Middleware for Router {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a, 'b>, mut res: Response<'a>)
-                        -> MiddlewareResult<'a> {
+impl<D: 'static> Middleware<D> for Router<D> {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a, 'b, D>, mut res: Response<'a, D>)
+                        -> MiddlewareResult<'a, D> {
         debug!("Router::invoke for '{:?}'", req.origin.uri);
 
         // Strip off the querystring when matching a route
@@ -187,7 +187,7 @@ fn creates_valid_regex_for_routes () {
 
 #[test]
 fn can_match_var_routes () {
-    let route_store = &mut Router::new();
+    let route_store = &mut Router::<()>::new();
 
     route_store.add_route(Method::Get, "/foo/:userid", middleware! { "hello from foo" });
     route_store.add_route(Method::Get, "/bar", middleware! { "hello from foo" });
@@ -252,7 +252,7 @@ fn can_match_var_routes () {
 
 #[test]
 fn params_lifetime() {
-    let route_store = &mut Router::new();
+    let route_store = &mut Router::<()>::new();
     let handler = middleware! { "hello from foo" };
 
     route_store.add_route(Method::Get, "/file/:format/:file", handler);
@@ -272,7 +272,7 @@ fn params_lifetime() {
 fn regex_path() {
     use regex::Regex;
 
-    let route_store = &mut Router::new();
+    let route_store = &mut Router::<()>::new();
 
     let regex = Regex::new("/(foo|bar)").unwrap();
     route_store.add_route(Method::Get, regex, middleware! { "hello from foo" });
@@ -294,7 +294,7 @@ fn regex_path() {
 fn regex_path_named() {
     use regex::Regex;
 
-    let route_store = &mut Router::new();
+    let route_store = &mut Router::<()>::new();
 
     let regex = Regex::new("/(?P<a>foo|bar)/b").unwrap();
     route_store.add_route(Method::Get, regex, middleware! { "hello from foo" });
@@ -319,7 +319,7 @@ fn regex_path_named() {
 fn ignores_querystring() {
     use regex::Regex;
 
-    let route_store = &mut Router::new();
+    let route_store = &mut Router::<()>::new();
 
     let regex = Regex::new("/(?P<a>foo|bar)/b").unwrap();
     route_store.add_route(Method::Get, regex, middleware! { "hello from foo" });

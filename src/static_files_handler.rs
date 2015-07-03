@@ -15,8 +15,9 @@ pub struct StaticFilesHandler {
     root_path: PathBuf
 }
 
-impl Middleware for StaticFilesHandler {
-    fn invoke<'a>(&self, req: &mut Request, res: Response<'a>) -> MiddlewareResult<'a> {
+impl<D> Middleware<D> for StaticFilesHandler {
+    fn invoke<'a>(&self, req: &mut Request<D>, res: Response<'a, D>)
+            -> MiddlewareResult<'a, D> {
         match req.origin.method {
             Get | Head => self.with_file(self.extract_path(req), res),
             _ => Ok(Continue(res))
@@ -43,7 +44,7 @@ impl StaticFilesHandler {
         }
     }
 
-    fn extract_path<'a>(&self, req: &'a mut Request) -> Option<&'a str> {
+    fn extract_path<'a, D>(&self, req: &'a mut Request<D>) -> Option<&'a str> {
         req.path_without_query().map(|path| {
             debug!("{:?} {:?}{:?}", req.origin.method, self.root_path.display(), path);
 
@@ -54,10 +55,10 @@ impl StaticFilesHandler {
         })
     }
 
-    fn with_file<'a, 'b, P>(&self,
+    fn with_file<'a, 'b, D, P>(&self,
                             relative_path: Option<P>,
-                            res: Response<'a>)
-            -> MiddlewareResult<'a> where P: AsRef<Path> {
+                            res: Response<'a, D>)
+            -> MiddlewareResult<'a, D> where P: AsRef<Path> {
         if let Some(path) = relative_path {
             let path = self.root_path.join(path);
             match fs::metadata(&path) {
