@@ -43,6 +43,10 @@ impl<'mw, 'server, D> Request<'mw, 'server, D> {
             _ => None
         }
     }
+
+    pub fn data(&self) -> &D {
+        &self.data
+    }
 }
 
 impl<'mw, 'server, D> Extensible for Request<'mw, 'server, D> {
