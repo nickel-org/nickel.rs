@@ -29,7 +29,7 @@ pub use router::{Router, Route, RouteResult, HttpRouter};
 pub use nickel_error::NickelError;
 pub use mimes::MediaType;
 pub use responder::Responder;
-pub use cookies::Cookies;
+pub use cookies::{Cookies, CookiesMut};
 
 #[macro_use] pub mod macros;
 
