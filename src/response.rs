@@ -1,3 +1,4 @@
+use std::mem;
 use std::borrow::Cow;
 use std::sync::RwLock;
 use std::collections::HashMap;
@@ -19,6 +20,8 @@ use std::fs::File;
 use std::any::Any;
 use {NickelError, Halt, MiddlewareResult, Responder};
 use modifier::Modifier;
+use plugin::{Extensible, Pluggable};
+use typemap::TypeMap;
 
 pub type TemplateCache = RwLock<HashMap<String, Template>>;
 
@@ -28,6 +31,9 @@ pub struct Response<'a, D: 'a, T: 'static + Any = Fresh> {
     origin: HyperResponse<'a, T>,
     templates: &'a TemplateCache,
     data: &'a D,
+    map: TypeMap,
+    // This should be FnBox, but that's currently unstable
+    on_send: Vec<Box<FnMut(&mut Response<'a, D, Fresh>)>>
 }
 
 impl<'a, D> Response<'a, D, Fresh> {
@@ -38,7 +44,9 @@ impl<'a, D> Response<'a, D, Fresh> {
         Response {
             origin: response,
             templates: templates,
-            data: data
+            data: data,
+            map: TypeMap::new(),
+            on_send: vec![]
         }
     }
 
@@ -243,15 +251,25 @@ impl<'a, D> Response<'a, D, Fresh> {
     }
 
     pub fn start(mut self) -> Result<Response<'a, D, Streaming>, NickelError<'a, D>> {
+        let on_send = mem::replace(&mut self.on_send, vec![]);
+        for mut f in on_send.into_iter() {
+            // TODO: Ensure `f` doesn't call on_send again
+            f(&mut self)
+        }
+
+        // Set fallback headers last after everything runs, if we did this before as an
+        // on_send then it would possibly set redundant things.
         self.set_fallback_headers();
 
-        let Response { origin, templates, data } = self;
+        let Response { origin, templates, data, map, on_send } = self;
         match origin.start() {
             Ok(origin) => {
                 Ok(Response {
                     origin: origin,
                     templates: templates,
-                    data: data
+                    data: data,
+                    map: map,
+                    on_send: on_send
                 })
             },
             Err(e) =>
@@ -259,6 +277,11 @@ impl<'a, D> Response<'a, D, Fresh> {
                     Err(NickelError::without_response(format!("Failed to start response: {}", e)))
                 }
         }
+    }
+
+    pub fn on_send<F>(&mut self, f: F)
+            where F: FnMut(&mut Response<'a, D, Fresh>) + 'static {
+        self.on_send.push(Box::new(f))
     }
 }
 
@@ -301,7 +324,23 @@ impl <'a, D, T: 'static + Any> Response<'a, D, T> {
     pub fn headers(&self) -> &Headers {
         self.origin.headers()
     }
+
+    pub fn data(&self) -> &D {
+        &self.data
+    }
 }
+
+impl<'a, D, T: 'static + Any> Extensible for Response<'a, D, T> {
+    fn extensions(&self) -> &TypeMap {
+        &self.map
+    }
+
+    fn extensions_mut(&mut self) -> &mut TypeMap {
+        &mut self.map
+    }
+}
+
+impl<'a, D, T: 'static + Any> Pluggable for Response<'a, D, T> {}
 
 fn mime_from_filename<P: AsRef<Path>>(path: P) -> Option<MediaType> {
     path.as_ref()
