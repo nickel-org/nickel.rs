@@ -28,7 +28,7 @@ pub use router::{Router, Route, RouteResult, HttpRouter};
 pub use nickel_error::NickelError;
 pub use mimes::MediaType;
 pub use responder::Responder;
-pub use cookies::{Cookies, CookiesMut};
+pub use cookies::Cookies;
 
 #[macro_use] pub mod macros;
 

@@ -1,7 +1,7 @@
 #[macro_use] extern crate nickel;
 extern crate cookie;
 
-use nickel::{Nickel, HttpRouter, Cookies, CookiesMut, QueryString};
+use nickel::{Nickel, HttpRouter, Cookies, QueryString};
 use nickel::cookies;
 use cookie::Cookie;
 
