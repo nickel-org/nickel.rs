@@ -1,4 +1,4 @@
-use request::Request;
+use {Request, Response};
 use plugin::{Plugin, Pluggable};
 use typemap::Key;
 use hyper::header;
@@ -34,5 +34,35 @@ impl<'a, 'b, 'k, D> Cookies for Request<'a, 'b, 'k, D>
         where D: AsRef<SecretKey> {
     fn cookies(&mut self) -> &CookieJar {
         self.get_ref::<CookiePlugin>().unwrap()
+    }
+}
+
+impl<'a, 'b, 'k, D> Plugin<Response<'a, D>> for CookiePlugin
+        where D: AsRef<SecretKey> {
+    type Error = ();
+
+    fn eval(res: &mut Response<'a, D>) -> Result<CookieJar<'static>, ()> {
+        // Schedule the cookie to be written when headers are being sent
+        res.on_send(|res| {
+            let header = {
+                let jar = res.get_ref::<CookiePlugin>().unwrap();
+                header::SetCookie::from_cookie_jar(jar)
+            };
+            res.set(header);
+        });
+
+        let key = res.data().as_ref();
+        Ok(CookieJar::new(&key.0))
+    }
+}
+
+pub trait CookiesMut {
+    fn cookies_mut(&mut self) -> &mut CookieJar<'static>;
+}
+
+impl<'a, D> CookiesMut for Response<'a, D>
+        where D: AsRef<SecretKey> {
+    fn cookies_mut(&mut self) -> &mut CookieJar<'static> {
+        self.get_mut::<CookiePlugin>().unwrap()
     }
 }
