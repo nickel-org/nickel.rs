@@ -1,5 +1,5 @@
 use {Request, Response};
-use plugin::{Plugin, Pluggable};
+use plugin::{Plugin, Pluggable, Extensible};
 use typemap::Key;
 use hyper::header;
 
@@ -26,17 +26,6 @@ impl<'mw, 'conn, D> Plugin<Request<'mw, 'conn, D>> for CookiePlugin
     }
 }
 
-pub trait Cookies {
-    fn cookies(&mut self) -> &CookieJar;
-}
-
-impl<'mw, 'conn, D> Cookies for Request<'mw, 'conn, D>
-        where D: AsRef<SecretKey> {
-    fn cookies(&mut self) -> &CookieJar {
-        self.get_ref::<CookiePlugin>().unwrap()
-    }
-}
-
 impl<'a, 'b, 'k, D> Plugin<Response<'a, D>> for CookiePlugin
         where D: AsRef<SecretKey> {
     type Error = ();
@@ -56,13 +45,36 @@ impl<'a, 'b, 'k, D> Plugin<Response<'a, D>> for CookiePlugin
     }
 }
 
-pub trait CookiesMut {
-    fn cookies_mut(&mut self) -> &mut CookieJar<'static>;
-}
+/// Trait to whitelist access to `&'mut CookieJar` via the `Cookies` trait.
+pub trait AllowMutCookies {}
+impl<'a, D> AllowMutCookies for Response<'a, D> {}
 
-impl<'a, D> CookiesMut for Response<'a, D>
-        where D: AsRef<SecretKey> {
-    fn cookies_mut(&mut self) -> &mut CookieJar<'static> {
+/// Provides access to a `CookieJar`.
+///
+/// Access to cookies for a `Request` is read-only and represents the cookies
+/// sent from the client.
+///
+/// The `Response` has access to a mutable `CookieJar` when first accessed.
+/// Any cookies added to this jar will be sent as `Set-Cookie` response headers
+/// when the `Response` sends it's `Headers` to the client.
+///
+/// #Examples
+/// See `examples/cookies_example.rs`.
+pub trait Cookies : Pluggable + Extensible
+        where CookiePlugin: Plugin<Self, Value=CookieJar<'static>, Error=()> {
+    /// Provides access to an immutable CookieJar.
+    ///
+    /// Currently requires a mutable reciever, hopefully this can change in future.
+    fn cookies(&mut self) -> &CookieJar {
+        self.get_ref::<CookiePlugin>().unwrap()
+    }
+
+    /// Provides access to a mutable CookieJar.
+    fn cookies_mut(&mut self) -> &mut CookieJar<'static> where Self: AllowMutCookies {
         self.get_mut::<CookiePlugin>().unwrap()
     }
 }
+
+impl<'mw, 'conn, D: AsRef<SecretKey>> Cookies for Request<'mw, 'conn, D> {}
+
+impl<'a, D: AsRef<SecretKey>> Cookies for Response<'a, D> {}
