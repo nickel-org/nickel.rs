@@ -1,5 +1,5 @@
 use {Request, Response};
-use plugin::{Plugin, Pluggable, Extensible};
+use plugin::{Plugin, Pluggable};
 use typemap::Key;
 use hyper::header;
 
@@ -8,7 +8,7 @@ use cookie::CookieJar;
 pub struct SecretKey(pub [u8; 32]);
 
 // Plugin boilerplate
-struct CookiePlugin;
+pub struct CookiePlugin;
 impl Key for CookiePlugin { type Value = CookieJar<'static>; }
 
 impl<'a, 'b, 'k, D> Plugin<Request<'a, 'b, 'k, D>> for CookiePlugin
@@ -60,21 +60,32 @@ impl<'a, D> AllowMutCookies for Response<'a, D> {}
 ///
 /// #Examples
 /// See `examples/cookies_example.rs`.
-pub trait Cookies : Pluggable + Extensible
-        where CookiePlugin: Plugin<Self, Value=CookieJar<'static>, Error=()> {
+pub trait Cookies {
     /// Provides access to an immutable CookieJar.
     ///
     /// Currently requires a mutable reciever, hopefully this can change in future.
-    fn cookies(&mut self) -> &CookieJar {
+    fn cookies(&mut self) -> &CookieJar<'static>;
+
+    /// Provides access to a mutable CookieJar.
+    fn cookies_mut(&mut self) -> &mut CookieJar<'static> where Self: AllowMutCookies;
+}
+
+impl<'a, 'b, 'k, D: AsRef<SecretKey>> Cookies for Request<'a, 'b, 'k, D> {
+    fn cookies(&mut self) -> &<CookiePlugin as Key>::Value {
         self.get_ref::<CookiePlugin>().unwrap()
     }
 
-    /// Provides access to a mutable CookieJar.
-    fn cookies_mut(&mut self) -> &mut CookieJar<'static> where Self: AllowMutCookies {
-        self.get_mut::<CookiePlugin>().unwrap()
+    fn cookies_mut(&mut self) -> &mut <CookiePlugin as Key>::Value where Self: AllowMutCookies {
+        unreachable!()
     }
 }
 
-impl<'a, 'b, 'k, D: AsRef<SecretKey>> Cookies for Request<'a, 'b, 'k, D> {}
+impl<'a, D: AsRef<SecretKey>> Cookies for Response<'a, D> {
+    fn cookies(&mut self) -> &<CookiePlugin as Key>::Value {
+        self.get_ref::<CookiePlugin>().unwrap()
+    }
 
-impl<'a, D: AsRef<SecretKey>> Cookies for Response<'a, D> {}
+    fn cookies_mut(&mut self) -> &mut <CookiePlugin as Key>::Value where Self: AllowMutCookies {
+        self.get_mut::<CookiePlugin>().unwrap()
+    }
+}
