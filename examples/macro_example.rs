@@ -19,13 +19,13 @@ struct Person {
 }
 
 //this is an example middleware function that just logs each request
-fn logger<'a>(request: &mut Request, response: Response<'a>) -> MiddlewareResult<'a> {
+fn logger<'a, D>(request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
     println!("logging request: {:?}", request.origin.uri);
     Ok(Continue(response))
 }
 
 //this is how to overwrite the default error handler to handle 404 cases with a custom view
-fn custom_404<'a>(err: &mut NickelError, _req: &mut Request) -> Action {
+fn custom_404<'a, D>(err: &mut NickelError<D>, _req: &mut Request<D>) -> Action {
     if let Some(ref mut res) = err.stream {
         if res.status() == NotFound {
             let _ = res.write_all(b"<h1>Call the police!</h1>");
@@ -122,7 +122,7 @@ fn main() {
     ));
 
     // issue #20178
-    let custom_handler: fn(&mut NickelError, &mut Request) -> Action = custom_404;
+    let custom_handler: fn(&mut NickelError<()>, &mut Request<()>) -> Action = custom_404;
 
     server.handle_error(custom_handler);
 

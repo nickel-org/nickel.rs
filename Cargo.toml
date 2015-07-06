@@ -28,6 +28,7 @@ groupable = "*"
 mustache = "*"
 lazy_static = "*"
 modifier = "*"
+cookie = "*"
 
 [dependencies.compiletest_rs]
 version = "*"
@@ -37,6 +38,11 @@ optional = true
 
 name = "example"
 path = "examples/example.rs"
+
+[[example]]
+
+name = "cookies_example"
+path = "examples/cookies_example.rs"
 
 [[example]]
 

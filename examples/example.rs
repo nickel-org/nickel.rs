@@ -113,7 +113,7 @@ fn main() {
     server.utilize(StaticFilesHandler::new("examples/assets/"));
 
     //this is how to overwrite the default error handler to handle 404 cases with a custom view
-    fn custom_404<'a>(err: &mut NickelError, _req: &mut Request) -> Action {
+    fn custom_404<'a, D>(err: &mut NickelError<D>, _req: &mut Request<D>) -> Action {
         if let Some(ref mut res) = err.stream {
             if res.status() == NotFound {
                 let _ = res.write_all(b"<h1>Call the police!</h1>");
@@ -126,7 +126,7 @@ fn main() {
 
 
     // issue #20178
-    let custom_handler: fn(&mut NickelError, &mut Request) -> Action = custom_404;
+    let custom_handler: fn(&mut NickelError<()>, &mut Request<()>) -> Action = custom_404;
 
     server.handle_error(custom_handler);
 

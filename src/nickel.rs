@@ -10,21 +10,29 @@ use default_error_handler::DefaultErrorHandler;
 
 /// Nickel is the application object. It's the surface that
 /// holds all public APIs.
-pub struct Nickel{
-    middleware_stack: MiddlewareStack,
+pub struct Nickel<D: Sync + Send + 'static = ()> {
+    middleware_stack: MiddlewareStack<D>,
+    data: D
 }
 
-impl HttpRouter for Nickel {
-    fn add_route<M: Into<Matcher>, H: Middleware>(&mut self, method: Method, matcher: M, handler: H) {
+impl<D: Sync + Send + 'static> HttpRouter<D> for Nickel<D> {
+    fn add_route<M: Into<Matcher>, H: Middleware<D>>(&mut self, method: Method, matcher: M, handler: H) {
         let mut router = Router::new();
         router.add_route(method, matcher, handler);
         self.utilize(router);
     }
 }
 
-impl Nickel {
+impl Nickel<()> {
     /// Creates an instance of Nickel with default error handling.
-    pub fn new() -> Nickel {
+    pub fn new() -> Nickel<()> {
+        Nickel::with_data(())
+    }
+}
+
+impl<D: Sync + Send + 'static> Nickel<D> {
+    /// Creates an instance of Nickel with default error handling and custom data.
+    pub fn with_data(data: D) -> Nickel<D> {
         let mut middleware_stack = MiddlewareStack::new();
 
         // Hook up the default error handler by default. Users are
@@ -32,7 +40,10 @@ impl Nickel {
         // they don't like the default behaviour.
         middleware_stack.add_error_handler(DefaultErrorHandler);
 
-        Nickel { middleware_stack: middleware_stack }
+        Nickel {
+            middleware_stack: middleware_stack,
+            data: data
+        }
     }
 
     /// Registers a middleware handler which will be invoked among other middleware
@@ -56,7 +67,7 @@ impl Nickel {
     /// });
     /// # }
     /// ```
-    pub fn utilize<T: Middleware>(&mut self, handler: T){
+    pub fn utilize<T: Middleware<D>>(&mut self, handler: T){
         self.middleware_stack.add_middleware(handler);
     }
 
@@ -76,7 +87,7 @@ impl Nickel {
     /// use nickel::{NickelError, Action};
     /// use nickel::status::StatusCode::NotFound;
     ///
-    /// fn error_handler(err: &mut NickelError, req: &mut Request) -> Action {
+    /// fn error_handler<D>(err: &mut NickelError<D>, req: &mut Request<D>) -> Action {
     ///    if let Some(ref mut res) = err.stream {
     ///        if res.status() == NotFound {
     ///            let _ = res.write_all(b"<h1>Call the police!</h1>");
@@ -89,12 +100,12 @@ impl Nickel {
     ///
     /// let mut server = Nickel::new();
     ///
-    /// let ehandler: fn(&mut NickelError, &mut Request) -> Action = error_handler;
+    /// let ehandler: fn(&mut NickelError<()>, &mut Request<()>) -> Action = error_handler;
     ///
     /// server.handle_error(ehandler)
     /// # }
     /// ```
-    pub fn handle_error<T: ErrorHandler>(&mut self, handler: T){
+    pub fn handle_error<T: ErrorHandler<D>>(&mut self, handler: T){
         self.middleware_stack.add_error_handler(handler);
     }
 
@@ -117,7 +128,7 @@ impl Nickel {
     ///     server.utilize(router);
     /// }
     /// ```
-    pub fn router() -> Router {
+    pub fn router() -> Router<D> {
         Router::new()
     }
 
@@ -139,7 +150,7 @@ impl Nickel {
             (StatusCode::NotFound, "File Not Found")
         });
 
-        let server = Server::new(self.middleware_stack);
+        let server = Server::new(self.middleware_stack, self.data);
         let listener = server.serve(addr).unwrap();
 
         println!("Listening on http://{}", listener.socket);
