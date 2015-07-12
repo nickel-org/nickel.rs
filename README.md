@@ -20,7 +20,7 @@ fn main() {
 
 You'll need to create a *Cargo.toml* that looks like this;
 
-```not_rust
+```toml
 [package]
 
 name = "my-nickel-app"
@@ -32,13 +32,18 @@ version = "*"
 # If you are using the 'nightly' rust channel you can uncomment
 # the line below to activate unstable features
 # features = ["unstable"]
+
+# Some examples require the `rustc_serialize` crate, which will
+# require uncommenting the lines below
+# [dependencies]
+# rustc-serialize = "*"
 ```
 
 You can then compile this using *Cargo build* and run it using *Cargo run*. After it's running you should visit http://localhost:6767 to see your hello world!
 
 ## More examples
 
-More examples can be found [in the examples directory](/examples/) and the full documentation can be [found here](http://nickel-org.github.io/nickel/).
+More examples can be found [in the examples directory](/examples/) and the full documentation can be [found here](http://docs.nickel.rs).
 
 ##License
 
