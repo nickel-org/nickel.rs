@@ -76,7 +76,7 @@ dual_impl!(&'a [u8],
                 }
             });
 
-dual_impl!(&'static str,
+dual_impl!(&'a str,
            String,
             |self, res| {
                 maybe_set_type(&mut res, MediaType::Html);

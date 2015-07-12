@@ -60,5 +60,10 @@ path = "examples/hello_world.rs"
 
 [[example]]
 
+name = "moved_ownership"
+path = "examples/moved_ownership.rs"
+
+[[example]]
+
 name = "example_route_data"
 path = "examples/example_route_data.rs"
