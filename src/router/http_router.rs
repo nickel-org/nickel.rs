@@ -59,7 +59,7 @@ pub trait HttpRouter {
     ///
     ///     // with variables
     ///     server.get("/user/:userid", middleware! { |request|
-    ///         format!("This is user: {}", request.param("userid"))
+    ///         format!("This is user: {}", request.param("userid").unwrap())
     ///     });
     ///
     ///     // with simple wildcard
@@ -88,7 +88,7 @@ pub trait HttpRouter {
     ///         }
     ///         // with variables
     ///         get "/user/:userid" => |request, response| {
-    ///             format!("This is user: {}", request.param("userid"))
+    ///             format!("This is user: {}", request.param("userid").unwrap())
     ///         }
     ///         // with simple wildcard
     ///         get "/user/*/:userid" => |request, response| {

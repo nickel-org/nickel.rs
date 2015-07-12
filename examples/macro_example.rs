@@ -52,13 +52,13 @@ fn main() {
         // go to http://localhost:6767/user/4711 to see this route in action
         get "/user/:userid" => |request| {
             // returning a String
-            format!("This is user: {}", request.param("userid"))
+            format!("This is user: {}", request.param("userid").unwrap())
         }
 
         // go to http://localhost:6767/no_alloc/4711 to see this route in action
         get "/no_alloc/:userid" => |request, response| {
             // returning a slice of T where T: Display
-            &["This is user: ", request.param("userid")][..]
+            &["This is user: ", request.param("userid").unwrap()][..]
         }
 
         // go to http://localhost:6767/bar to see this route in action
@@ -75,7 +75,7 @@ fn main() {
 
         // go to http://localhost:6767/hello/moomah to see this route in action
         get hello_regex => |request| {
-            format!("Hello {}", request.param("name"))
+            format!("Hello {}", request.param("name").unwrap())
         }
 
         // go to http://localhost:6767/redirect to see this route in action
