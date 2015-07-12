@@ -18,10 +18,9 @@ pub struct FaviconHandler {
 }
 
 impl<D> Middleware<D> for FaviconHandler {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a, 'b, D>, res: Response<'a, D>)
-            -> MiddlewareResult<'a, D> {
-        if FaviconHandler::is_favicon_request(req) {
-            self.handle_request(req, res)
+    fn invoke<'a, 'k>(&'a self, res: Response<'a, 'k, D>) -> MiddlewareResult<'a, 'k, D> {
+        if FaviconHandler::is_favicon_request(&res.request) {
+            self.handle_request(res)
         } else {
             Ok(Continue(res))
         }
@@ -52,17 +51,17 @@ impl FaviconHandler {
     }
 
     #[inline]
-    pub fn is_favicon_request<D>(req: &Request<D>) -> bool {
+    pub fn is_favicon_request(req: &Request) -> bool {
         match req.origin.uri {
             AbsolutePath(ref path) => &**path == "/favicon.ico",
             _                      => false
         }
     }
 
-    pub fn handle_request<'a, D>(&self, req: &Request<D>, mut res: Response<'a, D>) -> MiddlewareResult<'a, D> {
-        match req.origin.method {
+    pub fn handle_request<'a, 'k, D>(&self, mut res: Response<'a, 'k, D>) -> MiddlewareResult<'a, 'k, D> {
+        match res.request.origin.method {
             Get | Head => {
-                self.send_favicon(req, res)
+                self.send_favicon(res)
             },
             Options => {
                 res.set(StatusCode::Ok);
@@ -77,8 +76,8 @@ impl FaviconHandler {
         }
     }
 
-    pub fn send_favicon<'a, 'b, D>(&self, req: &Request<D>, mut res: Response<'a, D>) -> MiddlewareResult<'a, D> {
-        debug!("{:?} {:?}", req.origin.method, self.icon_path.display());
+    pub fn send_favicon<'a, 'k, D>(&self, mut res: Response<'a, 'k, D>) -> MiddlewareResult<'a, 'k, D> {
+        debug!("{:?} {:?}", res.request.origin.method, self.icon_path.display());
         res.set(MediaType::Ico);
         res.send(&*self.icon)
     }

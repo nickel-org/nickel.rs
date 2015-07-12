@@ -20,22 +20,23 @@ fn main() {
     let mut server = Nickel::with_data(data);
 
     // Try curl -b MyCookie=bar localhost:6767
-    server.get("/", middleware! { |req|
-        let cookie = req.cookies().find("MyCookie");
+    server.get("/", middleware! { |mut res|
+        let cookie = res.cookies().find("MyCookie");
         format!("MyCookie={:?}", cookie.map(|c| c.value))
     });
 
     // Note: Don't use get for login in real applications ;)
     // Try http://localhost:6767/login?name=foo
-    server.get("/login", middleware! { |req, mut res|
+    server.get("/login", middleware! { |mut res|
+        let cookie = {
+            let name = res.request.query().get("name")
+                              .unwrap_or("default_name");
+            Cookie::new("MyCookie".to_owned(), name.to_owned())
+        };
+
         let jar = res.cookies_mut()
                      // long life cookies!
                      .permanent();
-
-        let name = req.query().get("name")
-                              .unwrap_or("default_name");
-        let cookie = Cookie::new("MyCookie".to_owned(),
-                                 name.to_owned());
         jar.add(cookie);
 
         "Cookie set!"

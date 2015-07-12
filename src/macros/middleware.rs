@@ -25,21 +25,20 @@
 /// ```
 #[macro_export]
 macro_rules! middleware {
-    (|$req:tt, mut $res:ident| $($b:tt)+) => { _middleware_inner!($req, $res, mut $res, $($b)+) };
-    (|$req:tt, $res:ident| $($b:tt)+) => { _middleware_inner!($req, $res, $res, $($b)+) };
-    (|$req:tt| $($b:tt)+) => { middleware!(|$req, _res| $($b)+) };
-    ($($b:tt)+) => { middleware!(|_, _res| $($b)+) };
+    (|mut $res:ident| $($b:tt)+) => { _middleware_inner!($res, mut $res, $($b)+) };
+    (|$res:ident| $($b:tt)+) => { _middleware_inner!($res, $res, $($b)+) };
+    ($($b:tt)+) => { _middleware_inner!(_res, _res, $($b)+) };
 }
 
 #[doc(hidden)]
 #[macro_export]
 macro_rules! _middleware_inner {
-    ($req:tt, $res:ident, $res_binding:pat, $($b:tt)+) => {{
-        use $crate::{MiddlewareResult,Responder, Response, Request};
+    ($res:ident, $res_binding:pat, $($b:tt)+) => {{
+        use $crate::{MiddlewareResult,Responder, Response};
 
         #[inline(always)]
-        fn restrict<'a, D, R: Responder<D>>(r: R, res: Response<'a, D>)
-                -> MiddlewareResult<'a, D> {
+        fn restrict<'a, 'k, D, R: Responder<D>>(r: R, res: Response<'a, 'k, D>)
+                -> MiddlewareResult<'a, 'k, D> {
             res.send(r)
         }
 
@@ -47,11 +46,11 @@ macro_rules! _middleware_inner {
         // different mutability requirements
         #[inline(always)]
         fn restrict_closure<F, D>(f: F) -> F
-            where F: for<'r, 'b, 'a>
-                        Fn(&'r mut Request<'b, 'a, 'b, D>, Response<'a, D>)
-                            -> MiddlewareResult<'a, D> + Send + Sync { f }
+            where F: for<'a, 'k>
+                        Fn(Response<'a, 'k, D>)
+                            -> MiddlewareResult<'a, 'k, D> + Send + Sync { f }
 
-        restrict_closure(move |as_pat!($req), $res_binding| {
+        restrict_closure(move |$res_binding| {
             restrict(as_block!({$($b)+}), $res)
         })
     }};

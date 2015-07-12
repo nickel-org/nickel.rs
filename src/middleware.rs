@@ -1,13 +1,12 @@
-use request::Request;
 use response::Response;
 use nickel_error::NickelError;
 use hyper::net;
 
 pub use self::Action::{Continue, Halt};
 
-pub type MiddlewareResult<'a, D> = Result<Action<Response<'a, D, net::Fresh>,
-                                                 Response<'a, D, net::Streaming>>,
-                                          NickelError<'a, D>>;
+pub type MiddlewareResult<'a, 'k, D> = Result<Action<Response<'a, 'k, D, net::Fresh>,
+                                                 Response<'a, 'k, D, net::Streaming>>,
+                                          NickelError<'a, 'k, D>>;
 
 pub enum Action<T=(), U=()> {
     Continue(T),
@@ -17,24 +16,24 @@ pub enum Action<T=(), U=()> {
 // the usage of + Send is weird here because what we really want is + Static
 // but that's not possible as of today. We have to use + Send for now.
 pub trait Middleware<D>: Send + 'static + Sync {
-    fn invoke<'a, 'b>(&'a self, _req: &mut Request<'b, 'a, 'b, D>, res: Response<'a, D, net::Fresh>) -> MiddlewareResult<'a, D> {
+    fn invoke<'a, 'k>(&'a self, res: Response<'a, 'k, D, net::Fresh>) -> MiddlewareResult<'a, 'k, D> {
         Ok(Continue(res))
     }
 }
 
-impl<T, D> Middleware<D> for T where T: for<'r, 'b, 'a> Fn(&'r mut Request<'b, 'a, 'b, D>, Response<'a, D>) -> MiddlewareResult<'a, D> + Send + Sync + 'static {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a, 'b, D>, res: Response<'a, D>) -> MiddlewareResult<'a, D> {
-        (*self)(req, res)
+impl<T, D> Middleware<D> for T where T: for<'a, 'k> Fn(Response<'a, 'k, D>) -> MiddlewareResult<'a, 'k, D> + Send + Sync + 'static {
+    fn invoke<'a, 'k>(&'a self, res: Response<'a, 'k, D>) -> MiddlewareResult<'a, 'k, D> {
+        (*self)(res)
     }
 }
 
 pub trait ErrorHandler<D>: Send + 'static + Sync {
-    fn handle_error(&self, &mut NickelError<D>, &mut Request<D>) -> Action;
+    fn handle_error(&self, &mut NickelError<D>) -> Action;
 }
 
-impl<D> ErrorHandler<D> for fn(&mut NickelError<D>, &mut Request<D>) -> Action {
-    fn handle_error(&self, err: &mut NickelError<D>, req: &mut Request<D>) -> Action {
-        (*self)(err, req)
+impl<D> ErrorHandler<D> for fn(&mut NickelError<D>) -> Action {
+    fn handle_error(&self, err: &mut NickelError<D>) -> Action {
+        (*self)(err)
     }
 }
 
@@ -52,14 +51,14 @@ impl<D> MiddlewareStack<D> {
         self.error_handlers.push(Box::new(handler));
     }
 
-    pub fn invoke<'a, 'b>(&'a self, mut req: Request<'a, 'a, 'b, D>, mut res: Response<'a, D>) {
+    pub fn invoke<'a, 'k>(&'a self, mut res: Response<'a, 'k, D>) {
         for handler in self.handlers.iter() {
-            match handler.invoke(&mut req, res) {
+            match handler.invoke(res) {
                 Ok(Halt(res)) => {
                     debug!("Halted {:?} {:?} {:?} {:?}",
-                           req.origin.method,
-                           req.origin.remote_addr,
-                           req.origin.uri,
+                           res.request.origin.method,
+                           res.request.origin.remote_addr,
+                           res.request.origin.uri,
                            res.status());
                     let _ = res.end();
                     return
@@ -67,25 +66,25 @@ impl<D> MiddlewareStack<D> {
                 Ok(Continue(fresh)) => res = fresh,
                 Err(mut err) => {
                     warn!("{:?} {:?} {:?} {:?} {:?}",
-                          req.origin.method,
-                          req.origin.remote_addr,
-                          req.origin.uri,
+                          err.request().origin.method,
+                          err.request().origin.remote_addr,
+                          err.request().origin.uri,
                           err.message,
-                          err.stream.as_ref().map(|s| s.status()));
+                          err.response().as_ref().map(|s| s.status()));
 
                     for error_handler in self.error_handlers.iter().rev() {
-                        if let Halt(()) = error_handler.handle_error(&mut err, &mut req) {
-                            err.end();
-                            return
+                        if let Halt(()) = error_handler.handle_error(&mut err) {
+                           err.end();
+                           return
                         }
                     }
 
                     warn!("Unhandled error: {:?} {:?} {:?} {:?} {:?}",
-                          req.origin.method,
-                          req.origin.remote_addr,
-                          req.origin.uri,
+                          err.request().origin.method,
+                          err.request().origin.remote_addr,
+                          err.request().origin.uri,
                           err.message,
-                          err.stream.map(|s| s.status()));
+                          err.response().map(|s| s.status()));
                     return
                 }
             }

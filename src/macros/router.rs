@@ -13,24 +13,20 @@ macro_rules! router {
 macro_rules! _router_inner {
     ($router:ident)
         => { $router }; // Base case
-    ($router:ident $method:ident $path:expr => |$req:tt, mut $res:ident| { $($b:tt)* } $($rest:tt)*)
+    ($router:ident $method:ident $path:expr => |mut $res:ident| { $($b:tt)* } $($rest:tt)*)
         => {{
-            $router.$method($path, middleware!(|$req, mut $res| $($b)*));
+            $router.$method($path, middleware!(|mut $res| $($b)*));
 
             _router_inner!($router $($rest)*)
         }};
-    ($router:ident $method:ident $path:expr => |$req:tt, $res:ident| { $($b:tt)* } $($rest:tt)*)
+    ($router:ident $method:ident $path:expr => |$res:ident| { $($b:tt)* } $($rest:tt)*)
         => {{
-            $router.$method($path, middleware!(|$req, $res| $($b)*));
+            $router.$method($path, middleware!(|$res| $($b)*));
 
             _router_inner!($router $($rest)*)
         }};
-    ($router:ident $method:ident $path:expr => |$req:tt| { $($b:tt)* } $($rest:tt)*)
-        => {
-            _router_inner!($router $method $path => |$req, _res| { $($b)* } $($rest)*)
-        };
     ($router:ident $method:ident $path:expr => { $($b:tt)* } $($rest:tt)*)
         => {
-            _router_inner!($router $method $path => |_, _res| { $($b)* } $($rest)*)
+            _router_inner!($router $method $path => |_res| { $($b)* } $($rest)*)
         };
 }

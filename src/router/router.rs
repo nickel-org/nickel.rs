@@ -1,6 +1,5 @@
 use middleware::{Middleware, Continue, MiddlewareResult};
 
-use request::Request;
 use response::Response;
 use router::HttpRouter;
 use hyper::method::Method;
@@ -21,7 +20,7 @@ pub struct Route<D=()> {
 /// a HashMap with the keys being the variable names and the value being the
 /// evaluated string
 pub struct RouteResult<'a, D: 'a> {
-    pub route: &'a Route<D>,
+    route: &'a Route<D>,
     params: Vec<(String, String)>
 }
 
@@ -96,13 +95,19 @@ impl<D> HttpRouter<D> for Router<D> {
 }
 
 impl<D: 'static> Middleware<D> for Router<D> {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a, 'b, D>, mut res: Response<'a, D>)
-                        -> MiddlewareResult<'a, D> {
-        debug!("Router::invoke for '{:?}'", req.origin.uri);
+    fn invoke<'a, 'k>(&'a self, mut res: Response<'a, 'k, D>) -> MiddlewareResult<'a, 'k, D> {
+        debug!("Router::invoke for '{:?}'", res.request.origin.uri);
 
-        // Strip off the querystring when matching a route
-        let route_result = req.path_without_query()
-                              .and_then(|path| self.match_route(&req.origin.method, path));
+        let route_result = {
+            // Strip off the querystring when matching a route
+            match res.request.path_without_query() {
+                Some(path) => {
+                    let method = &res.request.origin.method;
+                    self.match_route(method, path)
+                },
+                None => None
+            }
+        };
 
         debug!("route_result.route.path: {:?}", route_result.as_ref().map(|r| r.route.matcher.path()));
 
@@ -110,8 +115,8 @@ impl<D: 'static> Middleware<D> for Router<D> {
             Some(route_result) => {
                 res.set(StatusCode::Ok);
                 let handler = &route_result.route.handler;
-                req.route_result = Some(route_result);
-                handler.invoke(req, res)
+                res.route_result = Some(route_result);
+                handler.invoke(res)
             },
             None => Ok(Continue(res))
         }

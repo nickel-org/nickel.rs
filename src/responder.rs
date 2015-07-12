@@ -22,17 +22,17 @@ use std::io::Write;
 ///
 /// Please see the examples for some uses.
 pub trait Responder<D> {
-    fn respond<'a>(self, Response<'a, D>) -> MiddlewareResult<'a, D>;
+    fn respond<'a, 'k>(self, Response<'a, 'k, D>) -> MiddlewareResult<'a, 'k, D>;
 }
 
 impl<D> Responder<D> for () {
-    fn respond<'a>(self, res: Response<'a, D>) -> MiddlewareResult<'a, D> {
+    fn respond<'a, 'k>(self, res: Response<'a, 'k, D>) -> MiddlewareResult<'a, 'k, D> {
         Ok(Continue(res))
     }
 }
 
 impl<D> Responder<D> for json::Json {
-    fn respond<'a>(self, mut res: Response<'a, D>) -> MiddlewareResult<'a, D> {
+    fn respond<'a, 'k>(self, mut res: Response<'a, 'k, D>) -> MiddlewareResult<'a, 'k, D> {
         maybe_set_type(&mut res, MediaType::Json);
         res.send(json::encode(&self)
                       .map_err(|e| format!("Failed to parse JSON: {}", e)))
@@ -41,8 +41,8 @@ impl<D> Responder<D> for json::Json {
 
 impl<T, E, D> Responder<D> for Result<T, E>
         where T: Responder<D>,
-              for<'e> NickelError<'e, D>: From<(Response<'e, D>, E)> {
-    fn respond<'a>(self, res: Response<'a, D>) -> MiddlewareResult<'a, D> {
+              for<'e, 'f> NickelError<'e, 'f, D>: From<(Response<'e, 'f, D>, E)> {
+    fn respond<'a, 'k>(self, res: Response<'a, 'k, D>) -> MiddlewareResult<'a, 'k, D> {
         let data = try_with!(res, self);
         res.send(data)
     }
@@ -53,13 +53,13 @@ macro_rules! dual_impl {
         impl<'a, D> Responder<D> for $view {
             #[allow(unused_mut)]
             #[inline]
-            fn respond<'c>($s, mut $res: Response<'c, D>) -> MiddlewareResult<'c, D> $b
+            fn respond<'c, 'd>($s, mut $res: Response<'c, 'd, D>) -> MiddlewareResult<'c, 'd, D> $b
         }
 
         impl<'a, D> Responder<D> for $alloc {
             #[allow(unused_mut)]
             #[inline]
-            fn respond<'c>($s, mut $res: Response<'c, D>) -> MiddlewareResult<'c, D> $b
+            fn respond<'c, 'd>($s, mut $res: Response<'c, 'd, D>) -> MiddlewareResult<'c, 'd, D> $b
         }
     )
 }
@@ -99,9 +99,9 @@ dual_impl!((StatusCode, &'static str),
                 }
             });
 
-impl<'a, D> Responder<D> for StatusCode {
+impl<D> Responder<D> for StatusCode {
     #[inline]
-    fn respond<'c>(self, res: Response<'c, D>) -> MiddlewareResult<'c, D> {
+    fn respond<'a, 'k>(self, res: Response<'a, 'k, D>) -> MiddlewareResult<'a, 'k, D> {
         res.send((self, ""))
     }
 }

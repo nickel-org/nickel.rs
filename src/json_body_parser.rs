@@ -8,10 +8,10 @@ use std::io::{Read, ErrorKind};
 // Plugin boilerplate
 struct JsonBodyParser;
 impl Key for JsonBodyParser { type Value = String; }
-impl<'a, 'b, 'k, D> Plugin<Request<'a, 'b, 'k, D>> for JsonBodyParser {
+impl<'a, 'k> Plugin<Request<'a, 'k>> for JsonBodyParser {
     type Error = io::Error;
 
-    fn eval(req: &mut Request<D>) -> Result<String, io::Error> {
+    fn eval(req: &mut Request) -> Result<String, io::Error> {
         let mut s = String::new();
         try!(req.origin.read_to_string(&mut s));
         Ok(s)
@@ -22,7 +22,7 @@ pub trait JsonBody {
     fn json_as<T: Decodable>(&mut self) -> Result<T, io::Error>;
 }
 
-impl<'a, 'b, 'k, D> JsonBody for Request<'a, 'b, 'k, D> {
+impl<'a, 'k> JsonBody for Request<'a, 'k> {
     fn json_as<T: Decodable>(&mut self) -> Result<T, io::Error> {
         self.get_ref::<JsonBodyParser>().and_then(|parsed|
             json::decode::<T>(&*parsed).map_err(|err|

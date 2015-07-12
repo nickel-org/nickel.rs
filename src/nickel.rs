@@ -62,8 +62,8 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     /// # fn main() {
     /// use nickel::Nickel;
     /// let mut server = Nickel::new();
-    /// server.utilize(middleware! { |req|
-    ///     println!("logging request: {:?}", req.origin.uri);
+    /// server.utilize(middleware! { |response|
+    ///     println!("logging request: {:?}", response.request.origin.uri);
     /// });
     /// # }
     /// ```
@@ -83,12 +83,12 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     /// # extern crate nickel;
     /// # fn main() {
     /// use std::io::Write;
-    /// use nickel::{Nickel, Request, Continue, Halt};
+    /// use nickel::{Nickel, Continue, Halt};
     /// use nickel::{NickelError, Action};
     /// use nickel::status::StatusCode::NotFound;
     ///
-    /// fn error_handler<D>(err: &mut NickelError<D>, _req: &mut Request<D>) -> Action {
-    ///    if let Some(ref mut res) = err.stream {
+    /// fn error_handler<D>(err: &mut NickelError<D>) -> Action {
+    ///    if let Some(ref mut res) = err.response_mut() {
     ///        if res.status() == NotFound {
     ///            let _ = res.write_all(b"<h1>Call the police!</h1>");
     ///            return Halt(())
@@ -100,7 +100,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     ///
     /// let mut server = Nickel::new();
     ///
-    /// let ehandler: fn(&mut NickelError<()>, &mut Request<()>) -> Action = error_handler;
+    /// let ehandler: fn(&mut NickelError<()>) -> Action = error_handler;
     ///
     /// server.handle_error(ehandler)
     /// # }

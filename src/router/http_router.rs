@@ -21,14 +21,14 @@ pub trait HttpRouter<D> {
     ///     let mut server = Nickel::new();
     ///
     ///     server.add_route(Get, "/foo", middleware! { "Get request! "});
-    ///     server.add_route(Post, "/foo", middleware! { |request|
-    ///         format!("Method is: {}", request.origin.method)
+    ///     server.add_route(Post, "/foo", middleware! { |response|
+    ///         format!("Method is: {}", response.request.origin.method)
     ///     });
-    ///     server.add_route(Put, "/foo", middleware! { |request|
-    ///         format!("Method is: {}", request.origin.method)
+    ///     server.add_route(Put, "/foo", middleware! { |response|
+    ///         format!("Method is: {}", response.request.origin.method)
     ///     });
-    ///     server.add_route(Delete, "/foo", middleware! { |request|
-    ///         format!("Method is: {}", request.origin.method)
+    ///     server.add_route(Delete, "/foo", middleware! { |response|
+    ///         format!("Method is: {}", response.request.origin.method)
     ///     });
     ///
     ///     // Regex path
@@ -58,8 +58,8 @@ pub trait HttpRouter<D> {
     ///     server.get("/user", middleware! { "This matches /user" });
     ///
     ///     // with variables
-    ///     server.get("/user/:userid", middleware! { |request|
-    ///         format!("This is user: {}", request.param("userid").unwrap())
+    ///     server.get("/user/:userid", middleware! { |response|
+    ///         format!("This is user: {}", response.param("userid").unwrap())
     ///     });
     ///
     ///     // with simple wildcard
@@ -83,20 +83,20 @@ pub trait HttpRouter<D> {
     /// fn main() {
     ///     let router = router! {
     ///         //  without variables or wildcards
-    ///         get "/user" => |_, response| {
+    ///         get "/user" => {
     ///             "This matches /user";
     ///         }
     ///         // with variables
-    ///         get "/user/:userid" => |request, response| {
-    ///             format!("This is user: {}", request.param("userid").unwrap())
+    ///         get "/user/:userid" => |response| {
+    ///             format!("This is user: {}", response.param("userid").unwrap())
     ///         }
     ///         // with simple wildcard
-    ///         get "/user/*/:userid" => |_, response| {
+    ///         get "/user/*/:userid" => {
     ///             ["This matches /user/list/4711",
     ///              "NOT /user/extended/list/4711"];
     ///         }
     ///         // with double wildcard
-    ///         get "/user/**/:userid" => |_, response| {
+    ///         get "/user/**/:userid" => {
     ///             ["This matches /user/list/4711",
     ///              "AND /user/extended/list/4711"];
     ///         }
