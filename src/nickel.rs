@@ -1,3 +1,5 @@
+use std::fmt::Display;
+use std::path::Path;
 use std::net::ToSocketAddrs;
 use router::{Router, HttpRouter, Matcher};
 use middleware::{MiddlewareStack, Middleware, ErrorHandler};
@@ -144,6 +146,17 @@ impl Nickel {
 
         println!("Listening on http://{}", listener.socket);
         println!("Ctrl-C to shutdown server");
+    }
+    
+    pub fn listen_https<T: ToSocketAddrs + Display>(mut self, addr: T, cert: &Path, key: &Path) {
+        self.middleware_stack.add_middleware(middleware! {
+            (StatusCode::NotFound, "File Not Found")
+        });
+
+        println!("Listening on https://{}", addr);
+        println!("Ctrl-C to shutdown server");
+
+        Server::new(self.middleware_stack).serve_https(addr, cert, key);
     }
 }
 

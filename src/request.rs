@@ -1,10 +1,4 @@
-use router::RouteResult;
-use plugin::{Extensible, Pluggable};
-use typemap::TypeMap;
-use hyper::server::Request as HyperRequest;
-use hyper::uri::RequestUri::AbsolutePath;
-
-///A container for all the request data
+use router::RouteResult; use plugin::{Extensible, Pluggable}; use typemap::TypeMap; use hyper::server::Request as HyperRequest; use hyper::uri::RequestUri::AbsolutePath; ///A container for all the request data
 pub struct Request<'a, 'b: 'k, 'k: 'a> {
     ///the original `hyper::server::Request`
     pub origin: HyperRequest<'a, 'k>,
@@ -23,7 +17,8 @@ impl<'a, 'b, 'k> Request<'a, 'b, 'k> {
         }
     }
 
-    pub fn param(&self, key: &str) -> &str {
+    //pub fn param(&self, key: &str) -> &str {
+    pub fn param(&mut self, key: &str) -> &str {
         self.route_result.as_ref().unwrap().param(key)
     }
 

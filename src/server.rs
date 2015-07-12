@@ -1,4 +1,5 @@
 use std::net::ToSocketAddrs;
+use std::path::Path;
 use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
 use hyper::Result as HttpResult;
@@ -38,5 +39,11 @@ impl Server {
         let arc = ArcServer(Arc::new(self));
         let server = HyperServer::http(arc);
         server.listen(addr)
+    }
+    
+    pub fn serve_https<T: ToSocketAddrs>(self, addr: T, cert: &Path, key: &Path) {
+        let arc = ArcServer(Arc::new(self));
+        let server = HyperServer::https(arc, cert, key);
+        let _ = server.listen(addr);
     }
 }
