@@ -29,6 +29,7 @@ mustache = "*"
 lazy_static = "*"
 modifier = "*"
 cookie = "*"
+byteorder = "*"
 
 [dependencies.compiletest_rs]
 version = "*"
@@ -43,6 +44,11 @@ path = "examples/example.rs"
 
 name = "cookies_example"
 path = "examples/cookies_example.rs"
+
+[[example]]
+
+name = "session_example"
+path = "examples/session_example.rs"
 
 [[example]]
 

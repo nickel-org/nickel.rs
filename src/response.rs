@@ -257,7 +257,7 @@ impl<'a, 'k, D> Response<'a, 'k, D, Fresh> {
 
     pub fn start(mut self) -> Result<Response<'a, 'k, D, Streaming>, NickelError<'a, 'k, D>> {
         let on_send = mem::replace(&mut self.on_send, vec![]);
-        for mut f in on_send.into_iter() {
+        for mut f in on_send.into_iter().rev() {
             // TODO: Ensure `f` doesn't call on_send again
             f(&mut self)
         }
