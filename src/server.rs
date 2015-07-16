@@ -36,7 +36,7 @@ impl Server {
 
     pub fn serve<T: ToSocketAddrs>(self, addr: T) -> HttpResult<Listening> {
         let arc = ArcServer(Arc::new(self));
-        let server = HyperServer::http(arc);
-        server.listen(addr)
+        let server = try!(HyperServer::http(addr));
+        server.handle(arc)
     }
 }
