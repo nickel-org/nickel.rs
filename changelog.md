@@ -1,3 +1,16 @@
+<a name="0.6.0"></a>
+## 0.6.0 (2015-07-16)
+
+
+#### Bug Fixes
+
+* **travis**  allow failures on travis nightly builds ([a5a32efc](https://github.com/nickel-org/nickel.rs/commit/a5a32efcc31e874018a73bb3b91e8d578f851023))
+* **request**  request.param(_) now returns an Option ([f218ce1a](https://github.com/nickel-org/nickel.rs/commit/f218ce1a44bed27172b936d0dfdd230db7d184cd))
+* **responder**  relax required lifetime for responding with string slices ([b220a6f3](https://github.com/nickel-org/nickel.rs/commit/b220a6f3c04f09357955a5d405c74a62651f20e0))
+* **static_files**  ignore the querystring during static file lookup ([88f9632e](https://github.com/nickel-org/nickel.rs/commit/88f9632e373b64761461e255a32d0aff2f1e008c))
+
+
+
 <a name="0.5.0"></a>
 ## 0.5.0 (2015-05-20)
 
