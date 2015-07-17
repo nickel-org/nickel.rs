@@ -45,7 +45,7 @@ fn main() {
         (StatusCode::BadRequest, "Access denied.")
     });
 
-    server.get("/secret", middleware! { |mut res|
+    server.get("/secret", middleware! { |mut res| <ServerData>
         match *res.session() {
             Some(ref user) if user == "foo" => (StatusCode::Ok, "Some hidden information!"),
             _ => (StatusCode::Forbidden, "Access denied.")
