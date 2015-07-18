@@ -47,6 +47,7 @@ mod query_string;
 mod urlencoded;
 mod nickel_error;
 mod default_error_handler;
+pub mod extensions;
 
 pub mod status {
     pub use hyper::status::StatusCode;
