@@ -1,4 +1,6 @@
-# [nickel.rs](http://nickel.rs) [![Build Status](https://travis-ci.org/nickel-org/nickel.rs.png?branch=master)](https://travis-ci.org/nickel-org/nickel.rs) [![](http://meritbadge.herokuapp.com/nickel)](https://crates.io/crates/nickel) [![Join the chat at https://gitter.im/nickel-org/nickel.rs](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nickel-org/nickel.rs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+# [nickel.rs](http://nickel.rs) [![Build Status](https://travis-ci.org/nickel-org/nickel.rs.png?branch=master)](https://travis-ci.org/nickel-org/nickel.rs) [![](http://meritbadge.herokuapp.com/nickel)](https://crates.io/crates/nickel) 
+[![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/nickel-org/nickel.rs/master/LICENSE)
+[![Join the chat at https://gitter.im/nickel-org/nickel.rs](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nickel-org/nickel.rs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 [nickel.rs](http://nickel.rs) is a simple and lightweight foundation for web applications written in Rust. Its API is inspired by the popular express framework for JavaScript.
 
@@ -44,10 +46,6 @@ You can then compile this using *Cargo build* and run it using *Cargo run*. Afte
 ## More examples
 
 More examples can be found [in the examples directory](/examples/) and the full documentation can be [found here](http://docs.nickel.rs).
-
-##License
-
-[MIT license](https://github.com/nickel-org/nickel/blob/master/LICENSE)
 
 ##Contributing
 
