@@ -72,11 +72,11 @@ impl Nickel {
     /// # extern crate nickel;
     /// # fn main() {
     /// use std::io::Write;
-    /// use nickel::{Nickel, Request, Response, Continue, Halt};
+    /// use nickel::{Nickel, Request, Continue, Halt};
     /// use nickel::{NickelError, Action};
     /// use nickel::status::StatusCode::NotFound;
     ///
-    /// fn error_handler(err: &mut NickelError, req: &mut Request) -> Action {
+    /// fn error_handler(err: &mut NickelError, _req: &mut Request) -> Action {
     ///    if let Some(ref mut res) = err.stream {
     ///        if res.status() == NotFound {
     ///            let _ = res.write_all(b"<h1>Call the police!</h1>");
@@ -131,7 +131,7 @@ impl Nickel {
     /// ```{rust,no_run}
     /// use nickel::Nickel;
     ///
-    /// let mut server = Nickel::new();
+    /// let server = Nickel::new();
     /// server.listen("127.0.0.1:6767");
     /// ```
     pub fn listen<T: ToSocketAddrs>(mut self, addr: T) {

@@ -1,16 +1,4 @@
-#![crate_name = "nickel"]
-#![crate_type = "rlib"]
-
-//!Nickel is supposed to be a simple and lightweight foundation for web applications written in Rust. Its API is inspired by the popular express framework for JavaScript.
-//!
-//!Some of the features are:
-//!
-//!* Easy handlers: A handler is just a function that takes a `Request` and `ResponseWriter`
-//!* Variables in routes. Just write `my/route/:someid`
-//!* Easy parameter access: `request.params.get(&"someid")`
-//!* simple wildcard routes: `/some/*/route`
-//!* double wildcard routes: `/a/**/route`
-//!* middleware
+#![doc(test(attr(deny(warnings))))]
 
 extern crate time;
 extern crate rustc_serialize as serialize;

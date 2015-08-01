@@ -49,7 +49,7 @@ pub trait HttpRouter {
     ///
     /// ```{rust}
     /// #[macro_use] extern crate nickel;
-    /// use nickel::{Nickel, Request, Response, HttpRouter};
+    /// use nickel::{Nickel, HttpRouter};
     ///
     /// fn main() {
     ///     let mut server = Nickel::new();
@@ -83,7 +83,7 @@ pub trait HttpRouter {
     /// fn main() {
     ///     let router = router! {
     ///         //  without variables or wildcards
-    ///         get "/user" => |request, response| {
+    ///         get "/user" => |_, response| {
     ///             "This matches /user";
     ///         }
     ///         // with variables
@@ -91,12 +91,12 @@ pub trait HttpRouter {
     ///             format!("This is user: {}", request.param("userid").unwrap())
     ///         }
     ///         // with simple wildcard
-    ///         get "/user/*/:userid" => |request, response| {
+    ///         get "/user/*/:userid" => |_, response| {
     ///             ["This matches /user/list/4711",
     ///              "NOT /user/extended/list/4711"];
     ///         }
     ///         // with double wildcard
-    ///         get "/user/**/:userid" => |request, response| {
+    ///         get "/user/**/:userid" => |_, response| {
     ///             ["This matches /user/list/4711",
     ///              "AND /user/extended/list/4711"];
     ///         }
