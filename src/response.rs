@@ -90,8 +90,9 @@ impl<'a> Response<'a, Fresh> {
     ///
     /// # Examples
     /// ```{rust}
-    /// use nickel::{Request, Response, MiddlewareResult, Halt};
+    /// use nickel::{Request, Response, MiddlewareResult};
     ///
+    /// # #[allow(dead_code)]
     /// fn handler<'a>(_: &mut Request, res: Response<'a>) -> MiddlewareResult<'a> {
     ///     res.send("hello world")
     /// }
@@ -105,11 +106,11 @@ impl<'a> Response<'a, Fresh> {
     ///
     /// # Examples
     /// ```{rust}
-    /// use nickel::{Request, Response, MiddlewareResult, Halt};
-    /// use nickel::status::StatusCode;
+    /// use nickel::{Request, Response, MiddlewareResult};
     /// use std::path::Path;
     ///
-    /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
+    /// # #[allow(dead_code)]
+    /// fn handler<'a>(_: &mut Request, res: Response<'a>) -> MiddlewareResult<'a> {
     ///     let favicon = Path::new("/assets/favicon.ico");
     ///     res.send_file(favicon)
     /// }
@@ -163,6 +164,7 @@ impl<'a> Response<'a, Fresh> {
     /// use nickel::{Nickel, HttpRouter, MediaType};
     /// use hyper::header::ContentType;
     ///
+    /// # #[allow(unreachable_code)]
     /// fn main() {
     ///     let mut server = Nickel::new();
     ///     server.get("/", middleware! { |_, mut res|
@@ -189,9 +191,10 @@ impl<'a> Response<'a, Fresh> {
     /// # Examples
     /// ```{rust}
     /// use std::collections::HashMap;
-    /// use nickel::{Request, Response, MiddlewareResult, Halt};
+    /// use nickel::{Request, Response, MiddlewareResult};
     ///
-    /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
+    /// # #[allow(dead_code)]
+    /// fn handler<'a>(_: &mut Request, res: Response<'a>) -> MiddlewareResult<'a> {
     ///     let mut data = HashMap::new();
     ///     data.insert("name", "user");
     ///     res.render("examples/assets/template.tpl", &data)

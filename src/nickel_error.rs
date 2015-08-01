@@ -25,7 +25,8 @@ impl<'a> NickelError<'a> {
     /// use nickel::{Request, Response, MiddlewareResult, NickelError};
     /// use nickel::status::StatusCode;
     ///
-    /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
+    /// # #[allow(dead_code)]
+    /// fn handler<'a>(_: &mut Request, res: Response<'a>) -> MiddlewareResult<'a> {
     ///     Err(NickelError::new(res, "Error Parsing JSON", StatusCode::BadRequest))
     /// }
     /// # }
