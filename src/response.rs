@@ -26,12 +26,21 @@ use typemap::TypeMap;
 
 pub type TemplateCache = RwLock<HashMap<String, Template>>;
 
-///A container for the response
+/// Response handles the environment available for a given Request-Response pair.
+///
+/// # Why does the Response own the Request?
+/// To enable more complicated Plugins which may rely on client state, it can be
+/// necessary for a Plugin to access data from the Request while forming a Response.
+/// With Request and Response seperated this would lead to unintuitive syntax such
+/// as `(req, res).foo()`.
+///
+/// As the Response needs to use 'moves' to maintain invariants it is easier for
+/// the Request to be owned by the Response than the inverse.
 pub struct Response<'a, 'k: 'a, D: 'a, T: 'static + Any = Fresh> {
-    ///the original `hyper::server::Response`
-    origin: HyperResponse<'a, T>,
+    /// The Request which this Response is replying to
     pub request: Request<'a, 'k>,
     pub route_result: Option<RouteResult<'a, D>>,
+    origin: HyperResponse<'a, T>,
     templates: &'a TemplateCache,
     data: &'a D,
     map: TypeMap,
