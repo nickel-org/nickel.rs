@@ -7,7 +7,6 @@ cache:
 
 rust:
   - stable
-  - 1.0.0
   - nightly
   - beta
 
