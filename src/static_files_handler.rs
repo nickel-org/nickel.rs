@@ -15,10 +15,10 @@ pub struct StaticFilesHandler {
     root_path: PathBuf
 }
 
-impl Middleware for StaticFilesHandler {
-    fn invoke<'a>(&self, req: &mut Request, res: Response<'a>) -> MiddlewareResult<'a> {
-        match req.origin.method {
-            Get | Head => self.with_file(self.extract_path(req), res),
+impl<D> Middleware<D> for StaticFilesHandler {
+    fn invoke<'a, 'k>(&self, res: Response<'a, 'k, D>) -> MiddlewareResult<'a, 'k, D> {
+        match res.request.origin.method {
+            Get | Head => self.handle(res),
             _ => Ok(Continue(res))
         }
     }
@@ -43,7 +43,7 @@ impl StaticFilesHandler {
         }
     }
 
-    fn extract_path<'a>(&self, req: &'a mut Request) -> Option<&'a str> {
+    fn extract_path<'a>(&self, req: &'a Request) -> Option<&'a str> {
         req.path_without_query().map(|path| {
             debug!("{:?} {:?}{:?}", req.origin.method, self.root_path.display(), path);
 
@@ -54,12 +54,8 @@ impl StaticFilesHandler {
         })
     }
 
-    fn with_file<'a, 'b, P>(&self,
-                            relative_path: Option<P>,
-                            res: Response<'a>)
-            -> MiddlewareResult<'a> where P: AsRef<Path> {
-        if let Some(path) = relative_path {
-            let path = self.root_path.join(path);
+    fn handle<'a, 'k, D>(&self, res: Response<'a, 'k, D>) -> MiddlewareResult<'a, 'k, D> {
+        if let Some(path) = self.extract_path(&res.request).map(|p| self.root_path.join(p)) {
             match fs::metadata(&path) {
                 Ok(ref attr) if attr.is_file() => return res.send_file(&path),
                 Err(ref e) if e.kind() != NotFound => debug!("Error getting metadata \

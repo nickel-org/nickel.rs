@@ -1,3 +1,4 @@
+use std::mem;
 use std::borrow::Cow;
 use std::sync::RwLock;
 use std::collections::HashMap;
@@ -17,25 +18,50 @@ use mustache::Template;
 use std::io::{self, Read, Write, copy};
 use std::fs::File;
 use std::any::Any;
-use {NickelError, Halt, MiddlewareResult, Responder};
+use {NickelError, Halt, MiddlewareResult, Responder, Request};
+use router::RouteResult;
 use modifier::Modifier;
+use plugin::{Extensible, Pluggable};
+use typemap::TypeMap;
 
 pub type TemplateCache = RwLock<HashMap<String, Template>>;
 
-///A container for the response
-pub struct Response<'a, T: 'static + Any = Fresh> {
-    ///the original `hyper::server::Response`
+/// Response handles the environment available for a given Request-Response pair.
+///
+/// # Why does the Response own the Request?
+/// To enable more complicated Plugins which may rely on client state, it can be
+/// necessary for a Plugin to access data from the Request while forming a Response.
+/// With Request and Response seperated this would lead to unintuitive syntax such
+/// as `(req, res).foo()`.
+///
+/// As the Response needs to use 'moves' to maintain invariants it is easier for
+/// the Request to be owned by the Response than the inverse.
+pub struct Response<'a, 'k: 'a, D: 'a, T: 'static + Any = Fresh> {
+    /// The Request which this Response is replying to
+    pub request: Request<'a, 'k>,
+    pub route_result: Option<RouteResult<'a, D>>,
     origin: HyperResponse<'a, T>,
-    templates: &'a TemplateCache
+    templates: &'a TemplateCache,
+    data: &'a D,
+    map: TypeMap,
+    // This should be FnBox, but that's currently unstable
+    on_send: Vec<Box<FnMut(&mut Response<'a, 'k, D, Fresh>)>>
 }
 
-impl<'a> Response<'a, Fresh> {
-    pub fn from_internal<'c, 'd>(response: HyperResponse<'c, Fresh>,
-                                 templates: &'c TemplateCache)
-                                -> Response<'c, Fresh> {
+impl<'a, 'k, D> Response<'a, 'k, D, Fresh> {
+    pub fn from_internal(response: HyperResponse<'a, Fresh>,
+                         request: Request<'a, 'k>,
+                         templates: &'a TemplateCache,
+                         data: &'a D)
+                                -> Response<'a, 'k, D, Fresh> {
         Response {
             origin: response,
-            templates: templates
+            route_result: None,
+            request: request,
+            templates: templates,
+            data: data,
+            map: TypeMap::new(),
+            on_send: vec![]
         }
     }
 
@@ -62,7 +88,7 @@ impl<'a> Response<'a, Fresh> {
     ///
     /// fn main() {
     ///     let mut server = Nickel::new();
-    ///     server.get("/a", middleware! { |_, mut res|
+    ///     server.get("/a", middleware! { |mut res|
     ///             // set the Status
     ///         res.set(StatusCode::PermanentRedirect)
     ///             // update a Header value
@@ -71,7 +97,7 @@ impl<'a> Response<'a, Fresh> {
     ///         ""
     ///     });
     ///
-    ///     server.get("/b", middleware! { |_, mut res|
+    ///     server.get("/b", middleware! { |mut res|
     ///             // setting the content type
     ///         res.set(MediaType::Json);
     ///
@@ -81,7 +107,7 @@ impl<'a> Response<'a, Fresh> {
     ///     // ...
     /// }
     /// ```
-    pub fn set<T: Modifier<Response<'a>>>(&mut self, attribute: T) -> &mut Response<'a> {
+    pub fn set<T: Modifier<Response<'a, 'k, D>>>(&mut self, attribute: T) -> &mut Response<'a, 'k, D> {
         attribute.modify(self);
         self
     }
@@ -90,15 +116,15 @@ impl<'a> Response<'a, Fresh> {
     ///
     /// # Examples
     /// ```{rust}
-    /// use nickel::{Request, Response, MiddlewareResult};
+    /// use nickel::{Response, MiddlewareResult};
     ///
     /// # #[allow(dead_code)]
-    /// fn handler<'a>(_: &mut Request, res: Response<'a>) -> MiddlewareResult<'a> {
+    /// fn handler<'a, 'k, D>(res: Response<'a, 'k, D>) -> MiddlewareResult<'a, 'k, D> {
     ///     res.send("hello world")
     /// }
     /// ```
     #[inline]
-    pub fn send<T: Responder>(self, data: T) -> MiddlewareResult<'a> {
+    pub fn send<T: Responder<D>>(self, data: T) -> MiddlewareResult<'a, 'k, D> {
         data.respond(self)
     }
 
@@ -106,16 +132,16 @@ impl<'a> Response<'a, Fresh> {
     ///
     /// # Examples
     /// ```{rust}
-    /// use nickel::{Request, Response, MiddlewareResult};
+    /// use nickel::{Response, MiddlewareResult};
     /// use std::path::Path;
     ///
     /// # #[allow(dead_code)]
-    /// fn handler<'a>(_: &mut Request, res: Response<'a>) -> MiddlewareResult<'a> {
+    /// fn handler<'a, 'k, D>(res: Response<'a, 'k, D>) -> MiddlewareResult<'a, 'k, D> {
     ///     let favicon = Path::new("/assets/favicon.ico");
     ///     res.send_file(favicon)
     /// }
     /// ```
-    pub fn send_file(mut self, path: &Path) -> MiddlewareResult<'a> {
+    pub fn send_file(mut self, path: &Path) -> MiddlewareResult<'a, 'k, D> {
         // Chunk the response
         self.origin.headers_mut().remove::<ContentLength>();
         // Determine content type by file extension or default to binary
@@ -146,7 +172,7 @@ impl<'a> Response<'a, Fresh> {
 
     /// Return an error with the appropriate status code for error handlers to
     /// provide output for.
-    pub fn error<T>(self, status: StatusCode, message: T) -> MiddlewareResult<'a>
+    pub fn error<T>(self, status: StatusCode, message: T) -> MiddlewareResult<'a, 'k, D>
             where T: Into<Cow<'static, str>> {
         Err(NickelError::new(self, message, status))
     }
@@ -167,7 +193,7 @@ impl<'a> Response<'a, Fresh> {
     /// # #[allow(unreachable_code)]
     /// fn main() {
     ///     let mut server = Nickel::new();
-    ///     server.get("/", middleware! { |_, mut res|
+    ///     server.get("/", middleware! { |mut res|
     ///         res.set(MediaType::Html);
     ///         res.set_header_fallback(|| {
     ///             panic!("Should not get called");
@@ -191,19 +217,19 @@ impl<'a> Response<'a, Fresh> {
     /// # Examples
     /// ```{rust}
     /// use std::collections::HashMap;
-    /// use nickel::{Request, Response, MiddlewareResult};
+    /// use nickel::{Response, MiddlewareResult};
     ///
     /// # #[allow(dead_code)]
-    /// fn handler<'a>(_: &mut Request, res: Response<'a>) -> MiddlewareResult<'a> {
+    /// fn handler<'a, 'k, D>(res: Response<'a, 'k, D>) -> MiddlewareResult<'a, 'k, D> {
     ///     let mut data = HashMap::new();
     ///     data.insert("name", "user");
     ///     res.render("examples/assets/template.tpl", &data)
     /// }
     /// ```
-    pub fn render<T, P>(self, path: P, data: &T) -> MiddlewareResult<'a>
+    pub fn render<T, P>(self, path: P, data: &T) -> MiddlewareResult<'a, 'k, D>
             where T: Encodable, P: AsRef<str> + Into<String> {
-        fn render<'a, T>(res: Response<'a>, template: &Template, data: &T)
-                -> MiddlewareResult<'a> where T: Encodable {
+        fn render<'a, 'k, D, T>(res: Response<'a, 'k, D>, template: &Template, data: &T)
+                -> MiddlewareResult<'a, 'k, D> where T: Encodable {
             let mut stream = try!(res.start());
             match template.render(&mut stream, data) {
                 Ok(()) => Ok(Halt(stream)),
@@ -238,21 +264,45 @@ impl<'a> Response<'a, Fresh> {
         render(self, template, data)
     }
 
-    pub fn start(mut self) -> Result<Response<'a, Streaming>, NickelError<'a>> {
+    pub fn start(mut self) -> Result<Response<'a, 'k, D, Streaming>, NickelError<'a, 'k, D>> {
+        let on_send = mem::replace(&mut self.on_send, vec![]);
+        for mut f in on_send.into_iter().rev() {
+            // TODO: Ensure `f` doesn't call on_send again
+            f(&mut self)
+        }
+
+        // Set fallback headers last after everything runs, if we did this before as an
+        // on_send then it would possibly set redundant things.
         self.set_fallback_headers();
 
-        let Response { origin, templates } = self;
+        let Response { origin, request, route_result, templates, data, map, on_send } = self;
         match origin.start() {
-            Ok(origin) => Ok(Response { origin: origin, templates: templates }),
+            Ok(origin) => {
+                Ok(Response {
+                    origin: origin,
+                    route_result: route_result,
+                    request: request,
+                    templates: templates,
+                    data: data,
+                    map: map,
+                    on_send: on_send
+                })
+            },
             Err(e) =>
                 unsafe {
-                    Err(NickelError::without_response(format!("Failed to start response: {}", e)))
+                    Err(NickelError::without_response(format!("Failed to start response: {}", e),
+                                                      request))
                 }
         }
     }
+
+    pub fn on_send<F>(&mut self, f: F)
+            where F: FnMut(&mut Response<'a, 'k, D, Fresh>) + 'static {
+        self.on_send.push(Box::new(f))
+    }
 }
 
-impl<'a, 'b> Write for Response<'a, Streaming> {
+impl<'a, 'k, D> Write for Response<'a, 'k, D, Streaming> {
     #[inline(always)]
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.origin.write(buf)
@@ -264,15 +314,16 @@ impl<'a, 'b> Write for Response<'a, Streaming> {
     }
 }
 
-impl<'a, 'b> Response<'a, Streaming> {
+impl<'a, 'k, D> Response<'a, 'k, D, Streaming> {
     /// In the case of an unrecoverable error while a stream is already in
     /// progress, there is no standard way to signal to the client that an
     /// error has occurred. `bail` will drop the connection and log an error
     /// message.
-    pub fn bail<T>(self, message: T) -> MiddlewareResult<'a>
+    pub fn bail<T>(self, message: T) -> MiddlewareResult<'a, 'k, D>
             where T: Into<Cow<'static, str>> {
-        let _ = self.end();
-        unsafe { Err(NickelError::without_response(message)) }
+        let Response { origin, request, .. } = self;
+        let _ = origin.end();
+        unsafe { Err(NickelError::without_response(message, request)) }
     }
 
     /// Flushes all writing of a response to the client.
@@ -281,7 +332,7 @@ impl<'a, 'b> Response<'a, Streaming> {
     }
 }
 
-impl <'a, T: 'static + Any> Response<'a, T> {
+impl<'a, 'k, D, T: 'static + Any> Response<'a, 'k, D, T> {
     /// The status of this response.
     pub fn status(&self) -> StatusCode {
         self.origin.status()
@@ -291,7 +342,27 @@ impl <'a, T: 'static + Any> Response<'a, T> {
     pub fn headers(&self) -> &Headers {
         self.origin.headers()
     }
+
+    pub fn data(&self) -> &D {
+        &self.data
+    }
+
+    pub fn param(&self, key: &str) -> Option<&str> {
+        self.route_result.as_ref().and_then(|r| r.param(key))
+    }
 }
+
+impl<'a, 'k, D, T: 'static + Any> Extensible for Response<'a, 'k, D, T> {
+    fn extensions(&self) -> &TypeMap {
+        &self.map
+    }
+
+    fn extensions_mut(&mut self) -> &mut TypeMap {
+        &mut self.map
+    }
+}
+
+impl<'a, 'k, D, T: 'static + Any> Pluggable for Response<'a, 'k, D, T> {}
 
 fn mime_from_filename<P: AsRef<Path>>(path: P) -> Option<MediaType> {
     path.as_ref()
@@ -314,14 +385,14 @@ mod modifier_impls {
     use modifier::Modifier;
     use {Response, MediaType};
 
-    impl<'a> Modifier<Response<'a>> for StatusCode {
-        fn modify(self, res: &mut Response<'a>) {
+    impl<'a, 'k, D> Modifier<Response<'a, 'k, D>> for StatusCode {
+        fn modify(self, res: &mut Response<'a, 'k, D>) {
             *res.status_mut() = self
         }
     }
 
-    impl<'a> Modifier<Response<'a>> for MediaType {
-        fn modify(self, res: &mut Response<'a>) {
+    impl<'a, 'k, D> Modifier<Response<'a, 'k, D>> for MediaType {
+        fn modify(self, res: &mut Response<'a, 'k, D>) {
             ContentType(self.into()).modify(res)
         }
     }
@@ -329,8 +400,8 @@ mod modifier_impls {
     macro_rules! header_modifiers {
         ($($t:ty),+) => (
             $(
-                impl<'a> Modifier<Response<'a>> for $t {
-                    fn modify(self, res: &mut Response<'a>) {
+                impl<'a, 'k, D> Modifier<Response<'a, 'k, D>> for $t {
+                    fn modify(self, res: &mut Response<'a, 'k, D>) {
                         res.headers_mut().set(self)
                     }
                 }

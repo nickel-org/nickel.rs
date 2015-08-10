@@ -6,7 +6,6 @@ use hyper::uri::RequestUri::AbsolutePath;
 use hyper::method::Method::{Get, Head, Options};
 use hyper::status::StatusCode;
 use hyper::header;
-use hyper::net;
 
 use request::Request;
 use response::Response;
@@ -18,11 +17,10 @@ pub struct FaviconHandler {
     icon_path: PathBuf, // Is it useful to log where in-memory favicon came from every request?
 }
 
-impl Middleware for FaviconHandler {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a, 'b>, res: Response<'a, net::Fresh>)
-            -> MiddlewareResult<'a> {
-        if FaviconHandler::is_favicon_request(req) {
-            self.handle_request(req, res)
+impl<D> Middleware<D> for FaviconHandler {
+    fn invoke<'a, 'k>(&'a self, res: Response<'a, 'k, D>) -> MiddlewareResult<'a, 'k, D> {
+        if FaviconHandler::is_favicon_request(&res.request) {
+            self.handle_request(res)
         } else {
             Ok(Continue(res))
         }
@@ -60,10 +58,10 @@ impl FaviconHandler {
         }
     }
 
-    pub fn handle_request<'a>(&self, req: &Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
-        match req.origin.method {
+    pub fn handle_request<'a, 'k, D>(&self, mut res: Response<'a, 'k, D>) -> MiddlewareResult<'a, 'k, D> {
+        match res.request.origin.method {
             Get | Head => {
-                self.send_favicon(req, res)
+                self.send_favicon(res)
             },
             Options => {
                 res.set(StatusCode::Ok);
@@ -78,8 +76,8 @@ impl FaviconHandler {
         }
     }
 
-    pub fn send_favicon<'a, 'b>(&self, req: &Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
-        debug!("{:?} {:?}", req.origin.method, self.icon_path.display());
+    pub fn send_favicon<'a, 'k, D>(&self, mut res: Response<'a, 'k, D>) -> MiddlewareResult<'a, 'k, D> {
+        debug!("{:?} {:?}", res.request.origin.method, self.icon_path.display());
         res.set(MediaType::Ico);
         res.send(&*self.icon)
     }

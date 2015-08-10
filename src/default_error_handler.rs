@@ -1,5 +1,4 @@
 use hyper::status::StatusCode::{NotFound, BadRequest};
-use request::Request;
 use middleware::{ErrorHandler, Action, Halt};
 use nickel_error::NickelError;
 use std::io::Write;
@@ -7,9 +6,12 @@ use std::io::Write;
 #[derive(Clone, Copy)]
 pub struct DefaultErrorHandler;
 
-impl ErrorHandler for DefaultErrorHandler {
-    fn handle_error(&self, err: &mut NickelError, _req: &mut Request) -> Action {
-        if let Some(ref mut res) = err.stream {
+impl<D> ErrorHandler<D> for DefaultErrorHandler {
+    fn handle_error(&self, err: &mut NickelError<D>) -> Action {
+        // Not sure why the borrow isn't being released for the None branch
+        if err.response().is_none() { println!("Error: {}", err.message) }
+
+        if let Some(ref mut res) = err.response_mut() {
             let msg : &[u8] = match res.status() {
                 NotFound => b"Not Found",
                 BadRequest => b"Bad Request",
@@ -17,8 +19,6 @@ impl ErrorHandler for DefaultErrorHandler {
             };
 
             let _ = res.write_all(msg);
-        } else {
-            println!("Error: {}", err.message);
         }
 
         Halt(())

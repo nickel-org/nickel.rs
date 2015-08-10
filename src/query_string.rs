@@ -33,7 +33,7 @@ impl Query {
 struct QueryStringParser;
 impl Key for QueryStringParser { type Value = Query; }
 
-impl<'a, 'b, 'k> Plugin<Request<'a, 'b, 'k>> for QueryStringParser {
+impl<'a, 'k> Plugin<Request<'a, 'k>> for QueryStringParser {
     type Error = ();
 
     fn eval(req: &mut Request) -> Result<Query, ()> {
@@ -46,7 +46,7 @@ pub trait QueryString {
     fn query(&mut self) -> &Query;
 }
 
-impl<'a, 'b, 'k> QueryString for Request<'a, 'b, 'k> {
+impl<'a, 'k> QueryString for Request<'a, 'k> {
     fn query(&mut self) -> &Query {
         self.get_ref::<QueryStringParser>()
             .ok()

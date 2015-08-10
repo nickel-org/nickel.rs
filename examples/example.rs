@@ -6,8 +6,8 @@ use std::collections::BTreeMap;
 use std::io::Write;
 use nickel::status::StatusCode::{self, NotFound, BadRequest};
 use nickel::{
-    Nickel, NickelError, Continue, Halt, Request,
-    QueryString, JsonBody, StaticFilesHandler, HttpRouter, Action, MediaType
+    Nickel, NickelError, Continue, Halt, QueryString, JsonBody,
+    StaticFilesHandler, HttpRouter, Action, MediaType
 };
 use regex::Regex;
 use rustc_serialize::json::{Json, ToJson};
@@ -35,22 +35,22 @@ fn main() {
 
     //this is an example middleware function that just logs each request
     // middleware is optional and can be registered with `utilize`
-    server.utilize(middleware! { |request|
-        println!("logging request: {:?}", request.origin.uri);
+    server.utilize(middleware! { |response|
+        println!("logging request: {:?}", response.request.origin.uri);
     });
 
     let mut router = Nickel::router();
 
     // go to http://localhost:6767/user/4711 to see this route in action
-    router.get("/user/:userid", middleware! { |request|
-        format!("This is user: {}", request.param("userid").unwrap())
+    router.get("/user/:userid", middleware! { |response|
+        format!("This is user: {}", response.param("userid").unwrap())
     });
 
     // go to http://localhost:6767/bar to see this route in action
     router.get("/bar", middleware!("This is the /bar handler"));
 
     // go to http://localhost:6767/content-type to see this route in action
-    router.get("/content-type", middleware! { |_, mut response|
+    router.get("/content-type", middleware! { |mut response|
         response.set(MediaType::Json);
         "{'foo':'bar'}"
     });
@@ -58,8 +58,8 @@ fn main() {
     let hello_regex = Regex::new("/hello/(?P<name>[a-zA-Z]+)").unwrap();
 
     // go to http://localhost:6767/hello/moomah to see this route in action
-    router.get(hello_regex, middleware! { |request|
-        format!("Hello {}", request.param("name").unwrap())
+    router.get(hello_regex, middleware! { |response|
+        format!("Hello {}", response.param("name").unwrap())
     });
 
     // go to http://localhost:6767/some/crazy/route to see this route in action
@@ -74,8 +74,8 @@ fn main() {
 
     // try it with curl
     // curl 'http://localhost:6767/a/post/request' -H 'Content-Type: application/json;charset=UTF-8'  --data-binary $'{ "firstname": "John","lastname": "Connor" }'
-    router.post("/a/post/request", middleware! { |request, response|
-        let person = request.json_as::<Person>().unwrap();
+    router.post("/a/post/request", middleware! { |mut response|
+        let person = response.request.json_as::<Person>().unwrap();
         format!("Hello {} {}", person.firstname, person.lastname)
     });
 
@@ -89,8 +89,8 @@ fn main() {
     });
 
     // try calling http://localhost:6767/query?foo=bar
-    router.get("/query", middleware! { |request|
-        if let Some(vals) = request.query().all("foo") {
+    router.get("/query", middleware! { |mut response|
+        if let Some(vals) = response.request.query().all("foo") {
             format!("Your foo values in the query string are: {:?}", vals)
         } else {
             format!("You didn't provide any foo values!")
@@ -99,12 +99,14 @@ fn main() {
 
     // try calling http://localhost:6767/strict?state=valid
     // then try calling http://localhost:6767/strict?state=invalid
-    router.get("/strict", middleware! { |request|
-        if request.query().get("state") != Some("valid") {
+    router.get("/strict", middleware! { |mut response|
+        let reply = if response.request.query().get("state") != Some("valid") {
             (BadRequest, "Error Parsing JSON")
         } else {
             (StatusCode::Ok, "Congratulations on conforming!")
-        }
+        };
+
+        reply
     });
 
     server.utilize(router);
@@ -113,8 +115,8 @@ fn main() {
     server.utilize(StaticFilesHandler::new("examples/assets/"));
 
     //this is how to overwrite the default error handler to handle 404 cases with a custom view
-    fn custom_404<'a>(err: &mut NickelError, _req: &mut Request) -> Action {
-        if let Some(ref mut res) = err.stream {
+    fn custom_404<'a, D>(err: &mut NickelError<D>) -> Action {
+        if let Some(ref mut res) = err.response_mut() {
             if res.status() == NotFound {
                 let _ = res.write_all(b"<h1>Call the police!</h1>");
                 return Halt(())
@@ -126,7 +128,7 @@ fn main() {
 
 
     // issue #20178
-    let custom_handler: fn(&mut NickelError, &mut Request) -> Action = custom_404;
+    let custom_handler: fn(&mut NickelError<()>) -> Action = custom_404;
 
     server.handle_error(custom_handler);
 
