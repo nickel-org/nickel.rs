@@ -184,6 +184,23 @@ impl<'a> Response<'a, Fresh> {
         if !headers.has::<H>() { headers.set(f()) }
     }
 
+
+    /// Renders the given template
+    ///
+    /// # Examples
+    /// ```{rust}
+    /// use std::collections::HashMap;
+    /// use nickel::{Request, Response, MiddlewareResult, Halt};
+    ///
+    /// fn handler<'a>(_: &mut Request, mut res: Response<'a>) -> MiddlewareResult<'a> {
+    ///     res.render("examples/assets/template.tpl")
+    /// }
+    /// ```
+    pub fn render_without_data<T, P>(self, path: P) -> MiddlewareResult<'a>
+            where P: AsRef<str> + Into<String> {
+        self.render(path, &())
+    }
+
     /// Renders the given template bound with the given data.
     ///
     /// # Examples
