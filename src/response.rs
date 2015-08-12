@@ -115,7 +115,8 @@ impl<'a> Response<'a, Fresh> {
     ///     res.send_file(favicon)
     /// }
     /// ```
-    pub fn send_file(mut self, path: &Path) -> MiddlewareResult<'a> {
+    pub fn send_file<P:AsRef<Path>>(mut self, path: P) -> MiddlewareResult<'a> {
+        let path = path.as_ref();
         // Chunk the response
         self.origin.headers_mut().remove::<ContentLength>();
         // Determine content type by file extension or default to binary
