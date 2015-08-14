@@ -5,9 +5,9 @@ use hyper::net;
 
 pub use self::Action::{Continue, Halt};
 
-pub type MiddlewareResult<'a> = Result<Action<Response<'a, net::Fresh>,
-                                              Response<'a, net::Streaming>>,
-                                        NickelError<'a>>;
+pub type MiddlewareResult<'mw> = Result<Action<Response<'mw, net::Fresh>,
+                                              Response<'mw, net::Streaming>>,
+                                        NickelError<'mw>>;
 
 pub enum Action<T=(), U=()> {
     Continue(T),
@@ -17,13 +17,13 @@ pub enum Action<T=(), U=()> {
 // the usage of + Send is weird here because what we really want is + Static
 // but that's not possible as of today. We have to use + Send for now.
 pub trait Middleware: Send + 'static + Sync {
-    fn invoke<'a, 'b>(&'a self, _req: &mut Request<'a, 'a, 'b>, res: Response<'a, net::Fresh>) -> MiddlewareResult<'a> {
+    fn invoke<'mw, 'conn>(&'mw self, _req: &mut Request<'mw, 'conn>, res: Response<'mw, net::Fresh>) -> MiddlewareResult<'mw> {
         Ok(Continue(res))
     }
 }
 
-impl<T> Middleware for T where T: for<'r, 'b, 'a> Fn(&'r mut Request<'a, 'a, 'b>, Response<'a>) -> MiddlewareResult<'a> + Send + Sync + 'static {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'a, 'a, 'b>, res: Response<'a>) -> MiddlewareResult<'a> {
+impl<T> Middleware for T where T: for<'r, 'mw, 'conn> Fn(&'r mut Request<'mw, 'conn>, Response<'mw>) -> MiddlewareResult<'mw> + Send + Sync + 'static {
+    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, 'conn>, res: Response<'mw>) -> MiddlewareResult<'mw> {
         (*self)(req, res)
     }
 }
@@ -52,7 +52,7 @@ impl MiddlewareStack {
         self.error_handlers.push(Box::new(handler));
     }
 
-    pub fn invoke<'a, 'b>(&'a self, mut req: Request<'a, 'a, 'b>, mut res: Response<'a>) {
+    pub fn invoke<'mw, 'conn>(&'mw self, mut req: Request<'mw, 'conn>, mut res: Response<'mw>) {
         for handler in self.handlers.iter() {
             match handler.invoke(&mut req, res) {
                 Ok(Halt(res)) => {

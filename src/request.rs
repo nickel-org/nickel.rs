@@ -4,18 +4,24 @@ use typemap::TypeMap;
 use hyper::server::Request as HyperRequest;
 use hyper::uri::RequestUri::AbsolutePath;
 
-///A container for all the request data
-pub struct Request<'a, 'b, 'k: 'a> {
+/// A container for all the request data.
+///
+/// The lifetime `'mw` represents the lifetime of various bits of
+/// middleware state within nickel. It can vary and get shorter.
+///
+/// The lifetime `'server` represents the lifetime of data internal to
+/// the server. It is fixed and longer than `'mw`.
+pub struct Request<'mw, 'server: 'mw> {
     ///the original `hyper::server::Request`
-    pub origin: HyperRequest<'a, 'k>,
+    pub origin: HyperRequest<'mw, 'server>,
     ///a `HashMap<String, String>` holding all params with names and values
-    pub route_result: Option<RouteResult<'b>>,
+    pub route_result: Option<RouteResult<'mw>>,
 
     map: TypeMap
 }
 
-impl<'a, 'b, 'k> Request<'a, 'b, 'k> {
-    pub fn from_internal(req: HyperRequest<'a, 'k>) -> Request<'a, 'b, 'k> {
+impl<'mw, 'server> Request<'mw, 'server> {
+    pub fn from_internal(req: HyperRequest<'mw, 'server>) -> Request<'mw, 'server> {
         Request {
             origin: req,
             route_result: None,
@@ -35,7 +41,7 @@ impl<'a, 'b, 'k> Request<'a, 'b, 'k> {
     }
 }
 
-impl<'a, 'b, 'k> Extensible for Request<'a, 'b, 'k> {
+impl<'mw, 'server> Extensible for Request<'mw, 'server> {
     fn extensions(&self) -> &TypeMap {
         &self.map
     }
@@ -45,4 +51,4 @@ impl<'a, 'b, 'k> Extensible for Request<'a, 'b, 'k> {
     }
 }
 
-impl<'a, 'b, 'k> Pluggable for Request<'a, 'b, 'k> {}
+impl<'mw, 'server> Pluggable for Request<'mw, 'server> {}

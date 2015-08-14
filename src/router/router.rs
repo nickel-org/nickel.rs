@@ -20,12 +20,12 @@ pub struct Route {
 /// It contains the matched `route` and also a `params` property holding
 /// a HashMap with the keys being the variable names and the value being the
 /// evaluated string
-pub struct RouteResult<'a> {
-    pub route: &'a Route,
+pub struct RouteResult<'mw> {
+    pub route: &'mw Route,
     params: Vec<(String, String)>
 }
 
-impl<'a> RouteResult<'a> {
+impl<'mw> RouteResult<'mw> {
     pub fn param(&self, key: &str) -> Option<&str> {
         for &(ref k, ref v) in &self.params {
             if k == &key {
@@ -56,7 +56,7 @@ impl Router {
         }
     }
 
-    pub fn match_route<'a>(&'a self, method: &Method, path: &str) -> Option<RouteResult<'a>> {
+    pub fn match_route<'mw>(&'mw self, method: &Method, path: &str) -> Option<RouteResult<'mw>> {
         self.routes
             .iter()
             .find(|item| item.method == *method && item.matcher.is_match(path))
@@ -95,8 +95,8 @@ impl HttpRouter for Router {
 }
 
 impl Middleware for Router {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'a, 'a, 'b>, mut res: Response<'a>)
-                        -> MiddlewareResult<'a> {
+    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, 'conn>, mut res: Response<'mw>)
+                          -> MiddlewareResult<'mw> {
         debug!("Router::invoke for '{:?}'", req.origin.uri);
 
         // Strip off the querystring when matching a route
