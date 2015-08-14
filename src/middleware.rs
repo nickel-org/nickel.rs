@@ -17,13 +17,13 @@ pub enum Action<T=(), U=()> {
 // the usage of + Send is weird here because what we really want is + Static
 // but that's not possible as of today. We have to use + Send for now.
 pub trait Middleware: Send + 'static + Sync {
-    fn invoke<'a, 'b>(&'a self, _req: &mut Request<'b, 'a, 'b>, res: Response<'a, net::Fresh>) -> MiddlewareResult<'a> {
+    fn invoke<'a, 'b>(&'a self, _req: &mut Request<'a, 'a, 'b>, res: Response<'a, net::Fresh>) -> MiddlewareResult<'a> {
         Ok(Continue(res))
     }
 }
 
-impl<T> Middleware for T where T: for<'r, 'b, 'a> Fn(&'r mut Request<'b, 'a, 'b>, Response<'a>) -> MiddlewareResult<'a> + Send + Sync + 'static {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a, 'b>, res: Response<'a>) -> MiddlewareResult<'a> {
+impl<T> Middleware for T where T: for<'r, 'b, 'a> Fn(&'r mut Request<'a, 'a, 'b>, Response<'a>) -> MiddlewareResult<'a> + Send + Sync + 'static {
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'a, 'a, 'b>, res: Response<'a>) -> MiddlewareResult<'a> {
         (*self)(req, res)
     }
 }

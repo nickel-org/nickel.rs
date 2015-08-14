@@ -48,7 +48,7 @@ macro_rules! _middleware_inner {
         #[inline(always)]
         fn restrict_closure<F>(f: F) -> F
             where F: for<'r, 'b, 'a>
-                        Fn(&'r mut Request<'b, 'a, 'b>, Response<'a>)
+                        Fn(&'r mut Request<'a, 'a, 'b>, Response<'a>)
                             -> MiddlewareResult<'a> + Send + Sync { f }
 
         restrict_closure(move |as_pat!($req), $res_binding| {

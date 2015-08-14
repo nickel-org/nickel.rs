@@ -5,7 +5,7 @@ use hyper::server::Request as HyperRequest;
 use hyper::uri::RequestUri::AbsolutePath;
 
 ///A container for all the request data
-pub struct Request<'a, 'b: 'k, 'k: 'a> {
+pub struct Request<'a, 'b, 'k: 'a> {
     ///the original `hyper::server::Request`
     pub origin: HyperRequest<'a, 'k>,
     ///a `HashMap<String, String>` holding all params with names and values

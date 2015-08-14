@@ -95,7 +95,7 @@ impl HttpRouter for Router {
 }
 
 impl Middleware for Router {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a, 'b>, mut res: Response<'a>)
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'a, 'a, 'b>, mut res: Response<'a>)
                         -> MiddlewareResult<'a> {
         debug!("Router::invoke for '{:?}'", req.origin.uri);
 

@@ -19,7 +19,7 @@ pub struct FaviconHandler {
 }
 
 impl Middleware for FaviconHandler {
-    fn invoke<'a, 'b>(&'a self, req: &mut Request<'b, 'a, 'b>, res: Response<'a, net::Fresh>)
+    fn invoke<'a, 'b>(&'a self, req: &mut Request<'a, 'a, 'b>, res: Response<'a, net::Fresh>)
             -> MiddlewareResult<'a> {
         if FaviconHandler::is_favicon_request(req) {
             self.handle_request(req, res)
