@@ -6,7 +6,7 @@ use std::collections::BTreeMap;
 use std::io::Write;
 use nickel::status::StatusCode::{self, NotFound, BadRequest};
 use nickel::{
-    Nickel, NickelError, Continue, Halt, Request,
+    Nickel, NickelError, Continue, Halt, Request, Response, MiddlewareResult,
     QueryString, JsonBody, StaticFilesHandler, HttpRouter, Action, MediaType
 };
 use regex::Regex;
@@ -27,17 +27,28 @@ impl ToJson for Person {
     }
 }
 
+fn logger<'mw>(req: &mut Request, res: Response<'mw>) -> MiddlewareResult<'mw> {
+    println!("logging request from logger fn: {:?}", req.origin.uri);
+    Ok(Continue(res))
+}
+
 fn main() {
     let mut server = Nickel::new();
 
     // we would love to use a closure for the handler but it seems to be hard
     // to achieve with the current version of rust.
 
-    //this is an example middleware function that just logs each request
-    // middleware is optional and can be registered with `utilize`
+    // Middleware is optional and can be registered with `utilize`
+
+    // This is an example middleware function that just logs each request
+    // The middleware! macro wraps a closure which can capture variables
+    // from the outer scope. See `example_route_data` for an example.
     server.utilize(middleware! { |request|
-        println!("logging request: {:?}", request.origin.uri);
+        println!("logging request from middleware! macro: {:?}", request.origin.uri);
     });
+
+    // Middleware can also be regular rust functions
+    server.utilize(logger);
 
     let mut router = Nickel::router();
 
