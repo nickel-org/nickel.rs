@@ -1,4 +1,4 @@
-use middleware::{Middleware, Continue, MiddlewareResult};
+use middleware::{Middleware, MiddlewareResult};
 
 use request::Request;
 use response::Response;
@@ -113,7 +113,7 @@ impl<D: 'static> Middleware<D> for Router<D> {
                 req.route_result = Some(route_result);
                 handler.invoke(req, res)
             },
-            None => Ok(Continue(res))
+            None => res.next_middleware()
         }
     }
 }

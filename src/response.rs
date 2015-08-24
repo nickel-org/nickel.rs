@@ -18,7 +18,7 @@ use mustache::Template;
 use std::io::{self, Read, Write, copy};
 use std::fs::File;
 use std::any::Any;
-use {NickelError, Halt, MiddlewareResult, Responder};
+use {NickelError, Halt, MiddlewareResult, Responder, Action};
 use modifier::Modifier;
 use plugin::{Extensible, Pluggable};
 use typemap::TypeMap;
@@ -286,6 +286,14 @@ impl<'a, D> Response<'a, D, Fresh> {
     pub fn on_send<F>(&mut self, f: F)
             where F: FnMut(&mut Response<'a, D, Fresh>) + 'static {
         self.on_send.push(Box::new(f))
+    }
+
+    /// Pass execution off to another Middleware
+    ///
+    /// When returned from a Middleware, it allows computation to continue
+    /// in any Middleware queued after the active one.
+    pub fn next_middleware(self) -> MiddlewareResult<'a, D> {
+        Ok(Action::Continue(self))
     }
 }
 

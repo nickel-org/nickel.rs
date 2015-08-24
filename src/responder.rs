@@ -9,7 +9,7 @@
 //! in any request.
 //!
 //! Please see the examples for usage.
-use {Response, NickelError, MiddlewareResult, Halt, Continue};
+use {Response, NickelError, MiddlewareResult, Halt};
 use hyper::status::{StatusCode, StatusClass};
 use hyper::header;
 use serialize::json;
@@ -27,7 +27,7 @@ pub trait Responder<D> {
 
 impl<D> Responder<D> for () {
     fn respond<'a>(self, res: Response<'a, D>) -> MiddlewareResult<'a, D> {
-        Ok(Continue(res))
+        res.next_middleware()
     }
 }
 
