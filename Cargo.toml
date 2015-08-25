@@ -77,3 +77,8 @@ path = "examples/mount.rs"
 
 name = "chaining"
 path = "examples/chaining.rs"
+
+[[example]]
+
+name = "form_data"
+path = "examples/form_data/form_data.rs"
