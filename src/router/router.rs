@@ -83,7 +83,7 @@ fn extract_params(route: &Route, path: &str) -> Vec<(String, String)> {
 }
 
 impl HttpRouter for Router {
-    fn add_route<M: Into<Matcher>, H: Middleware>(&mut self, method: Method, matcher: M, handler: H) {
+    fn add_route<M: Into<Matcher>, H: Middleware>(&mut self, method: Method, matcher: M, handler: H) -> &mut Self {
         let route = Route {
             matcher: matcher.into(),
             method: method,
@@ -91,6 +91,7 @@ impl HttpRouter for Router {
         };
 
         self.routes.push(route);
+        self
     }
 }
 
