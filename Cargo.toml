@@ -28,6 +28,7 @@ groupable = "*"
 mustache = "*"
 lazy_static = "*"
 modifier = "*"
+cookie = "*"
 
 [dependencies.compiletest_rs]
 version = "*"
