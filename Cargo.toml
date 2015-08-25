@@ -67,3 +67,7 @@ path = "examples/moved_ownership.rs"
 
 name = "example_route_data"
 path = "examples/example_route_data.rs"
+
+[[example]]
+name = "chaining"
+path = "examples/chaining.rs"

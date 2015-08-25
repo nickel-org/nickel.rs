@@ -36,7 +36,7 @@ pub trait HttpRouter {
     ///     server.add_route(Get, regex, middleware! { "Regex Get request! "});
     /// }
     /// ```
-    fn add_route<M: Into<Matcher>, H: Middleware>(&mut self, Method, M, H);
+    fn add_route<M: Into<Matcher>, H: Middleware>(&mut self, Method, M, H) -> &mut Self;
 
     /// Registers a handler to be used for a specific GET request.
     /// Handlers are assigned to paths and paths are allowed to contain
@@ -71,6 +71,21 @@ pub trait HttpRouter {
     ///     server.get("/user/**/:userid", middleware! {
     ///         "This matches /user/list/4711 and also /user/extended/list/4711"
     ///     });
+    ///
+    ///     // with chained routes
+    ///     server
+    ///         .get("/foo", middleware! {
+    ///             "foo"
+    ///         })
+    ///         .get("/bar", middleware! {
+    ///             "bar"
+    ///         })
+    ///         .get("/baz", middleware! {
+    ///             "baz"
+    ///         })
+    ///         .get("/quux", middleware! {
+    ///             "quux"
+    ///         });
     /// }
     /// ```
     ///
@@ -106,42 +121,42 @@ pub trait HttpRouter {
     ///     server.utilize(router);
     /// }
     /// ```
-    fn get<M: Into<Matcher>, H: Middleware>(&mut self, matcher: M, handler: H) {
-        self.add_route(Method::Get, matcher, handler);
+    fn get<M: Into<Matcher>, H: Middleware>(&mut self, matcher: M, handler: H) -> &mut Self {
+        self.add_route(Method::Get, matcher, handler)
     }
 
     /// Registers a handler to be used for a specific POST request.
     ///
     /// Take a look at `get(...)` for a more detailed description.
-    fn post<M: Into<Matcher>, H: Middleware>(&mut self, matcher: M, handler: H) {
-        self.add_route(Method::Post, matcher, handler);
+    fn post<M: Into<Matcher>, H: Middleware>(&mut self, matcher: M, handler: H) -> &mut Self {
+        self.add_route(Method::Post, matcher, handler)
     }
 
     /// Registers a handler to be used for a specific PUT request.
     ///
     /// Take a look at `get(...)` for a more detailed description.
-    fn put<M: Into<Matcher>, H: Middleware>(&mut self, matcher: M, handler: H) {
-        self.add_route(Method::Put, matcher, handler);
+    fn put<M: Into<Matcher>, H: Middleware>(&mut self, matcher: M, handler: H) -> &mut Self {
+        self.add_route(Method::Put, matcher, handler)
     }
 
     /// Registers a handler to be used for a specific DELETE request.
     ///
     /// Take a look at `get(...)` for a more detailed description.
-    fn delete<M: Into<Matcher>, H: Middleware>(&mut self, matcher: M, handler: H) {
-        self.add_route(Method::Delete, matcher, handler);
+    fn delete<M: Into<Matcher>, H: Middleware>(&mut self, matcher: M, handler: H) -> &mut Self {
+        self.add_route(Method::Delete, matcher, handler)
     }
 
     /// Registers a handler to be used for a specific OPTIONS request.
     ///
     /// Take a look at `get(...)` for a more detailed description.
-    fn options<M: Into<Matcher>, H: Middleware>(&mut self, matcher: M, handler: H) {
-        self.add_route(Method::Options, matcher, handler);
+    fn options<M: Into<Matcher>, H: Middleware>(&mut self, matcher: M, handler: H) -> &mut Self {
+        self.add_route(Method::Options, matcher, handler)
     }
 
     /// Registers a handler to be used for a specific PATCH request.
     ///
     /// Take a look at `get(...)` for a more detailed description.
-    fn patch<M: Into<Matcher>, H: Middleware>(&mut self, matcher: M, handler: H) {
-        self.add_route(Method::Patch, matcher, handler);
+    fn patch<M: Into<Matcher>, H: Middleware>(&mut self, matcher: M, handler: H) -> &mut Self {
+        self.add_route(Method::Patch, matcher, handler)
     }
 }
