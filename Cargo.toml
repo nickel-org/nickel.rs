@@ -30,6 +30,7 @@ lazy_static = "*"
 modifier = "*"
 cookie = "^0.1"
 byteorder = "^0.3"
+rand = "^0.3"
 
 [dependencies.hyper]
 version = "=0.6"

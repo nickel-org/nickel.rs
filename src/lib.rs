@@ -12,6 +12,7 @@ extern crate groupable;
 extern crate modifier;
 extern crate cookie;
 extern crate byteorder;
+extern crate rand;
 
 #[macro_use] extern crate log;
 #[macro_use] extern crate lazy_static;

@@ -2,12 +2,27 @@ use {Request, Response};
 use plugin::{Plugin, Pluggable};
 use typemap::Key;
 use hyper::header;
+use rand::{self, Rng};
 
 use cookie::CookieJar;
 
 #[derive(Clone)]
 // Let's not derive `Copy` as that seems like a bad idea for key data
 pub struct SecretKey(pub [u8; 32]);
+
+impl SecretKey {
+    pub fn new<T: AsRef<[u8]>>(arr: T) -> Result<SecretKey, &'static str> {
+        let arr = arr.as_ref();
+        if arr.len() != 32 { return Err("Key length must be 32") }
+
+        let mut key = [0; 32];
+        for idx in 0..32 {
+            key[idx] = arr[idx]
+        }
+
+        Ok(SecretKey(key))
+    }
+}
 
 // Plugin boilerplate
 pub struct CookiePlugin;
@@ -59,7 +74,18 @@ impl<'a, D> AllowMutCookies for Response<'a, D> {}
 /// Implementors should aim to provide a stable key between server reboots so
 /// as to minimize data loss in client cookies.
 pub trait KeyProvider {
-    fn key(&self) -> SecretKey;
+    fn key(&self) -> SecretKey {
+        lazy_static! {
+            static ref CACHED_SECRET: SecretKey = {
+                let mut rng = rand::thread_rng();
+                let bytes: Vec<u8> = (0..32).map(|_| rng.gen()).collect();
+
+                SecretKey::new(bytes).unwrap()
+            };
+        };
+
+        CACHED_SECRET.clone()
+    }
 }
 
 /// Provides access to a `CookieJar`.
