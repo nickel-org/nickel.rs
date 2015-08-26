@@ -9,9 +9,9 @@ struct Data {
     secret_key: cookies::SecretKey
 }
 
-impl AsRef<cookies::SecretKey> for Data {
-    fn as_ref(&self) -> &cookies::SecretKey {
-        &self.secret_key
+impl cookies::KeyProvider for Data {
+    fn key(&self) -> cookies::SecretKey {
+        self.secret_key.clone()
     }
 }
 

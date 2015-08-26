@@ -16,8 +16,8 @@ struct User {
 struct ServerData;
 static SECRET_KEY: &'static cookies::SecretKey = &cookies::SecretKey([0; 32]);
 
-impl AsRef<cookies::SecretKey> for ServerData {
-    fn as_ref(&self) -> &cookies::SecretKey { SECRET_KEY }
+impl cookies::KeyProvider for ServerData {
+    fn key(&self) -> cookies::SecretKey { SECRET_KEY.clone() }
 }
 
 impl SessionStore for ServerData {

@@ -5,6 +5,8 @@ use hyper::header;
 
 use cookie::CookieJar;
 
+#[derive(Clone)]
+// Let's not derive `Copy` as that seems like a bad idea for key data
 pub struct SecretKey(pub [u8; 32]);
 
 // Plugin boilerplate
@@ -12,11 +14,11 @@ pub struct CookiePlugin;
 impl Key for CookiePlugin { type Value = CookieJar<'static>; }
 
 impl<'mw, 'conn, D> Plugin<Request<'mw, 'conn, D>> for CookiePlugin
-        where D: AsRef<SecretKey> {
+where D: KeyProvider {
     type Error = ();
 
     fn eval(req: &mut Request<D>) -> Result<CookieJar<'static>, ()> {
-        let key = req.data().as_ref();
+        let key = req.data().key();
         let jar = match req.origin.headers.get::<header::Cookie>() {
             Some(c) => c.to_cookie_jar(&key.0),
             None => CookieJar::new(&key.0)
@@ -27,7 +29,7 @@ impl<'mw, 'conn, D> Plugin<Request<'mw, 'conn, D>> for CookiePlugin
 }
 
 impl<'a, 'b, 'k, D> Plugin<Response<'a, D>> for CookiePlugin
-        where D: AsRef<SecretKey> {
+where D: KeyProvider {
     type Error = ();
 
     fn eval(res: &mut Response<'a, D>) -> Result<CookieJar<'static>, ()> {
@@ -40,7 +42,7 @@ impl<'a, 'b, 'k, D> Plugin<Response<'a, D>> for CookiePlugin
             res.set(header);
         });
 
-        let key = res.data().as_ref();
+        let key = res.data().key();
         Ok(CookieJar::new(&key.0))
     }
 }
@@ -48,6 +50,17 @@ impl<'a, 'b, 'k, D> Plugin<Response<'a, D>> for CookiePlugin
 /// Trait to whitelist access to `&'mut CookieJar` via the `Cookies` trait.
 pub trait AllowMutCookies {}
 impl<'a, D> AllowMutCookies for Response<'a, D> {}
+
+/// Provide the key used for decoding secure CookieJars
+///
+/// Cookies require a random key for their signed and encrypted cookies to be
+/// used.
+///
+/// Implementors should aim to provide a stable key between server reboots so
+/// as to minimize data loss in client cookies.
+pub trait KeyProvider {
+    fn key(&self) -> SecretKey;
+}
 
 /// Provides access to a `CookieJar`.
 ///
@@ -70,7 +83,8 @@ pub trait Cookies {
     fn cookies_mut(&mut self) -> &mut CookieJar<'static> where Self: AllowMutCookies;
 }
 
-impl<'mw, 'conn, D: AsRef<SecretKey>> Cookies for Request<'mw, 'conn, D> {
+impl<'mw, 'conn, D> Cookies for Request<'mw, 'conn, D>
+where D: KeyProvider {
     fn cookies(&mut self) -> &<CookiePlugin as Key>::Value {
         self.get_ref::<CookiePlugin>().unwrap()
     }
@@ -80,7 +94,8 @@ impl<'mw, 'conn, D: AsRef<SecretKey>> Cookies for Request<'mw, 'conn, D> {
     }
 }
 
-impl<'mw, D: AsRef<SecretKey>> Cookies for Response<'mw, D> {
+impl<'mw, D> Cookies for Response<'mw, D>
+where D: KeyProvider {
     fn cookies(&mut self) -> &<CookiePlugin as Key>::Value {
         self.get_ref::<CookiePlugin>().unwrap()
     }
