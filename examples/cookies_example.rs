@@ -2,22 +2,10 @@
 extern crate cookie;
 
 use nickel::{Nickel, HttpRouter, Cookies, QueryString};
-use nickel::cookies;
 use cookie::Cookie;
 
-struct Data {
-    secret_key: cookies::SecretKey
-}
-
-impl cookies::KeyProvider for Data {
-    fn key(&self) -> cookies::SecretKey {
-        self.secret_key.clone()
-    }
-}
-
 fn main() {
-    let data = Data { secret_key: cookies::SecretKey([0; 32]) };
-    let mut server = Nickel::with_data(data);
+    let mut server = Nickel::new();
 
     // Try curl -b MyCookie=bar localhost:6767
     server.get("/", middleware! { |req|

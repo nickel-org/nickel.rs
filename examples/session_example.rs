@@ -1,3 +1,6 @@
+//! This example only works if you enable the `session` feature.
+#![cfg_attr(not(feature = "session"), allow(dead_code, unused_imports))]
+
 #[macro_use] extern crate nickel;
 extern crate rustc_serialize;
 extern crate time;
@@ -16,10 +19,12 @@ struct User {
 struct ServerData;
 static SECRET_KEY: &'static cookies::SecretKey = &cookies::SecretKey([0; 32]);
 
+#[cfg(feature = "session")]
 impl cookies::KeyProvider for ServerData {
     fn key(&self) -> cookies::SecretKey { SECRET_KEY.clone() }
 }
 
+#[cfg(feature = "session")]
 impl SessionStore for ServerData {
     type Store = Option<String>;
 
@@ -28,7 +33,10 @@ impl SessionStore for ServerData {
     }
 }
 
+#[cfg(not(feature = "session"))]
+fn main() {}
 
+#[cfg(feature = "session")]
 fn main() {
     let mut server = Nickel::with_data(ServerData);
 

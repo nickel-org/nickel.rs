@@ -32,6 +32,8 @@ pub use nickel_error::NickelError;
 pub use mimes::MediaType;
 pub use responder::Responder;
 pub use cookies::Cookies;
+
+#[cfg(feature = "session")]
 pub use session::{Session, SessionStore, CookieSession};
 
 #[macro_use] pub mod macros;

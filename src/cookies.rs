@@ -73,6 +73,10 @@ impl<'a, D> AllowMutCookies for Response<'a, D> {}
 ///
 /// Implementors should aim to provide a stable key between server reboots so
 /// as to minimize data loss in client cookies.
+///
+/// # Implementing
+///
+/// The `secure_cookies` feature needs to be enabled for this to be implementable
 pub trait KeyProvider {
     fn key(&self) -> SecretKey {
         lazy_static! {
@@ -85,6 +89,16 @@ pub trait KeyProvider {
         };
 
         CACHED_SECRET.clone()
+    }
+}
+
+#[cfg(feature = "secure_cookies")]
+impl KeyProvider for () {}
+
+#[cfg(not(feature = "secure_cookies"))]
+impl<T> KeyProvider for T {
+    fn key(&self) -> SecretKey {
+        SecretKey([0; 32])
     }
 }
 

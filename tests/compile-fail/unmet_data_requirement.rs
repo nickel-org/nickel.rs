@@ -1,40 +1,21 @@
 #[macro_use] extern crate nickel;
-extern crate cookie;
 
-use nickel::{Nickel, HttpRouter, Cookies, QueryString};
-use nickel::cookies;
-use cookie::Cookie;
+use nickel::{Nickel, HttpRouter, Cookies};
 
-struct Data {
-    secret_key: cookies::SecretKey
-}
+struct MyData;
 
 fn main() {
-    let data = Data { secret_key: cookies::SecretKey([0; 32]) };
-    let mut server = Nickel::with_data(data);
+    let mut server = Nickel::with_data(MyData);
 
-    // Try curl -b MyCookie=bar localhost:6767
     server.get("/", middleware! { |req|
-        let cookie = req.cookies().find("MyCookie");
-        //~^ ERROR: the trait `core::convert::AsRef<nickel::cookies::SecretKey>` is not implemented for the type `Data`
-        format!("MyCookie={:?}", cookie.map(|c| c.value))
+        let cookie = req.cookies();
+        //~^ ERROR: the trait `nickel::cookies::KeyProvider` is not implemented for the type `MyData`
+        //~^^ ERROR: cannot infer an appropriate lifetime
     });
 
-    // Note: Don't use get for login in real applications ;)
-    // Try http://localhost:6767/login?name=foo
     server.get("/login", middleware! { |req, mut res|
-        let jar = res.cookies_mut()
-        //~^ ERROR: the trait `core::convert::AsRef<nickel::cookies::SecretKey>` is not implemented for the type `Data`
-                     // long life cookies!
-                     .permanent();
-
-        let name = req.query().get("name")
-                              .unwrap_or("default_name");
-        let cookie = Cookie::new("MyCookie".to_owned(),
-                                 name.to_owned());
-        jar.add(cookie);
-
-        "Cookie set!"
+        let jar = res.cookies_mut();
+        //~^ ERROR: the trait `nickel::cookies::KeyProvider` is not implemented for the type `MyData`
     });
 
     server.listen("127.0.0.1:6767");
