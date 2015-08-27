@@ -1,4 +1,4 @@
-use {Request, Response, Cookies};
+use {Request, Response, Cookies, cookies};
 use cookie::Cookie;
 use plugin::{Plugin, Pluggable};
 use typemap::Key;
@@ -13,7 +13,7 @@ use std::fmt::Debug;
 
 static COOKIE_KEY : &'static str = "__SESSION";
 
-pub trait SessionStore {
+pub trait SessionStore : cookies::KeyProvider {
     type Store: Encodable + Decodable + Default + Debug;
 
     fn timeout() -> Duration { Duration::minutes(60) }
@@ -24,8 +24,7 @@ pub struct SessionPlugin<T: 'static + Any>(PhantomData<T>);
 impl<T: 'static + Any> Key for SessionPlugin<T> { type Value = Option<T>; }
 
 impl<'mw, D, T> Plugin<Response<'mw, D>> for SessionPlugin<T>
-where Response<'mw, D> : Cookies,
-      T: 'static + Any + Encodable + Decodable + Default + Debug,
+where T: 'static + Any + Encodable + Decodable + Default + Debug,
       D: SessionStore<Store=T> {
     type Error = ();
 
@@ -109,9 +108,7 @@ pub trait Session<D> where D: SessionStore {
 pub struct CookieSession;
 
 impl<D> Session<D> for CookieSession
-where for <'mw, 'conn> Request<'mw, 'conn, D> : Cookies,
-      for <'mw> Response<'mw, D> : Cookies,
-      D: SessionStore,
+where D: SessionStore,
       D::Store : 'static + Any + Encodable + Decodable + Default + Debug {
     fn get_mut<'a>(req: &mut Request<D>, res: &'a mut Response<D>) -> &'a mut D::Store {
         let cached_session = res.get_mut::<SessionPlugin<D::Store>>().unwrap();
