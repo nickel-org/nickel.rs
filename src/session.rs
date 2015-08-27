@@ -13,8 +13,8 @@ use std::fmt::Debug;
 
 static COOKIE_KEY : &'static str = "__SESSION";
 
-pub trait SessionStore : cookies::KeyProvider {
-    type Store: Encodable + Decodable + Default + Debug;
+pub trait Store : cookies::KeyProvider {
+    type Session: Encodable + Decodable + Default + Debug;
 
     fn timeout() -> Duration { Duration::minutes(60) }
 }
@@ -25,7 +25,7 @@ impl<T: 'static + Any> Key for SessionPlugin<T> { type Value = Option<T>; }
 
 impl<'mw, D, T> Plugin<Response<'mw, D>> for SessionPlugin<T>
 where T: 'static + Any + Encodable + Decodable + Default + Debug,
-      D: SessionStore<Store=T> {
+      D: Store<Session=T> {
     type Error = ();
 
     fn eval(response: &mut Response<'mw, D>) -> Result<Option<T>, ()> {
@@ -40,7 +40,7 @@ where T: 'static + Any + Encodable + Decodable + Default + Debug,
             let encoded = {
                 // This should only ever get called after an initial setup, so these
                 // unwraps should be fine!
-                let session = response.get_mut::<SessionPlugin<D::Store>>()
+                let session = response.get_mut::<SessionPlugin<D::Session>>()
                                       .unwrap();
 
                 // Todo: track when a write has occurred and only create the cookie in
@@ -100,25 +100,25 @@ fn encode_data<T: Encodable + Debug>(data: &T) -> String {
     raw.to_base64(STANDARD)
 }
 
-pub trait Session<D> where D: SessionStore {
+pub trait Session<D> where D: Store {
     /// Provides access to a mutable Session.
-    fn get_mut<'a>(&mut Request<D>, &'a mut Response<D>) -> &'a mut D::Store;
+    fn get_mut<'a>(&mut Request<D>, &'a mut Response<D>) -> &'a mut D::Session;
 }
 
 pub struct CookieSession;
 
 impl<D> Session<D> for CookieSession
-where D: SessionStore,
-      D::Store : 'static + Any + Encodable + Decodable + Default + Debug {
-    fn get_mut<'a>(req: &mut Request<D>, res: &'a mut Response<D>) -> &'a mut D::Store {
-        let cached_session = res.get_mut::<SessionPlugin<D::Store>>().unwrap();
+where D: Store,
+      D::Session : 'static + Any + Encodable + Decodable + Default + Debug {
+    fn get_mut<'a>(req: &mut Request<D>, res: &'a mut Response<D>) -> &'a mut D::Session {
+        let cached_session = res.get_mut::<SessionPlugin<D::Session>>().unwrap();
         if let Some(ref mut session) = *cached_session {
             return session
         }
 
         let jar = req.cookies().encrypted();
         let data = jar.find(COOKIE_KEY).and_then(|cookie| {
-            let timeout = <D as SessionStore>::timeout();
+            let timeout = <D as Store>::timeout();
             match decode_data(&*cookie.value, timeout) {
                 Ok(data) => Some(data),
                 Err(e) => {
@@ -129,7 +129,7 @@ where D: SessionStore,
         });
 
         // Any error resets the session
-        *cached_session = data.or_else(|| Some(<D::Store>::default()));
+        *cached_session = data.or_else(|| Some(<D::Session>::default()));
         cached_session.as_mut().unwrap()
     }
 }

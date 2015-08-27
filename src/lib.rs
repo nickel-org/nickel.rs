@@ -34,7 +34,7 @@ pub use responder::Responder;
 pub use cookies::Cookies;
 
 #[cfg(feature = "session")]
-pub use session::{Session, SessionStore, CookieSession};
+pub use session::{Session, CookieSession};
 
 #[macro_use] pub mod macros;
 
