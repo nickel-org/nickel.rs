@@ -69,5 +69,11 @@ name = "example_route_data"
 path = "examples/example_route_data.rs"
 
 [[example]]
+
+name = "mount"
+path = "examples/mount.rs"
+
+[[example]]
+
 name = "chaining"
 path = "examples/chaining.rs"
