@@ -29,7 +29,7 @@ script:
 after_success:
   - |
       (echo "docs.nickel.rs" > target/doc/CNAME) &&
-      travis-cargo --only 1.0.0 doc-upload
+      travis-cargo --only stable doc-upload
 
 env:
   global:
