@@ -8,10 +8,15 @@ use hyper::status::StatusCode;
 //pre defined middleware
 use default_error_handler::DefaultErrorHandler;
 
+pub struct Options{
+    pub output_on_listen: bool,
+}
+
 /// Nickel is the application object. It's the surface that
 /// holds all public APIs.
 pub struct Nickel{
     middleware_stack: MiddlewareStack,
+    options: Options,
 }
 
 impl HttpRouter for Nickel {
@@ -33,7 +38,39 @@ impl Nickel {
         // they don't like the default behaviour.
         middleware_stack.add_error_handler(DefaultErrorHandler);
 
-        Nickel { middleware_stack: middleware_stack }
+        Nickel { middleware_stack: middleware_stack, options: Nickel::default_options() }
+    }
+    
+    /// Gets the default options for the framework
+    ///
+    /// # Examples
+    /// ```{rust}
+    /// # #[macro_use] extern crate nickel;
+    /// # fn main() {
+    /// use nickel::{Nickel, Options};
+    /// let mut server = Nickel::new();
+    /// let options = Options{output_on_listen: false, .. Nickel::default_options()};
+    /// server.set_options (options);
+    /// # }
+    /// ```
+    pub fn default_options() -> Options {
+        Options {output_on_listen: true}
+    }
+    
+    /// Sets the options for this instance
+    ///
+    /// # Examples
+    /// ```{rust}
+    /// # #[macro_use] extern crate nickel;
+    /// # fn main() {
+    /// use nickel::{Nickel, Options};
+    /// let mut server = Nickel::new();
+    /// let options = Options{output_on_listen: false, .. Nickel::default_options()};
+    /// server.set_options (options);
+    /// # }
+    /// ```
+    pub fn set_options(&mut self, options: Options) {
+        self.options = options;
     }
 
     /// Registers a middleware handler which will be invoked among other middleware
@@ -143,8 +180,10 @@ impl Nickel {
         let server = Server::new(self.middleware_stack);
         let listener = server.serve(addr).unwrap();
 
-        println!("Listening on http://{}", listener.socket);
-        println!("Ctrl-C to shutdown server");
+        if self.options.output_on_listen {
+            println!("Listening on http://{}", listener.socket);
+            println!("Ctrl-C to shutdown server");
+        }
     }
 }
 
