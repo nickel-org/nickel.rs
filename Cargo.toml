@@ -13,7 +13,9 @@ readme = "README.md"
 keywords = ["nickel", "server", "web", "express"]
 
 [features]
+default = ["ssl"]
 unstable = ["hyper/nightly", "compiletest_rs"]
+ssl = ["hyper/ssl"]
 
 [dependencies]
 url = "*"
@@ -23,11 +25,14 @@ plugin = "*"
 regex = "*"
 rustc-serialize = "*"
 log = "*"
-hyper = "=0.6"
 groupable = "*"
 mustache = "*"
 lazy_static = "*"
 modifier = "*"
+
+[dependencies.hyper]
+version = "=0.6"
+default-features = false
 
 [dependencies.compiletest_rs]
 version = "*"
