@@ -29,6 +29,10 @@ authors = ["yourname"]
 
 [dependencies.nickel]
 version = "*"
+# If you are on Windows, you may disable SSL by uncommenting
+# the line below
+# default-features = false
+
 # If you are using the 'nightly' rust channel you can uncomment
 # the line below to activate unstable features
 # features = ["unstable"]
