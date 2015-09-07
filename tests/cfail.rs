@@ -12,6 +12,10 @@ fn run_mode(mode: &'static str) {
     config.mode = cfg_mode;
     config.src_base = format!("tests/{}", mode).into();
 
+    if cfg!(not(feature = "secure_cookies")) {
+        config.filter = Some("inference".into());
+    }
+
     compiletest::run_tests(&config);
 }
 

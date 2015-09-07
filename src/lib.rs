@@ -10,6 +10,9 @@ extern crate url;
 extern crate mustache;
 extern crate groupable;
 extern crate modifier;
+extern crate cookie;
+extern crate byteorder;
+extern crate rand;
 
 #[macro_use] extern crate log;
 #[macro_use] extern crate lazy_static;
@@ -28,6 +31,10 @@ pub use router::{Router, Route, RouteResult, HttpRouter};
 pub use nickel_error::NickelError;
 pub use mimes::MediaType;
 pub use responder::Responder;
+pub use cookies::Cookies;
+
+#[cfg(feature = "session")]
+pub use session::{Session, CookieSession};
 
 #[macro_use] pub mod macros;
 
@@ -47,6 +54,8 @@ mod query_string;
 mod urlencoded;
 mod nickel_error;
 mod default_error_handler;
+pub mod cookies;
+pub mod session;
 
 pub mod status {
     pub use hyper::status::StatusCode;

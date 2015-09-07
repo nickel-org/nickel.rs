@@ -15,6 +15,8 @@ keywords = ["nickel", "server", "web", "express"]
 [features]
 unstable = ["hyper/nightly", "compiletest_rs"]
 ssl = ["hyper/ssl"]
+secure_cookies = ["cookie/secure"]
+session = ["secure_cookies"]
 
 [dependencies]
 url = "*"
@@ -28,9 +30,12 @@ groupable = "*"
 mustache = "*"
 lazy_static = "*"
 modifier = "*"
+cookie = "^0.1"
+byteorder = "^0.3"
+rand = "^0.3"
 
 [dependencies.hyper]
-version = "=0.6"
+version = "^0.6"
 default-features = false
 
 [dependencies.compiletest_rs]
@@ -41,6 +46,16 @@ optional = true
 
 name = "example"
 path = "examples/example.rs"
+
+[[example]]
+
+name = "session_example"
+path = "examples/session_example.rs"
+
+[[example]]
+
+name = "cookies_example"
+path = "examples/cookies_example.rs"
 
 [[example]]
 

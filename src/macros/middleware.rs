@@ -23,8 +23,29 @@
 /// server.listen("127.0.0.1:6767");
 /// # }
 /// ```
+///
+/// # Type hinting
+/// Sometimes type inference is unable to determine the datatype for the server,
+/// which can lead to a lot of extra type annotations. The `middleware!` macro
+/// supports annotating the macro so as to drive the inference allowing the handler
+/// code to remain with minimal annotations.
+///
+/// ```
+/// # #[macro_use] extern crate nickel;
+/// # fn main() {
+/// # struct MyServerData;
+/// middleware! { |_request, _response| <MyServerData>
+///     // _response is of type Response<MyServerData>
+///     "Hello World"
+/// }
+/// # ; // This semicolon is required to satisfy returning `()`
+/// # }
+/// ```
 #[macro_export]
 macro_rules! middleware {
+    (|$req:tt, mut $res:ident| <$data:path> $($b:tt)+) => { _middleware_inner!($req, $res, mut $res, <$data> $($b)+) };
+    (|$req:tt, $res:ident| <$data:path> $($b:tt)+) => { _middleware_inner!($req, $res, $res, <$data> $($b)+) };
+    (|$req:tt| <$data:path> $($b:tt)+) => { middleware!(|$req, _res| <$data> $($b)+) };
     (|$req:tt, mut $res:ident| $($b:tt)+) => { _middleware_inner!($req, $res, mut $res, $($b)+) };
     (|$req:tt, $res:ident| $($b:tt)+) => { _middleware_inner!($req, $res, $res, $($b)+) };
     (|$req:tt| $($b:tt)+) => { middleware!(|$req, _res| $($b)+) };
@@ -34,12 +55,12 @@ macro_rules! middleware {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! _middleware_inner {
-    ($req:tt, $res:ident, $res_binding:pat, $($b:tt)+) => {{
+    ($req:tt, $res:ident, $res_binding:pat, <$data:path> $($b:tt)+) => {{
         use $crate::{MiddlewareResult,Responder, Response, Request};
 
         #[inline(always)]
-        fn restrict<'mw, R: Responder>(r: R, res: Response<'mw>)
-                -> MiddlewareResult<'mw> {
+        fn restrict<'mw, R: Responder<$data>>(r: R, res: Response<'mw, $data>)
+                -> MiddlewareResult<'mw, $data> {
             res.send(r)
         }
 
@@ -48,8 +69,29 @@ macro_rules! _middleware_inner {
         #[inline(always)]
         fn restrict_closure<F>(f: F) -> F
             where F: for<'r, 'mw, 'conn>
-                        Fn(&'r mut Request<'mw, 'conn>, Response<'mw>)
-                            -> MiddlewareResult<'mw> + Send + Sync { f }
+                        Fn(&'r mut Request<'mw, 'conn, $data>, Response<'mw, $data>)
+                            -> MiddlewareResult<'mw, $data> + Send + Sync { f }
+
+        restrict_closure(move |as_pat!($req), $res_binding| {
+            restrict(as_block!({$($b)+}), $res)
+        })
+    }};
+    ($req:tt, $res:ident, $res_binding:pat,  $($b:tt)+) => {{
+        use $crate::{MiddlewareResult,Responder, Response, Request};
+
+        #[inline(always)]
+        fn restrict<'mw, D, R: Responder<D>>(r: R, res: Response<'mw, D>)
+                -> MiddlewareResult<'mw, D> {
+            res.send(r)
+        }
+
+        // Inference fails due to thinking it's a (&Request, Response) with
+        // different mutability requirements
+        #[inline(always)]
+        fn restrict_closure<F, D>(f: F) -> F
+            where F: for<'r, 'mw, 'conn>
+                        Fn(&'r mut Request<'mw, 'conn, D>, Response<'mw, D>)
+                            -> MiddlewareResult<'mw, D> + Send + Sync { f }
 
         restrict_closure(move |as_pat!($req), $res_binding| {
             restrict(as_block!({$($b)+}), $res)

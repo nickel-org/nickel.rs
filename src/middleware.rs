@@ -5,9 +5,9 @@ use hyper::net;
 
 pub use self::Action::{Continue, Halt};
 
-pub type MiddlewareResult<'mw> = Result<Action<Response<'mw, net::Fresh>,
-                                              Response<'mw, net::Streaming>>,
-                                        NickelError<'mw>>;
+pub type MiddlewareResult<'mw, D> = Result<Action<Response<'mw, D, net::Fresh>,
+                                              Response<'mw, D, net::Streaming>>,
+                                        NickelError<'mw, D>>;
 
 pub enum Action<T=(), U=()> {
     Continue(T),
@@ -16,43 +16,43 @@ pub enum Action<T=(), U=()> {
 
 // the usage of + Send is weird here because what we really want is + Static
 // but that's not possible as of today. We have to use + Send for now.
-pub trait Middleware: Send + 'static + Sync {
-    fn invoke<'mw, 'conn>(&'mw self, _req: &mut Request<'mw, 'conn>, res: Response<'mw, net::Fresh>) -> MiddlewareResult<'mw> {
+pub trait Middleware<D>: Send + 'static + Sync {
+    fn invoke<'mw, 'conn>(&'mw self, _req: &mut Request<'mw, 'conn, D>, res: Response<'mw, D, net::Fresh>) -> MiddlewareResult<'mw, D> {
         Ok(Continue(res))
     }
 }
 
-impl<T> Middleware for T where T: for<'r, 'mw, 'conn> Fn(&'r mut Request<'mw, 'conn>, Response<'mw>) -> MiddlewareResult<'mw> + Send + Sync + 'static {
-    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, 'conn>, res: Response<'mw>) -> MiddlewareResult<'mw> {
+impl<T, D> Middleware<D> for T where T: for<'r, 'mw, 'conn> Fn(&'r mut Request<'mw, 'conn, D>, Response<'mw, D>) -> MiddlewareResult<'mw, D> + Send + Sync + 'static {
+    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, 'conn, D>, res: Response<'mw, D>) -> MiddlewareResult<'mw, D> {
         (*self)(req, res)
     }
 }
 
-pub trait ErrorHandler: Send + 'static + Sync {
-    fn handle_error(&self, &mut NickelError, &mut Request) -> Action;
+pub trait ErrorHandler<D>: Send + 'static + Sync {
+    fn handle_error(&self, &mut NickelError<D>, &mut Request<D>) -> Action;
 }
 
-impl ErrorHandler for fn(&mut NickelError, &mut Request) -> Action {
-    fn handle_error(&self, err: &mut NickelError, req: &mut Request) -> Action {
+impl<D: 'static> ErrorHandler<D> for fn(&mut NickelError<D>, &mut Request<D>) -> Action {
+    fn handle_error(&self, err: &mut NickelError<D>, req: &mut Request<D>) -> Action {
         (*self)(err, req)
     }
 }
 
-pub struct MiddlewareStack {
-    handlers: Vec<Box<Middleware + Send + Sync>>,
-    error_handlers: Vec<Box<ErrorHandler + Send + Sync>>
+pub struct MiddlewareStack<D> {
+    handlers: Vec<Box<Middleware<D> + Send + Sync>>,
+    error_handlers: Vec<Box<ErrorHandler<D> + Send + Sync>>
 }
 
-impl MiddlewareStack {
-    pub fn add_middleware<T: Middleware> (&mut self, handler: T) {
+impl<D: 'static> MiddlewareStack<D> {
+    pub fn add_middleware<T: Middleware<D>> (&mut self, handler: T) {
         self.handlers.push(Box::new(handler));
     }
 
-    pub fn add_error_handler<T: ErrorHandler> (&mut self, handler: T) {
+    pub fn add_error_handler<T: ErrorHandler<D>> (&mut self, handler: T) {
         self.error_handlers.push(Box::new(handler));
     }
 
-    pub fn invoke<'mw, 'conn>(&'mw self, mut req: Request<'mw, 'conn>, mut res: Response<'mw>) {
+    pub fn invoke<'mw, 'conn>(&'mw self, mut req: Request<'mw, 'conn, D>, mut res: Response<'mw, D>) {
         for handler in self.handlers.iter() {
             match handler.invoke(&mut req, res) {
                 Ok(Halt(res)) => {
@@ -92,7 +92,7 @@ impl MiddlewareStack {
         }
     }
 
-    pub fn new () -> MiddlewareStack {
+    pub fn new () -> MiddlewareStack<D> {
         MiddlewareStack{
             handlers: Vec::new(),
             error_handlers: Vec::new()

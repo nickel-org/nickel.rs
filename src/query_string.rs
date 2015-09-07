@@ -33,10 +33,10 @@ impl Query {
 struct QueryStringParser;
 impl Key for QueryStringParser { type Value = Query; }
 
-impl<'mw, 'conn> Plugin<Request<'mw, 'conn>> for QueryStringParser {
+impl<'mw, 'conn, D> Plugin<Request<'mw, 'conn, D>> for QueryStringParser {
     type Error = ();
 
-    fn eval(req: &mut Request) -> Result<Query, ()> {
+    fn eval(req: &mut Request<D>) -> Result<Query, ()> {
         Ok(parse(&req.origin.uri))
     }
 }
@@ -46,7 +46,7 @@ pub trait QueryString {
     fn query(&mut self) -> &Query;
 }
 
-impl<'mw, 'conn> QueryString for Request<'mw, 'conn> {
+impl<'mw, 'conn, D> QueryString for Request<'mw, 'conn, D> {
     fn query(&mut self) -> &Query {
         self.get_ref::<QueryStringParser>()
             .ok()

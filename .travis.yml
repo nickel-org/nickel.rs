@@ -20,9 +20,9 @@ before_script:
 
 script:
   - |
-      travis-cargo build &&
-      travis-cargo test &&
-      travis-cargo doc &&
+      travis-cargo build $FEATURES &&
+      travis-cargo test $FEATURES &&
+      travis-cargo doc $FEATURES &&
       echo "Testing README" &&
       rustdoc --test README.md -L dependency=./target/debug/deps --extern nickel=./target/debug/libnickel.rlib
 
@@ -34,3 +34,10 @@ after_success:
 env:
   global:
     secure: nPXTdkq9TK4LmqJWqB4jxscDG1mnqJzO0UX5ni+oC0SohjgBxdWjbvJ8Kthk3c8Qg/2zGlCryuT1lV4TcD3jF86MHlRlXsO3G8fCbEGdLLzppbV0A2VnEw1knhv2mfUhxA8hsFJE2ncT5qeOVyQ6N3PAMGoYkdhhbD9N/9EWuqs=
+  matrix:
+    # travis-cargo requires prefixing additional args with --
+    - FEATURES=""
+    - FEATURES="-- --features ssl"
+    - FEATURES="-- --features session"
+    - FEATURES="-- --features secure_cookies"
+    - FEATURES="-- --no-default-features"
