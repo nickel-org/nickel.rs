@@ -32,7 +32,7 @@ pub trait ErrorHandler<D>: Send + 'static + Sync {
     fn handle_error(&self, &mut NickelError<D>, &mut Request<D>) -> Action;
 }
 
-impl<D> ErrorHandler<D> for fn(&mut NickelError<D>, &mut Request<D>) -> Action {
+impl<D: 'static> ErrorHandler<D> for fn(&mut NickelError<D>, &mut Request<D>) -> Action {
     fn handle_error(&self, err: &mut NickelError<D>, req: &mut Request<D>) -> Action {
         (*self)(err, req)
     }
@@ -43,7 +43,7 @@ pub struct MiddlewareStack<D=()> {
     error_handlers: Vec<Box<ErrorHandler<D> + Send + Sync>>
 }
 
-impl<D> MiddlewareStack<D> {
+impl<D: 'static> MiddlewareStack<D> {
     pub fn add_middleware<T: Middleware<D>> (&mut self, handler: T) {
         self.handlers.push(Box::new(handler));
     }
