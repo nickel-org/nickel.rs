@@ -8,11 +8,11 @@ use nickel::{Nickel, HttpRouter, Request, Response};
 fn main() {
     let mut server = Nickel::new();
 
-    server.utilize(|_: &mut Request, res: Response| res.send("Hello World!"));
-    //~^ ERROR type mismatch resolving `for<'r,'b,'a> <[closure tests/com
+    server.utilize(|_: &mut Request<()>, res: Response<()>| res.send("Hello World!"));
+    //~^ ERROR type mismatch resolving `for<'
 
-    server.get("**", |_: &mut Request, res: Response| res.send("Hello World!"));
-    //~^ ERROR type mismatch resolving `for<'r,'b,'a> <[closure tests/com
+    server.get("**", |_: &mut Request<()>, res: Response<()>| res.send("Hello World!"));
+    //~^ ERROR type mismatch resolving `for<'
 
     server.listen("127.0.0.1:6767");
 }
