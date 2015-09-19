@@ -1,3 +1,4 @@
 [clog]
 repository = "https://github.com/nickel-org/nickel.rs"
 from-latest-tag = true
+changelog = "changelog.md"

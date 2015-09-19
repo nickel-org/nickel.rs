@@ -1,3 +1,28 @@
+<a name="0.7.0"></a>
+## 0.7.0 (2015-09-15)
+
+#### BREAKING CHANGES
+
+See [8f411c9d](https://github.com/nickel-org/nickel.rs/commit/8f411c9d8c437ec7108893daad65eaf3dcf241e9), [2dd98e8c](https://github.com/nickel-org/nickel.rs/commit/2dd98e8c24922c54a7b811dd5877460ccf4433b8), [d4a6d815](https://github.com/nickel-org/nickel.rs/commit/d4a6d815351b7c27b88efb68aace16fc3b3b8578) for more information.
+
+#### Bug Fixes
+
+* **lifetimes:**  correct lifetime pattern to separate out server state from mw state ([d4a6d815](https://github.com/nickel-org/nickel.rs/commit/d4a6d815351b7c27b88efb68aace16fc3b3b8578))
+* **middleware:**  satisfy lifetime requirements for RFC 1214 ([fc35544c](https://github.com/nickel-org/nickel.rs/commit/fc35544ccc5f672285e77ef731df520498994126))
+* **travis:**  resume publishing docs ([34a08aed](https://github.com/nickel-org/nickel.rs/commit/34a08aedfc1ce8740084db9487c8ad51bce3155a))
+
+#### Features
+
+* **macros:**  allow hinting the server data type in middleware macro ([dda02d65](https://github.com/nickel-org/nickel.rs/commit/dda02d654ca77d60033c1a8462425ee66a9e43f6))
+* **nickel:**  Add Mount middleware. ([0f258361](https://github.com/nickel-org/nickel.rs/commit/0f258361b0ca670321e1f621189a716c94633773))
+* **render:**  improve ergonomics of send_file ([55d97f4e](https://github.com/nickel-org/nickel.rs/commit/55d97f4e2736714ce9a90760981342c240b5f182))
+* **response:**  allow Plugins for Response ([ffb5f212](https://github.com/nickel-org/nickel.rs/commit/ffb5f21293a51dc29a3f7109560931ca810afe7e))
+* **router:**  add chainable routes ([2dd98e8c](https://github.com/nickel-org/nickel.rs/commit/2dd98e8c24922c54a7b811dd5877460ccf4433b8))
+* **server:**  add some shared data across all requests ([8f411c9d](https://github.com/nickel-org/nickel.rs/commit/8f411c9d8c437ec7108893daad65eaf3dcf241e9))
+* **ssl:**  make Hyper's SSL feature optional ([ea2081a7](https://github.com/nickel-org/nickel.rs/commit/ea2081a79877022186012d5212f9b78ac4a2f451))
+
+
+
 <a name="0.6.0"></a>
 ## 0.6.0 (2015-07-16)
 
