@@ -84,5 +84,10 @@ path = "examples/chaining.rs"
 
 [[example]]
 
+name = "chainable_router"
+path = "examples/chainable_router.rs"
+
+[[example]]
+
 name = "form_data"
 path = "examples/form_data/form_data.rs"
