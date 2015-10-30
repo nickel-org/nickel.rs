@@ -12,7 +12,7 @@ pub trait Redirect: Sized {
     /// #[macro_use] extern crate nickel;
     ///
     /// use nickel::{Nickel, HttpRouter};
-    /// use nickel::extensions::response::Redirect;
+    /// use nickel::extensions::Redirect;
     ///
     /// fn main() {
     ///     let mut server = Nickel::new();
@@ -31,19 +31,12 @@ pub trait Redirect: Sized {
         self.redirect_with(target, StatusCode::MovedPermanently)
     }
 
-    fn redirect_back(self) -> Self::Result;
-
     fn redirect_with<T>(self, target: T, status: StatusCode) -> Self::Result
     where T: Into<String>;
 }
 
-impl<'a> Redirect for Response<'a> {
-    type Result = MiddlewareResult<'a>;
-
-    fn redirect_back(self) -> Self::Result {
-        // FIXME: use request from environment to check referrer
-        unimplemented!()
-    }
+impl<'a, D> Redirect for Response<'a, D> {
+    type Result = MiddlewareResult<'a, D>;
 
     fn redirect_with<T>(mut self, target: T, status: StatusCode) -> Self::Result
     where T: Into<String> {
