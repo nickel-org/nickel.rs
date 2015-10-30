@@ -5,9 +5,9 @@ use hyper::net;
 
 pub use self::Action::{Continue, Halt};
 
-pub type MiddlewareResult<'mw, D> = Result<Action<Response<'mw, D, net::Fresh>,
-                                              Response<'mw, D, net::Streaming>>,
-                                        NickelError<'mw, D>>;
+pub type MiddlewareResult<'mw, D= ()> = Result<Action<Response<'mw, D, net::Fresh>,
+                                                      Response<'mw, D, net::Streaming>>,
+                                               NickelError<'mw, D>>;
 
 pub enum Action<T=(), U=()> {
     Continue(T),
