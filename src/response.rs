@@ -132,7 +132,7 @@ impl<'a, D> Response<'a, D, Fresh> {
         self.origin.headers_mut().remove::<ContentLength>();
         // Determine content type by file extension or default to binary
         let mime = mime_from_filename(path).unwrap_or(MediaType::Bin);
-        self.set(mime);
+        self.set_header_fallback(|| ContentType(mime.into()));
 
         let mut file = try_with!(self, {
             File::open(path).map_err(|e| format!("Failed to send file '{:?}': {}",
