@@ -44,7 +44,7 @@ impl<'mw, 'server, D> Request<'mw, 'server, D> {
         }
     }
 
-    pub fn server_data(&self) -> &D {
+    pub fn server_data(&self) -> &'mw D {
         &self.data
     }
 }

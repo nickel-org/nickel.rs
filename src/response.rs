@@ -279,7 +279,7 @@ impl<'a, D> Response<'a, D, Fresh> {
         }
     }
 
-    pub fn server_data(&self) -> &D {
+    pub fn server_data(&self) -> &'a D {
         &self.data
     }
 
@@ -329,7 +329,7 @@ impl <'a, D, T: 'static + Any> Response<'a, D, T> {
         self.origin.headers()
     }
 
-    pub fn data(&self) -> &D {
+    pub fn data(&self) -> &'a D {
         &self.data
     }
 }
