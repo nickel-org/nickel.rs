@@ -9,7 +9,7 @@ use hyper::header;
 
 use request::Request;
 use response::Response;
-use middleware::{Continue, Middleware, MiddlewareResult};
+use middleware::{Middleware, MiddlewareResult};
 use mimes::MediaType;
 
 pub struct FaviconHandler {
@@ -23,7 +23,7 @@ impl<D> Middleware<D> for FaviconHandler {
         if FaviconHandler::is_favicon_request(req) {
             self.handle_request(req, res)
         } else {
-            Ok(Continue(res))
+            res.next_middleware()
         }
     }
 }

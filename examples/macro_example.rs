@@ -21,7 +21,7 @@ struct Person {
 //this is an example middleware function that just logs each request
 fn logger<'a, D>(request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
     println!("logging request: {:?}", request.origin.uri);
-    Ok(Continue(response))
+    response.next_middleware()
 }
 
 //this is how to overwrite the default error handler to handle 404 cases with a custom view

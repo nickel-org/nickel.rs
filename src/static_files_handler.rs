@@ -6,7 +6,7 @@ use hyper::method::Method::{Get, Head};
 
 use request::Request;
 use response::Response;
-use middleware::{Continue, Middleware, MiddlewareResult};
+use middleware::{Middleware, MiddlewareResult};
 
 // this should be much simpler after unboxed closures land in Rust.
 
@@ -20,7 +20,7 @@ impl<D> Middleware<D> for StaticFilesHandler {
             -> MiddlewareResult<'a, D> {
         match req.origin.method {
             Get | Head => self.with_file(self.extract_path(req), res),
-            _ => Ok(Continue(res))
+            _ => res.next_middleware()
         }
     }
 }
@@ -70,6 +70,6 @@ impl StaticFilesHandler {
             }
         };
 
-        Ok(Continue(res))
+        res.next_middleware()
     }
 }
