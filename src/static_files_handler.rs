@@ -4,6 +4,7 @@ use std::fs;
 
 use hyper::method::Method::{Get, Head};
 
+use status::StatusCode;
 use request::Request;
 use response::Response;
 use middleware::{Middleware, MiddlewareResult};
@@ -60,6 +61,12 @@ impl StaticFilesHandler {
                             res: Response<'a, D>)
             -> MiddlewareResult<'a, D> where P: AsRef<Path> {
         if let Some(path) = relative_path {
+            let path = path.as_ref();
+            if !safe_path(path) {
+                let log_msg = format!("The path '{:?}' was denied access.", path);
+                return res.error(StatusCode::BadRequest, log_msg);
+            }
+
             let path = self.root_path.join(path);
             match fs::metadata(&path) {
                 Ok(ref attr) if attr.is_file() => return res.send_file(&path),
@@ -71,5 +78,46 @@ impl StaticFilesHandler {
         };
 
         res.next_middleware()
+    }
+}
+
+/// Block paths from accessing the parent directory
+fn safe_path<P: AsRef<Path>>(path: P) -> bool {
+    use std::path::Component;
+
+    path.as_ref().components().all(|c| match c {
+        // whitelist non-suspicious in case new things get added in future
+        Component::CurDir | Component::Normal(_) => true,
+        _ => false
+    })
+}
+
+#[test]
+fn bad_paths() {
+    let bad_paths = &[
+        "foo/bar/../baz/index.html",
+        "foo/bar/../baz",
+        "../bar/",
+        "..",
+        "/" // Root path should be handled already
+    ];
+
+    for &path in bad_paths {
+        assert!(!safe_path(path), "expected {:?} to be suspicious", path);
+    }
+}
+
+#[test]
+fn valid_paths() {
+    let good_paths = &[
+        "foo/bar/./baz/index.html",
+        "foo/bar/./baz",
+        "./bar/",
+        ".",
+        "index.html"
+    ];
+
+    for &path in good_paths {
+        assert!(safe_path(path), "expected {:?} to not be suspicious", path);
     }
 }
