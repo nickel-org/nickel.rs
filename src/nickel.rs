@@ -1,4 +1,5 @@
 use std::net::ToSocketAddrs;
+use std::time::Duration;
 use router::{Router, HttpRouter, Matcher};
 use middleware::{MiddlewareStack, Middleware, ErrorHandler};
 use server::Server;
@@ -12,7 +13,8 @@ use default_error_handler::DefaultErrorHandler;
 /// holds all public APIs.
 pub struct Nickel<D: Sync + Send + 'static = ()> {
     middleware_stack: MiddlewareStack<D>,
-    data: D
+    data: D,
+    keep_alive_timeout: Option<Duration>,
 }
 
 impl<D: Sync + Send + 'static> HttpRouter<D> for Nickel<D> {
@@ -43,7 +45,9 @@ impl<D: Sync + Send + 'static> Nickel<D> {
 
         Nickel {
             middleware_stack: middleware_stack,
-            data: data
+            data: data,
+            // Default value from nginx
+            keep_alive_timeout: Some(Duration::from_secs(75))
         }
     }
 
@@ -152,10 +156,27 @@ impl<D: Sync + Send + 'static> Nickel<D> {
         });
 
         let server = Server::new(self.middleware_stack, self.data);
-        let listener = server.serve(addr).unwrap();
+        let listener = server.serve(addr, self.keep_alive_timeout).unwrap();
 
         println!("Listening on http://{}", listener.socket);
         println!("Ctrl-C to shutdown server");
+    }
+
+    /// Set the timeout for the keep-alive loop
+    ///
+    /// # Performance
+    ///
+    /// Setting this to `None` can have significant performance impact, but if
+    /// you need to use a version of rustc < 1.4, then it may be a good choice.
+    ///
+    /// Alternatively, setting this too high, can lead to thread exhaustion,
+    /// see [this thread](https://github.com/hyperium/hyper/issues/368) for more.
+    ///
+    /// # Default
+    ///
+    /// The default value is 75 seconds.
+    pub fn keep_alive_timeout(&mut self, timeout: Option<Duration>){
+        self.keep_alive_timeout = timeout;
     }
 }
 
