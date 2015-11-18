@@ -1,6 +1,7 @@
 use std::net::ToSocketAddrs;
 use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
+use std::time::Duration;
 use hyper::Result as HttpResult;
 use hyper::server::{Request, Response, Handler, Listening};
 use hyper::server::Server as HyperServer;
@@ -40,9 +41,14 @@ impl<D: Sync + Send + 'static> Server<D> {
         }
     }
 
-    pub fn serve<A: ToSocketAddrs>(self, addr: A) -> HttpResult<Listening> {
+    pub fn serve<A: ToSocketAddrs>(self, addr: A, keep_alive_timeout: Option<Duration>) -> HttpResult<Listening> {
         let arc = ArcServer(Arc::new(self));
-        let server = try!(HyperServer::http(addr));
+        let mut server = try!(HyperServer::http(addr));
+
+        if let Some(timeout) = keep_alive_timeout {
+            server.keep_alive(timeout);
+        }
+
         server.handle(arc)
     }
 }
