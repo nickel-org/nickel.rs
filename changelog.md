@@ -1,3 +1,17 @@
+<a name="0.7.2"></a>
+### 0.7.2 (2015-11-18)
+
+
+#### Performance
+
+* **hyper:**  re-enable keep-alive by default ([dfcb3baf](https://github.com/nickel-org/nickel.rs/commit/dfcb3baf7fb046ec7bfe14186ddb4a758bbb381c))
+
+#### Bug Fixes
+
+* **static_files:**  deny suspicious paths ([bbba1ebf](https://github.com/nickel-org/nickel.rs/commit/bbba1ebf6eaa81e325edb9fb46b20d25d0ad52ed))
+
+
+
 <a name="0.7.1"></a>
 ### 0.7.1 (2015-11-02)
 
