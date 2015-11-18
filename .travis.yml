@@ -5,24 +5,25 @@ cache:
   directories:
       - target
 
-rust:
-  - stable
-  - nightly
-  - beta
-
 matrix:
   fast_finish: true
   allow_failures:
     - rust: nightly
+  include:
+      - rust: 1.3.0 # minimum supported rustc version
+        env: FEATURES="--no-default-features"
+      - rust: stable
+      - rust: beta
+      - rust: nightly
 
 before_script:
   - pip install 'travis-cargo<0.2' --user && export PATH=$HOME/.local/bin:$PATH
 
 script:
   - |
-      travis-cargo build &&
-      travis-cargo test &&
-      travis-cargo doc &&
+      travis-cargo build -- $FEATURES &&
+      travis-cargo test -- $FEATURES &&
+      travis-cargo doc -- $FEATURES &&
       echo "Testing README" &&
       rustdoc --test README.md -L dependency=./target/debug/deps --extern nickel=./target/debug/libnickel.rlib
 
