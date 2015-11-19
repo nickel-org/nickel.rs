@@ -1,5 +1,6 @@
 use std::net::ToSocketAddrs;
 use std::time::Duration;
+use std::env;
 use router::{Router, HttpRouter, Matcher};
 use middleware::{MiddlewareStack, Middleware, ErrorHandler};
 use server::Server;
@@ -156,7 +157,16 @@ impl<D: Sync + Send + 'static> Nickel<D> {
         });
 
         let server = Server::new(self.middleware_stack, self.data);
-        let listener = server.serve(addr, self.keep_alive_timeout).unwrap();
+
+        let is_test_harness = env::vars().any(|(ref k, _)| k == "NICKEL_TEST_HARNESS");
+
+        let listener = if is_test_harness {
+            // If we're under a test harness, we'll pass zero to get assigned a random
+            // port. See http://doc.rust-lang.org/std/net/struct.TcpListener.html#method.bind
+            server.serve("localhost:0", self.keep_alive_timeout).unwrap()
+        } else {
+            server.serve(addr, self.keep_alive_timeout).unwrap()
+        };
 
         println!("Listening on http://{}", listener.socket);
         println!("Ctrl-C to shutdown server");
