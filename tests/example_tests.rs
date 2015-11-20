@@ -1,4 +1,5 @@
 extern crate hyper;
+#[macro_use] extern crate lazy_static;
 
 mod util;
 
