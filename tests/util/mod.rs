@@ -3,6 +3,7 @@ use hyper::client::{Client, Response};
 use std::process::{Child, Command, Stdio};
 use std::thread;
 use std::io::Read;
+use std::sync::Mutex;
 
 struct Bomb(Child);
 
@@ -66,18 +67,25 @@ where F: FnOnce(u16) {
 // `cargo test --test foo` to run the integration tests only will not
 // pick up the changes.
 fn cargo_build(name: &str) {
-    // TODO: don't launch 2 cargos for the same file in parallel
-    // it's probably best to only build sequentially, as sometimes
-    // dependancies may get recompiled and apparently cargo doesn't
-    // do well with parallel builds of the same thing.
+    // Don't let cargo build in parallel, it can cause unnecessary test failures
+    // https://github.com/rust-lang/cargo/issues/354
+    //
+    // NOTE: important to assign to variable or it'll drop instantly.
+    let _lock = BUILD_LOCK.lock();
+
     let mut child = Command::new("cargo")
                             .arg("build")
                             .arg("--example")
                             .arg(name)
                             .env("NICKEL_TEST_HARNESS", "1")
+                            .stdout(Stdio::piped())
                             .spawn()
                             .unwrap();
     child.wait().unwrap();
+}
+
+lazy_static! {
+    static ref BUILD_LOCK : Mutex<()> = Mutex::new(());
 }
 
 fn parse_port(&mut Bomb(ref mut process): &mut Bomb) -> u16 {
