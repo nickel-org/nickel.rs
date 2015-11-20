@@ -1,4 +1,5 @@
 use hyper::client::{Client, Response};
+use hyper::method::Method;
 
 use std::process::{Child, Command, Stdio};
 use std::thread;
@@ -22,11 +23,15 @@ impl Drop for Bomb {
     }
 }
 
-pub fn response_for(url: &str) -> Response {
+pub fn response_for_method(method: Method, url: &str) -> Response {
     Client::new()
-           .get(url)
+           .request(method, url)
            .send()
            .unwrap()
+}
+
+pub fn response_for(url: &str) -> Response {
+    response_for_method(Method::Get, url)
 }
 
 pub fn read_body_to_string(res: &mut Response) -> String {

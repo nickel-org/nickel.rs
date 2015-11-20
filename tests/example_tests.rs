@@ -10,4 +10,5 @@ mod examples {
     mod default_router;
     mod template;
     mod moved_ownership;
+    mod chaining;
 }
