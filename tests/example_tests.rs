@@ -7,4 +7,5 @@ mod examples {
     mod hello_world;
     mod mount;
     mod route_data;
+    mod default_router;
 }

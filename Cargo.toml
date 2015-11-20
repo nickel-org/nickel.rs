@@ -46,8 +46,8 @@ path = "examples/example.rs"
 
 [[example]]
 
-name = "example_with_default_router"
-path = "examples/example_with_default_router.rs"
+name = "default_router"
+path = "examples/default_router.rs"
 
 [[example]]
 
