@@ -1,6 +1,4 @@
-extern crate hyper;
-
-use self::hyper::Client;
+use hyper::client::{Client, Response};
 
 use std::process::{Child, Command, Stdio};
 use std::thread;
@@ -23,15 +21,22 @@ impl Drop for Bomb {
     }
 }
 
-pub fn read_url(url: &str) -> String {
-    let mut res = Client::new()
-                         .get(url)
-                         .send()
-                         .unwrap();
+pub fn response_for(url: &str) -> Response {
+    Client::new()
+           .get(url)
+           .send()
+           .unwrap()
+}
 
+pub fn read_body_to_string(res: &mut Response) -> String {
     let mut s = String::new();
     res.read_to_string(&mut s).unwrap();
     s
+}
+
+pub fn read_url(url: &str) -> String {
+    let mut res = response_for(url);
+    read_body_to_string(&mut res)
 }
 
 pub fn run_example<F>(name: &str, f: F)
