@@ -8,4 +8,5 @@ mod examples {
     mod mount;
     mod route_data;
     mod default_router;
+    mod template;
 }
