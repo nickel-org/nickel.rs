@@ -9,4 +9,5 @@ mod examples {
     mod route_data;
     mod default_router;
     mod template;
+    mod moved_ownership;
 }
