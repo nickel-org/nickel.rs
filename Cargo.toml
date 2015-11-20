@@ -76,8 +76,8 @@ path = "examples/moved_ownership.rs"
 
 [[example]]
 
-name = "example_route_data"
-path = "examples/example_route_data.rs"
+name = "route_data"
+path = "examples/route_data.rs"
 
 [[example]]
 
