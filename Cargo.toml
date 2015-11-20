@@ -51,8 +51,8 @@ path = "examples/default_router.rs"
 
 [[example]]
 
-name = "example_template"
-path = "examples/example_template.rs"
+name = "template"
+path = "examples/template.rs"
 
 [[example]]
 
