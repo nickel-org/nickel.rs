@@ -1,3 +1,5 @@
+extern crate hyper;
+
 mod util;
 
 mod examples {
