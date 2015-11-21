@@ -19,17 +19,17 @@ timeouts = ["hyper/timeouts"]
 default = ["timeouts"]
 
 [dependencies]
-url = "*"
-time = "*"
-typemap = "*"
-plugin = "*"
-regex = "*"
-rustc-serialize = "*"
-log = "*"
-groupable = "*"
-mustache = "*"
-lazy_static = "*"
-modifier = "*"
+url = "0.2"
+time = "0.1"
+typemap = "0.3"
+plugin = "0.2"
+regex = "0.1"
+rustc-serialize = "0.3"
+log = "0.3"
+groupable = "0.2"
+mustache = "0.6"
+lazy_static = "0.1"
+modifier = "0.1"
 
 [dependencies.hyper]
 version = "=0.6"
