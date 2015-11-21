@@ -5,13 +5,17 @@ use std::process::{Child, Command, Stdio};
 use std::thread;
 use std::io::Read;
 use std::sync::Mutex;
+use std::env;
 
 struct Bomb(Child);
 
 // Don't leak child processes!
 impl Drop for Bomb {
     fn drop(&mut self) {
-        self.0.kill().expect("Leaking child process");
+        match self.0.kill() {
+            Ok(()) => {},
+            Err(e) => panic!("Leaking child process: {:?}", e)
+        }
 
         if thread::panicking() {
             let mut s = String::new();
@@ -78,14 +82,23 @@ fn cargo_build(name: &str) {
     // NOTE: important to assign to variable or it'll drop instantly.
     let _lock = BUILD_LOCK.lock();
 
-    let mut child = Command::new("cargo")
-                            .arg("build")
-                            .arg("--example")
-                            .arg(name)
-                            .env("NICKEL_TEST_HARNESS", "1")
-                            .stdout(Stdio::piped())
-                            .spawn()
-                            .unwrap();
+
+    let mut command = Command::new("cargo");
+
+    command.env("NICKEL_TEST_HARNESS", "1")
+           .stdout(Stdio::piped())
+           .arg("build")
+           .arg("--example")
+           .arg(name);
+
+    // support for features passed in the env (as we do on travis)
+    if let Some(arg) = env::var("FEATURES").ok() {
+        for feature_arg in arg.split_whitespace() {
+            command.arg(feature_arg);
+        }
+    }
+
+    let mut child = command.spawn().unwrap();
     child.wait().unwrap();
 }
 
