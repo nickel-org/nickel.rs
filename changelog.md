@@ -1,3 +1,13 @@
+<a name="0.7.3"></a>
+### 0.7.3 (2015-11-23)
+
+
+#### Bug Fixes
+
+* **Cargo:**  remove wildcard dependency versions ([ded09d3b](https://github.com/nickel-org/nickel.rs/commit/ded09d3b10304832e392a98724934b5f35f57119))
+
+
+
 <a name="0.7.2"></a>
 ### 0.7.2 (2015-11-18)
 
