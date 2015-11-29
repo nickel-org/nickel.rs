@@ -2,10 +2,10 @@
 extern crate regex;
 
 use std::io::Write;
-use nickel::status::StatusCode::{self, NotFound, BadRequest};
+use nickel::status::StatusCode::NotFound;
 use nickel::{
     Nickel, NickelError, Continue, Halt, Request, Response, MiddlewareResult,
-    QueryString, StaticFilesHandler, HttpRouter, Action
+    StaticFilesHandler, HttpRouter, Action
 };
 use regex::Regex;
 
@@ -57,25 +57,6 @@ fn main() {
     // go to http://localhost:6767/a/nice/route or http://localhost:6767/a/super/nice/route to see this route in action
     router.get("/a/**/route", middleware! {
         "This matches /a/crazy/route and also /a/super/crazy/route"
-    });
-
-    // try calling http://localhost:6767/query?foo=bar
-    router.get("/query", middleware! { |request|
-        if let Some(vals) = request.query().all("foo") {
-            format!("Your foo values in the query string are: {:?}", vals)
-        } else {
-            format!("You didn't provide any foo values!")
-        }
-    });
-
-    // try calling http://localhost:6767/strict?state=valid
-    // then try calling http://localhost:6767/strict?state=invalid
-    router.get("/strict", middleware! { |request|
-        if request.query().get("state") != Some("valid") {
-            (BadRequest, "Error Parsing JSON")
-        } else {
-            (StatusCode::Ok, "Congratulations on conforming!")
-        }
     });
 
     server.utilize(router);
