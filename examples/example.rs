@@ -1,31 +1,13 @@
 #[macro_use] extern crate nickel;
-extern crate rustc_serialize;
 extern crate regex;
 
-use std::collections::BTreeMap;
 use std::io::Write;
 use nickel::status::StatusCode::{self, NotFound, BadRequest};
 use nickel::{
     Nickel, NickelError, Continue, Halt, Request, Response, MiddlewareResult,
-    QueryString, JsonBody, StaticFilesHandler, HttpRouter, Action, MediaType
+    QueryString, StaticFilesHandler, HttpRouter, Action
 };
 use regex::Regex;
-use rustc_serialize::json::{Json, ToJson};
-
-#[derive(RustcDecodable, RustcEncodable)]
-struct Person {
-    firstname: String,
-    lastname:  String,
-}
-
-impl ToJson for Person {
-    fn to_json(&self) -> Json {
-        let mut map = BTreeMap::new();
-        map.insert("first_name".to_string(), self.firstname.to_json());
-        map.insert("last_name".to_string(), self.lastname.to_json());
-        Json::Object(map)
-    }
-}
 
 fn logger<'mw>(req: &mut Request, res: Response<'mw>) -> MiddlewareResult<'mw> {
     println!("logging request from logger fn: {:?}", req.origin.uri);
@@ -60,12 +42,6 @@ fn main() {
     // go to http://localhost:6767/bar to see this route in action
     router.get("/bar", middleware!("This is the /bar handler"));
 
-    // go to http://localhost:6767/content-type to see this route in action
-    router.get("/content-type", middleware! { |_, mut response|
-        response.set(MediaType::Json);
-        "{'foo':'bar'}"
-    });
-
     let hello_regex = Regex::new("/hello/(?P<name>[a-zA-Z]+)").unwrap();
 
     // go to http://localhost:6767/hello/moomah to see this route in action
@@ -81,22 +57,6 @@ fn main() {
     // go to http://localhost:6767/a/nice/route or http://localhost:6767/a/super/nice/route to see this route in action
     router.get("/a/**/route", middleware! {
         "This matches /a/crazy/route and also /a/super/crazy/route"
-    });
-
-    // try it with curl
-    // curl 'http://localhost:6767/a/post/request' -H 'Content-Type: application/json;charset=UTF-8'  --data-binary $'{ "firstname": "John","lastname": "Connor" }'
-    router.post("/a/post/request", middleware! { |request, response|
-        let person = request.json_as::<Person>().unwrap();
-        format!("Hello {} {}", person.firstname, person.lastname)
-    });
-
-    // go to http://localhost:6767/api/person/1 to see this route in action
-    router.get("/api/person/1", middleware! {
-        let person = Person {
-            firstname: "Pea".to_string(),
-            lastname: "Nut".to_string()
-        };
-        person.to_json()
     });
 
     // try calling http://localhost:6767/query?foo=bar
