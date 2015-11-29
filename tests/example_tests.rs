@@ -1,3 +1,4 @@
+extern crate rustc_serialize;
 extern crate hyper;
 #[macro_use] extern crate lazy_static;
 
@@ -11,4 +12,5 @@ mod examples {
     mod template;
     mod moved_ownership;
     mod chaining;
+    mod json;
 }
