@@ -13,4 +13,5 @@ mod examples {
     mod moved_ownership;
     mod chaining;
     mod json;
+    mod query_string;
 }
