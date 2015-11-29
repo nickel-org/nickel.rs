@@ -71,6 +71,11 @@ path = "examples/hello_world_macro.rs"
 
 [[example]]
 
+name = "json"
+path = "examples/json.rs"
+
+[[example]]
+
 name = "moved_ownership"
 path = "examples/moved_ownership.rs"
 
