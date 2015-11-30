@@ -16,4 +16,5 @@ mod examples {
     mod query_string;
     mod regex_route;
     mod custom_error_handler;
+    mod static_files;
 }
