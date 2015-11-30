@@ -15,4 +15,5 @@ mod examples {
     mod json;
     mod query_string;
     mod regex_route;
+    mod custom_error_handler;
 }
