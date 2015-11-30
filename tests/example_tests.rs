@@ -14,4 +14,5 @@ mod examples {
     mod chaining;
     mod json;
     mod query_string;
+    mod regex_route;
 }
