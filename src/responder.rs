@@ -9,7 +9,7 @@
 //! in any request.
 //!
 //! Please see the examples for usage.
-use {Response, NickelError, MiddlewareResult, Halt};
+use {Response, MiddlewareResult, Halt, IntoError};
 use hyper::status::{StatusCode, StatusClass};
 use hyper::header;
 use serialize::json;
@@ -41,7 +41,7 @@ impl<D> Responder<D> for json::Json {
 
 impl<T, E, D> Responder<D> for Result<T, E>
         where T: Responder<D>,
-              for<'e> NickelError<'e, D>: From<(Response<'e, D>, E)> {
+              E: IntoError<D> {
     fn respond<'a>(self, res: Response<'a, D>) -> MiddlewareResult<'a, D> {
         let data = try_with!(res, self);
         res.send(data)

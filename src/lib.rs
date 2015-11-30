@@ -26,7 +26,7 @@ pub use body_parser::{BodyError, FormBody, JsonBody};
 pub use query_string::QueryString;
 pub use urlencoded::{Params, Query};
 pub use router::{Router, Route, RouteResult, HttpRouter};
-pub use nickel_error::NickelError;
+pub use nickel_error::{IntoError, NickelError};
 pub use mimes::MediaType;
 pub use responder::Responder;
 pub use server::ListeningServer;

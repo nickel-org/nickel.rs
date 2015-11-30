@@ -69,22 +69,30 @@ impl<'a, D> NickelError<'a, D> {
     }
 }
 
-impl<'a, T, D> From<(Response<'a, D>, (StatusCode, T))> for NickelError<'a, D>
-        where T: Into<Box<Error + 'static>> {
-    fn from((res, (errorcode, err)): (Response<'a, D>, (StatusCode, T))) -> NickelError<'a, D> {
+/// `IntoError` is the required bounds for the `try_with!` macro.
+///
+/// See the `error_handling` example for usage.
+pub trait IntoError<D> : Sized {
+    fn into<'a>(self, res: Response<'a, D>) -> NickelError<'a, D>;
+}
+
+impl<D> IntoError<D> for StatusCode {
+    fn into<'a>(self, res: Response<'a, D>) -> NickelError<'a, D> {
+        NickelError::new(res, "", self)
+    }
+}
+
+impl<D> IntoError<D> for String {
+    fn into<'a>(self, res: Response<'a, D>) -> NickelError<'a, D> {
+        NickelError::new(res, self, StatusCode::InternalServerError)
+    }
+}
+
+impl<D, T> IntoError<D> for (StatusCode, T)
+where T: Into<Box<Error + 'static>> {
+    fn into<'a>(self, res: Response<'a, D>) -> NickelError<'a, D> {
+        let (status_code, err) = self;
         let err = err.into();
-        NickelError::new(res, err.description().to_string(), errorcode)
-    }
-}
-
-impl<'a, D> From<(Response<'a, D>, String)> for NickelError<'a, D> {
-    fn from((res, msg): (Response<'a, D>, String)) -> NickelError<'a, D> {
-        NickelError::new(res, msg, StatusCode::InternalServerError)
-    }
-}
-
-impl<'a, D> From<(Response<'a, D>, StatusCode)> for NickelError<'a, D> {
-    fn from((res, code): (Response<'a, D>, StatusCode)) -> NickelError<'a, D> {
-        NickelError::new(res, "", code)
+        NickelError::new(res, err.description().to_string(), status_code)
     }
 }

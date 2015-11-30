@@ -7,7 +7,7 @@ macro_rules! try_with {
         match $exp {
             ::std::result::Result::Ok(val) => val,
             ::std::result::Result::Err(e) => {
-                return Err(From::from(($res, e)))
+                return Err($crate::IntoError::into(e, $res))
             }
         }
     }};
