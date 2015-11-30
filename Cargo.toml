@@ -86,6 +86,11 @@ path = "examples/route_data.rs"
 
 [[example]]
 
+name = "regex_route"
+path = "examples/regex_route.rs"
+
+[[example]]
+
 name = "query_string"
 path = "examples/query_string.rs"
 
