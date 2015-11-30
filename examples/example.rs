@@ -1,6 +1,6 @@
 #[macro_use] extern crate nickel;
 
-use nickel::{Nickel, Request, Response, MiddlewareResult,StaticFilesHandler, HttpRouter};
+use nickel::{Nickel, Request, Response, MiddlewareResult, HttpRouter};
 
 fn logger<'mw>(req: &mut Request, res: Response<'mw>) -> MiddlewareResult<'mw> {
     println!("logging request from logger fn: {:?}", req.origin.uri);
@@ -46,9 +46,6 @@ fn main() {
     });
 
     server.utilize(router);
-
-    // go to http://localhost:6767/thoughtram_logo_brain.png to see static file serving in action
-    server.utilize(StaticFilesHandler::new("examples/assets/"));
 
     server.listen("127.0.0.1:6767");
 }

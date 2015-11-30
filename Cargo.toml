@@ -91,6 +91,11 @@ path = "examples/route_data.rs"
 
 [[example]]
 
+name = "static_files"
+path = "examples/static_files.rs"
+
+[[example]]
+
 name = "regex_route"
 path = "examples/regex_route.rs"
 
