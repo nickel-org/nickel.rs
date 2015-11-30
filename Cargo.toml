@@ -76,6 +76,11 @@ path = "examples/json.rs"
 
 [[example]]
 
+name = "custom_error_handler"
+path = "examples/custom_error_handler.rs"
+
+[[example]]
+
 name = "moved_ownership"
 path = "examples/moved_ownership.rs"
 
