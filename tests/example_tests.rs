@@ -8,7 +8,7 @@ mod examples {
     mod hello_world;
     mod mount;
     mod route_data;
-    mod default_router;
+    mod routing;
     mod template;
     mod moved_ownership;
     mod chaining;
