@@ -1,5 +1,4 @@
 #[macro_use] extern crate nickel;
-extern crate regex;
 
 use std::io::Write;
 use nickel::status::StatusCode::NotFound;
@@ -7,7 +6,6 @@ use nickel::{
     Nickel, NickelError, Continue, Halt, Request, Response, MiddlewareResult,
     StaticFilesHandler, HttpRouter, Action
 };
-use regex::Regex;
 
 fn logger<'mw>(req: &mut Request, res: Response<'mw>) -> MiddlewareResult<'mw> {
     println!("logging request from logger fn: {:?}", req.origin.uri);
@@ -41,13 +39,6 @@ fn main() {
 
     // go to http://localhost:6767/bar to see this route in action
     router.get("/bar", middleware!("This is the /bar handler"));
-
-    let hello_regex = Regex::new("/hello/(?P<name>[a-zA-Z]+)").unwrap();
-
-    // go to http://localhost:6767/hello/moomah to see this route in action
-    router.get(hello_regex, middleware! { |request|
-        format!("Hello {}", request.param("name").unwrap())
-    });
 
     // go to http://localhost:6767/some/crazy/route to see this route in action
     router.get("/some/*/route", middleware! {
