@@ -136,3 +136,8 @@ path = "examples/https.rs"
 
 name = "no_macro_custom_data"
 path = "examples/no_macro_custom_data.rs"
+
+[[example]]
+
+name = "error_handling"
+path = "examples/error_handling.rs"
