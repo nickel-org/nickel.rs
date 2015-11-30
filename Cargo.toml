@@ -41,13 +41,13 @@ optional = true
 
 [[example]]
 
-name = "example"
-path = "examples/example.rs"
+name = "logger_middleware"
+path = "examples/logger_middleware.rs"
 
 [[example]]
 
-name = "default_router"
-path = "examples/default_router.rs"
+name = "routing"
+path = "examples/routing.rs"
 
 [[example]]
 
