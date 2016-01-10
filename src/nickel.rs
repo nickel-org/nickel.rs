@@ -16,6 +16,7 @@ pub struct Nickel<D: Sync + Send + 'static = ()> {
     middleware_stack: MiddlewareStack<D>,
     data: D,
     keep_alive_timeout: Option<Duration>,
+    thread_count: Option<usize>,
 }
 
 impl<D: Sync + Send + 'static> HttpRouter<D> for Nickel<D> {
@@ -48,7 +49,9 @@ impl<D: Sync + Send + 'static> Nickel<D> {
             middleware_stack: middleware_stack,
             data: data,
             // Default value from nginx
-            keep_alive_timeout: Some(Duration::from_secs(75))
+            keep_alive_timeout: Some(Duration::from_secs(75)),
+            // Use hyper's default
+            thread_count: None
         }
     }
 
@@ -163,9 +166,9 @@ impl<D: Sync + Send + 'static> Nickel<D> {
         let listener = if is_test_harness {
             // If we're under a test harness, we'll pass zero to get assigned a random
             // port. See http://doc.rust-lang.org/std/net/struct.TcpListener.html#method.bind
-            server.serve("localhost:0", self.keep_alive_timeout).unwrap()
+            server.serve("localhost:0", self.keep_alive_timeout, self.thread_count).unwrap()
         } else {
-            server.serve(addr, self.keep_alive_timeout).unwrap()
+            server.serve(addr, self.keep_alive_timeout, self.thread_count).unwrap()
         };
 
         println!("Listening on http://{}", listener.socket);
@@ -187,6 +190,21 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     /// The default value is 75 seconds.
     pub fn keep_alive_timeout(&mut self, timeout: Option<Duration>){
         self.keep_alive_timeout = timeout;
+    }
+
+    /// Set the number of threads the server should use
+    ///
+    /// # Performance
+    ///
+    /// Increasing this can help with thread exhaustion. Setting this
+    /// to `None` will use the default value calculated by the hyper
+    /// http library (http://hyper.rs/).
+    ///
+    /// # Default
+    ///
+    /// The value calculated by hyper.
+    pub fn thread_count(&mut self, threads: Option<usize>) {
+        self.thread_count = threads;
     }
 }
 
