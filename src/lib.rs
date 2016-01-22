@@ -14,7 +14,7 @@ extern crate modifier;
 #[macro_use] extern crate log;
 #[macro_use] extern crate lazy_static;
 
-pub use nickel::Nickel;
+pub use nickel::{Nickel, Options};
 pub use request::Request;
 pub use response::Response;
 pub use middleware::{Action, Continue, Halt, Middleware, ErrorHandler, MiddlewareResult};
