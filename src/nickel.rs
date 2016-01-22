@@ -10,12 +10,49 @@ use hyper::status::StatusCode;
 //pre defined middleware
 use default_error_handler::DefaultErrorHandler;
 
+/// Configuration options for the server.
+///
+/// This struct provides a builder-style API for constructing the desired options.
+///
+/// # Examples
+/// ```{rust}
+/// use nickel::{Nickel, Options};
+/// let mut server = Nickel::new();
+///
+/// // Don't print to stdout when starting the server.
+/// server.options = Options::default().output_on_listen(false);
+/// ```
+pub struct Options {
+    output_on_listen: bool,
+}
+
+impl Options {
+    /// Whether the server should print the local address it is listening on when starting.
+    ///
+    /// Defaults to `true`.
+    pub fn output_on_listen(mut self, output: bool) -> Self {
+        self.output_on_listen = output;
+        self
+    }
+}
+
+impl Default for Options {
+    fn default() -> Self {
+        Options {
+            output_on_listen: true,
+        }
+    }
+}
+
 /// Nickel is the application object. It's the surface that
 /// holds all public APIs.
 pub struct Nickel<D: Sync + Send + 'static = ()> {
     middleware_stack: MiddlewareStack<D>,
     data: D,
     keep_alive_timeout: Option<Duration>,
+
+    /// Configuration options for the server.
+    pub options: Options,
 }
 
 impl<D: Sync + Send + 'static> HttpRouter<D> for Nickel<D> {
@@ -46,6 +83,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
 
         Nickel {
             middleware_stack: middleware_stack,
+            options: Options::default(),
             data: data,
             // Default value from nginx
             keep_alive_timeout: Some(Duration::from_secs(75))
@@ -168,8 +206,10 @@ impl<D: Sync + Send + 'static> Nickel<D> {
             server.serve(addr, self.keep_alive_timeout).unwrap()
         };
 
-        println!("Listening on http://{}", listener.socket);
-        println!("Ctrl-C to shutdown server");
+        if self.options.output_on_listen {
+            println!("Listening on http://{}", listener.socket);
+            println!("Ctrl-C to shutdown server");
+        }
     }
 
     /// Set the timeout for the keep-alive loop
