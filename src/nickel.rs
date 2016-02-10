@@ -81,7 +81,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     /// as soon as any regular handler returned an error
     ///
     /// A error handler is nearly identical to a regular middleware handler with the only
-    /// difference that it takes an additional error parameter or type `NickelError.
+    /// difference that it takes an additional error parameter of type `NickelError.
     ///
     /// # Examples
     ///
