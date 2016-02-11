@@ -41,7 +41,7 @@ impl<D: Sync + Send + 'static> Server<D> {
         }
     }
 
-    pub fn serve<A: ToSocketAddrs>(self, addr: A, keep_alive_timeout: Option<Duration>) -> HttpResult<Listening> {
+    pub fn serve<A: ToSocketAddrs>(self, addr: A, keep_alive_timeout: Option<Duration>, thread_count: Option<usize>) -> HttpResult<Listening> {
         let arc = ArcServer(Arc::new(self));
         let mut server = try!(HyperServer::http(addr));
 
@@ -49,6 +49,9 @@ impl<D: Sync + Send + 'static> Server<D> {
             server.keep_alive(timeout);
         }
 
-        server.handle(arc)
+        match thread_count {
+            Some(threads) => server.handle_threads(arc, threads),
+            None =>  server.handle(arc),
+        }
     }
 }
