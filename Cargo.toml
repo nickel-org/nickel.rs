@@ -118,3 +118,8 @@ path = "examples/chaining.rs"
 
 name = "form_data"
 path = "examples/form_data/form_data.rs"
+
+[[example]]
+
+name = "error_handling"
+path = "examples/error_handling.rs"
