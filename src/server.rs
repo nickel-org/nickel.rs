@@ -52,3 +52,31 @@ impl<D: Sync + Send + 'static> Server<D> {
         server.handle(arc)
     }
 }
+
+#[cfg(feature = "ssl")]
+mod ssl {
+    use std::net::ToSocketAddrs;
+    use std::sync::{Arc};
+    use std::time::Duration;
+    use hyper::Result as HttpResult;
+    use hyper::server::{Handler, Listening};
+    use hyper::server::Server as HyperServer;
+    use hyper::net::Ssl;
+
+    use super::{Server,ArcServer};
+
+    impl<D: Sync + Send + 'static> Server<D> {
+        pub fn serve_https<A,S>(self, addr: A, keep_alive_timeout: Option<Duration>, ssl: S) -> HttpResult<Listening>
+            where A: ToSocketAddrs,
+                  S: Ssl + Clone + Send + 'static {
+            let arc = ArcServer(Arc::new(self));
+            let mut server = try!(HyperServer::https(addr, ssl));
+
+            if let Some(timeout) = keep_alive_timeout {
+                server.keep_alive(timeout);
+            }
+
+            server.handle(arc)
+        }
+    }
+}
