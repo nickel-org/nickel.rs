@@ -17,4 +17,7 @@ mod examples {
     mod regex_route;
     mod custom_error_handler;
     mod static_files;
+
+    #[cfg(feature = "ssl")]
+    mod https;
 }
