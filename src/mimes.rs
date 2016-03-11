@@ -2,7 +2,7 @@ use hyper::mime::Mime;
 use std::str::FromStr;
 
 macro_rules! mimes {
-    ($($t:expr { $($name:ident, $as_s:pat, $subt:expr,)+ })+) => (
+    ($($t:expr => { $($name:ident, $as_s:pat, $subt:expr,)+ })+) => (
         #[allow(non_camel_case_types)]
         #[derive(Debug, PartialEq, Eq, Hash, Copy, Clone)]
         pub enum MediaType {
@@ -46,7 +46,7 @@ macro_rules! mimes {
 
 mimes!(
 
-    "application" {
+    "application" => {
 
         Ez, "ez", "andrew-inset",
         Aw, "aw", "applixware",
@@ -641,7 +641,7 @@ mimes!(
 
     }
 
-    "audio" {
+    "audio" => {
 
         Adp, "adp", "adpcm",
         Au, "au", "basic",
@@ -678,7 +678,7 @@ mimes!(
 
     }
 
-    "chemical" {
+    "chemical" => {
 
         Cdx, "cdx", "x-cdx",
         Cif, "cif", "x-cif",
@@ -689,7 +689,7 @@ mimes!(
 
     }
 
-    "image" {
+    "image" => {
 
         Bmp, "bmp", "bmp",
         Cgm, "cgm", "cgm",
@@ -740,13 +740,13 @@ mimes!(
 
     }
 
-    "message" {
+    "message" => {
 
         Eml, "eml", "rfc822",
 
     }
 
-    "model" {
+    "model" => {
 
         Igs, "igs", "iges",
         Msh, "msh", "mesh",
@@ -763,7 +763,7 @@ mimes!(
 
     }
 
-    "text" {
+    "text" => {
 
         Appcache, "appcache", "cache-manifest",
         Ics, "ics", "calendar",
@@ -807,7 +807,7 @@ mimes!(
 
     }
 
-    "video" {
+    "video" => {
 
         Media3gp, "3gp", "3gpp",
         Media3g2, "3g2", "3gpp2",
@@ -851,7 +851,7 @@ mimes!(
 
     }
 
-    "x-conference" {
+    "x-conference" => {
 
         Ice, "ice", "x-cooltalk",
 
