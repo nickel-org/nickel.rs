@@ -1,6 +1,7 @@
 use hyper::client::{Client, Response};
 use hyper::method::Method;
 
+use std::collections::HashSet;
 use std::process::{Child, Command, Stdio};
 use std::thread;
 use std::io::Read;
@@ -88,8 +89,12 @@ fn cargo_build(name: &str) {
     // https://github.com/rust-lang/cargo/issues/354
     //
     // NOTE: important to assign to variable or it'll drop instantly.
-    let _lock = BUILD_LOCK.lock();
+    let mut built_set = BUILD_LOCK.lock().expect("Failed to get build lock");
 
+    if !built_set.insert(name.to_owned()) {
+        // insert returned false, key was already in the set
+        return
+    }
 
     let mut command = Command::new("cargo");
 
@@ -111,7 +116,7 @@ fn cargo_build(name: &str) {
 }
 
 lazy_static! {
-    static ref BUILD_LOCK : Mutex<()> = Mutex::new(());
+    static ref BUILD_LOCK : Mutex<HashSet<String>> = Mutex::new(HashSet::new());
 }
 
 fn parse_port(&mut Bomb(ref mut process): &mut Bomb) -> u16 {
