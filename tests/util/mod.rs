@@ -4,7 +4,7 @@ use hyper::method::Method;
 use std::collections::HashSet;
 use std::process::{Child, Command, Stdio};
 use std::thread;
-use std::io::Read;
+use std::io::{BufReader, BufRead, Read};
 use std::sync::Mutex;
 use std::env;
 
@@ -120,32 +120,19 @@ lazy_static! {
 }
 
 fn parse_port(&mut Bomb(ref mut process): &mut Bomb) -> u16 {
-    // stdout doesn't implement BufRead... *shrug*
-    let stdout = process.stdout.as_mut().unwrap();
+    let stdout = BufReader::new(process.stdout.as_mut().unwrap());
 
-    let mut line = String::new();
+    let line = stdout.lines()
+        .map(Result::unwrap)
+        .inspect(|line| println!("Processing Stdout: {:?}", line))
+        .filter(|line| line.starts_with("Listening"))
+        .next()
+        .expect("Didn't find a line from stdout");
 
-    for c in stdout.bytes().map(|b| b.unwrap() as char) {
-        if c == '\n' {
-            // Check if it's the line we want
-            if line.starts_with("Listening") {
-                break
-            } else {
-                println!("Skipping Stdout line: {:?}", line);
-                line.clear();
-            }
-        } else {
-            line.push(c)
-        }
-    }
-
-    let port = {
-        let s = line.rsplitn(2, ':').next().unwrap();
-        match s.parse() {
-            Ok(port) => port,
-            Err(e) => panic!("Failed to parse port from: {:?} : {:?}", line, e)
-        }
-    };
+    let port = line.rsplitn(2, ':')
+        .next()
+        .and_then(|s| s.parse().ok())
+        .expect(&format!("Failed to parse port from {:?}", line));
 
     println!("Parsed: port={} from {:?}", port, line);
     port
