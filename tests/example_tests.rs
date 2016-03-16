@@ -1,5 +1,6 @@
 extern crate rustc_serialize;
 extern crate hyper;
+
 #[macro_use] extern crate lazy_static;
 
 mod util;
@@ -17,6 +18,7 @@ mod examples {
     mod regex_route;
     mod custom_error_handler;
     mod static_files;
+    mod enable_cors;
 
     #[cfg(feature = "ssl")]
     mod https;
