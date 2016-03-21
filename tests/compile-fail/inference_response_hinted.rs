@@ -10,11 +10,9 @@ fn main() {
 
     server.utilize(|_, res: Response<()>| res.send("Hello World!"));
     //~^ ERROR type mismatch resolving `for<'
-    //~^^ ERROR type mismatch: the type `[closure@tests/compile-fail
 
     server.get("**", |_, res: Response<()>| res.send("Hello World!"));
     //~^ ERROR type mismatch resolving `for<'
-    //~^^ ERROR type mismatch: the type `[closure@tests/compile-fail
 
     server.listen("127.0.0.1:6767");
 }
