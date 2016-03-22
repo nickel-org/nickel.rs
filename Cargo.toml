@@ -15,11 +15,9 @@ keywords = ["nickel", "server", "web", "express"]
 [features]
 unstable = ["hyper/nightly", "compiletest_rs"]
 ssl = ["hyper/ssl"]
-timeouts = ["hyper/timeouts"]
-default = ["timeouts"]
 
 [dependencies]
-url = "0.2"
+url = "0.5"
 time = "0.1"
 typemap = "0.3"
 plugin = "0.2"
@@ -32,7 +30,7 @@ lazy_static = "0.1"
 modifier = "0.1"
 
 [dependencies.hyper]
-version = "=0.6"
+version = "=0.8"
 default-features = false
 
 [dependencies.compiletest_rs]

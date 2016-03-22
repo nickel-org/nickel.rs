@@ -45,9 +45,7 @@ impl<D: Sync + Send + 'static> Server<D> {
         let arc = ArcServer(Arc::new(self));
         let mut server = try!(HyperServer::http(addr));
 
-        if let Some(timeout) = keep_alive_timeout {
-            server.keep_alive(timeout);
-        }
+        server.keep_alive(keep_alive_timeout);
 
         server.handle(arc)
     }
