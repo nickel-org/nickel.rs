@@ -1,3 +1,24 @@
+<a name="0.8.0"></a>
+## 0.8.0 (2016-04-01)
+
+
+#### Features
+
+* **dependencies:**  bump hyper, mime and url dependency versions ([8d85148d](https://github.com/nickel-org/nickel.rs/commit/8d85148d03a8a0ecf23216b5b56dcec9d99c7767), breaks [#](https://github.com/nickel-org/nickel.rs/issues/))
+* **Rust:**  Upgrade minimum Rust version to 1.5 ([7e35f991](https://github.com/nickel-org/nickel.rs/commit/7e35f991ba0fc1ce870a3b861a3f19dcd793d152), breaks [#](https://github.com/nickel-org/nickel.rs/issues/))
+* **https:**
+  *  Added an HTTPS example ([535ebfb4](https://github.com/nickel-org/nickel.rs/commit/535ebfb4a9c2d8596372488b41d6d0462fea8882))
+  *  Implemented Nickel::listen_https() when ssl is available ([cbfcffe6](https://github.com/nickel-org/nickel.rs/commit/cbfcffe6d26d5c0f795f910e3615848ba43b6229))
+* **nickel:**  add options to Nickel ([9c8bf3a1](https://github.com/nickel-org/nickel.rs/commit/9c8bf3a193ee47359168834e422fb1b3b5d99ebe))
+* **test:** add some testing infrastructure for feature testing examples ([848bf7ec](https://github.com/nickel-org/nickel.rs/pull/299/commits/848bf7ecba3f5db330549e37124b2e2e08036181))
+
+#### Breaking Changes
+
+* **dependencies:**  bump hyper, mime and url dependency versions ([8d85148d](https://github.com/nickel-org/nickel.rs/commit/8d85148d03a8a0ecf23216b5b56dcec9d99c7767), breaks [#](https://github.com/nickel-org/nickel.rs/issues/))
+* **Rust:**  Upgrade minimum Rust version to 1.5 ([7e35f991](https://github.com/nickel-org/nickel.rs/commit/7e35f991ba0fc1ce870a3b861a3f19dcd793d152), breaks [#](https://github.com/nickel-org/nickel.rs/issues/))
+
+
+
 <a name="0.7.3"></a>
 ### 0.7.3 (2015-11-23)
 
