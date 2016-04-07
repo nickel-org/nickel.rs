@@ -17,6 +17,51 @@ where F: Fn(&mut Response),
     }
 }
 
+#[test]
+fn issue_326() {
+    use hyper::Client;
+    use hyper::header::Connection;
+
+    // The issue is that if we have a body for the request, and it isn't read
+    // by the server, it bleeds into the next request if keep-alive is active
+    run_example("chaining", |port| {
+        // The client is backed by a pool of keep-alive connections
+        let client = Client::new();
+        let url = format!("http://localhost:{}{}", port, "/post");
+
+        // scope the requests so the connection gets released back to the pool
+        {
+            // Assert that keep alive is still true after a zero length request body
+            // so that we know we're not dropping *all* requests with a body
+            let ref mut res = client.post(&url)
+                                    .send()
+                                    .unwrap();
+            assert_eq!(false, res.headers.has::<Connection>());
+            assert_eq!("post", read_body_to_string(res));
+        }
+
+        {
+            // Now send a request with a body, which won't be read by the server
+            let ref mut res = client.post(&url)
+                                    .body("0123456789")
+                                    .send()
+                                    .unwrap();
+            // we could assert that `Connection: close` was given, but we may
+            // want to be more flexible in future and allow buffers up to a
+            // certain length to be drained.
+            assert_eq!("post", read_body_to_string(res));
+        }
+
+        // Ensure the next request works as intended with no failure due to
+        // a corrupted stream.
+        let ref mut res = client.post(&url)
+                                .body("0123456789")
+                                .send()
+                                .unwrap();
+        assert_eq!("post", read_body_to_string(res));
+    })
+}
+
 mod expect_200 {
     use super::with_paths_and_method;
     use util::*;
