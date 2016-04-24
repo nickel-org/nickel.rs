@@ -2,7 +2,7 @@
 
 ## Before you begin
 
-Make sure to follow this [commit message convention](https://github.com/ajoslin/conventional-changelog/blob/master/conventions/angular.md) because we will auto generate a changelog with [clog](https://github.com/thoughtram/clog) in the future.
+Make sure to follow this [commit message convention](https://github.com/conventional-changelog/conventional-changelog-angular/blob/master/convention.md) because we will auto generate a changelog with [clog](https://github.com/thoughtram/clog) in the future.
 
 # Getting started
 
