@@ -127,5 +127,5 @@ fn main() {
     server.handle_error(custom_handler);
 
     println!("Running server!");
-    server.listen("127.0.0.1:6767");
+    server.listen("127.0.0.1:6767").unwrap();
 }

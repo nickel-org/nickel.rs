@@ -14,5 +14,5 @@ fn main() {
     server.get("**", |_: &mut Request<()>, res: Response<()>| res.send("Hello World!"));
     //~^ ERROR type mismatch resolving `for<'
 
-    server.listen("127.0.0.1:6767");
+    server.listen("127.0.0.1:6767").unwrap();
 }

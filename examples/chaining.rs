@@ -13,5 +13,5 @@ fn main() {
           .patch("/patch", middleware!("patch"))
           .delete("/delete", middleware!("delete"));
 
-    server.listen("127.0.0.1:6767");
+    server.listen("127.0.0.1:6767").unwrap();
 }

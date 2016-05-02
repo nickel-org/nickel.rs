@@ -1,4 +1,4 @@
-use std::net::ToSocketAddrs;
+use std::net::{SocketAddr, ToSocketAddrs};
 use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
 use std::time::Duration;
@@ -45,16 +45,18 @@ impl<D: Sync + Send + 'static> Server<D> {
                                    addr: A,
                                    keep_alive_timeout: Option<Duration>,
                                    thread_count: Option<usize>)
-                                   -> HttpResult<Listening> {
+                                    -> HttpResult<ListeningServer> {
         let arc = ArcServer(Arc::new(self));
         let mut server = try!(HyperServer::http(addr));
 
         server.keep_alive(keep_alive_timeout);
 
-        match thread_count {
+        let listening = match thread_count {
             Some(threads) => server.handle_threads(arc, threads),
             None => server.handle(arc),
-        }
+        };
+
+        listening.map(ListeningServer)
     }
 }
 
@@ -68,7 +70,7 @@ mod ssl {
     use hyper::server::Server as HyperServer;
     use hyper::net::Ssl;
 
-    use super::{Server,ArcServer};
+    use super::{Server,ArcServer, ListeningServer};
 
     impl<D: Sync + Send + 'static> Server<D> {
         pub fn serve_https<A,S>(self,
@@ -76,7 +78,7 @@ mod ssl {
                                 keep_alive_timeout: Option<Duration>,
                                 thread_count: Option<usize>,
                                 ssl: S)
-                                -> HttpResult<Listening>
+                                -> HttpResult<ListeningServer>
             where A: ToSocketAddrs,
                   S: Ssl + Clone + Send + 'static {
             let arc = ArcServer(Arc::new(self));
@@ -84,10 +86,43 @@ mod ssl {
 
             server.keep_alive(keep_alive_timeout);
 
-            match thread_count {
+            let listening = match thread_count {
                 Some(threads) => server.handle_threads(arc, threads),
                 None => server.handle(arc),
-            }
+            };
+
+            listening.map(ListeningServer)
         }
+    }
+}
+
+/// A server listeing on a socket
+pub struct ListeningServer(Listening);
+
+impl ListeningServer {
+    /// Gets the `SocketAddr` which the server is currently listening on.
+    pub fn socket(&self) -> SocketAddr {
+        self.0.socket
+    }
+
+    /// Detaches the server thread.
+    ///
+    /// This doesn't actually kill the server, it just stops the current thread from
+    /// blocking due to the server running. In the case where `main` returns due to
+    /// this unblocking, then the server will be killed due to process death.
+    ///
+    /// The required use of this is when writing unit tests which spawn servers and do
+    /// not want to block the test-runner by waiting on the server to stop because
+    /// it probably never will.
+    ///
+    /// See [this hyper issue](https://github.com/hyperium/hyper/issues/338) for more
+    /// information.
+    pub fn detach(self) {
+        // We want this handle to be dropped without joining.
+        let _ = ::std::thread::spawn(move || {
+            // This will hang the spawned thread.
+            // See: https://github.com/hyperium/hyper/issues/338
+            let _ = self.0;
+        });
     }
 }

@@ -10,7 +10,7 @@ fn main() {
     let ssl = Openssl::with_cert_and_key("examples/assets/self_signed.crt", "examples/assets/key.pem").unwrap();
     let mut server = Nickel::new();
     server.get("**", middleware!("Hello World from HTTPS"));
-    server.listen_https("127.0.0.1:6767", ssl);
+    server.listen_https("127.0.0.1:6767", ssl).unwrap();
 }
 
 #[cfg(not(feature = "ssl"))]

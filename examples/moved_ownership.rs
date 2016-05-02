@@ -25,5 +25,5 @@ fn main() {
     // the value by 'ref' by doing `&*x` (the additional `*` in this case is to
     // deref from `String` to `str`).
     server.get("**", middleware!(&*x));
-    server.listen("127.0.0.1:6767");
+    server.listen("127.0.0.1:6767").unwrap();
 }
