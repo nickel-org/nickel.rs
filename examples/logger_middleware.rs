@@ -34,5 +34,5 @@ fn main() {
     server.utilize(logger_fn);
     server.utilize(Logger);
 
-    server.listen("127.0.0.1:6767");
+    server.listen("127.0.0.1:6767").unwrap();
 }

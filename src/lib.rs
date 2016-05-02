@@ -29,6 +29,7 @@ pub use router::{Router, Route, RouteResult, HttpRouter};
 pub use nickel_error::NickelError;
 pub use mimes::MediaType;
 pub use responder::Responder;
+pub use server::ListeningServer;
 
 #[macro_use] pub mod macros;
 

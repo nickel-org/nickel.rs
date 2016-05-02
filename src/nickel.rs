@@ -1,9 +1,10 @@
 use std::net::ToSocketAddrs;
 use std::time::Duration;
 use std::env;
+use std::error::Error as StdError;
 use router::{Router, HttpRouter, Matcher};
 use middleware::{MiddlewareStack, Middleware, ErrorHandler};
-use server::Server;
+use server::{Server, ListeningServer};
 use hyper::method::Method;
 use hyper::status::StatusCode;
 
@@ -192,18 +193,17 @@ impl<D: Sync + Send + 'static> Nickel<D> {
 
     /// Bind and listen for connections on the given host and port.
     ///
-    /// # Panics
-    ///
-    /// Panics if `addr` is an invalid `SocketAddr`.
-    ///
     /// # Examples
-    /// ```{rust,no_run}
+    /// ```rust
     /// use nickel::Nickel;
     ///
     /// let server = Nickel::new();
-    /// server.listen("127.0.0.1:6767");
+    /// let listening = server.listen("127.0.0.1:6767").expect("Failed to launch server");
+    /// println!("Listening on: {:?}", listening.socket());
+    /// # // unblock the server so the test doesn't block forever
+    /// # listening.detach();
     /// ```
-    pub fn listen<T: ToSocketAddrs>(mut self, addr: T) {
+    pub fn listen<T: ToSocketAddrs>(mut self, addr: T) -> Result<ListeningServer, Box<StdError>> {
         self.middleware_stack.add_middleware(middleware! {
             (StatusCode::NotFound, "File Not Found")
         });
@@ -215,21 +215,21 @@ impl<D: Sync + Send + 'static> Nickel<D> {
         let listener = if is_test_harness {
             // If we're under a test harness, we'll pass zero to get assigned a random
             // port. See http://doc.rust-lang.org/std/net/struct.TcpListener.html#method.bind
-            server.serve("localhost:0",
-                         self.keep_alive_timeout,
-                         self.options.thread_count)
-                  .unwrap()
+            try!(server.serve("localhost:0",
+                              self.keep_alive_timeout,
+                              self.options.thread_count))
         } else {
-            server.serve(addr,
-                         self.keep_alive_timeout,
-                         self.options.thread_count)
-                  .unwrap()
+            try!(server.serve(addr,
+                              self.keep_alive_timeout,
+                              self.options.thread_count))
         };
 
         if self.options.output_on_listen {
-            println!("Listening on http://{}", listener.socket);
+            println!("Listening on http://{}", listener.socket());
             println!("Ctrl-C to shutdown server");
         }
+
+        Ok(listener)
     }
 
     /// Set the timeout for the keep-alive loop
@@ -254,7 +254,8 @@ impl<D: Sync + Send + 'static> Nickel<D> {
 mod ssl {
     use std::net::ToSocketAddrs;
     use std::env;
-    use server::Server;
+    use std::error::Error as StdError;
+    use server::{Server, ListeningServer};
     use hyper::status::StatusCode;
     use hyper::net::Ssl;
 
@@ -278,11 +279,11 @@ mod ssl {
     /// # fn main() {
     /// let server = Nickel::new();
     /// let ssl = Openssl::with_cert_and_key("foo.crt", "key.pem").unwrap();
-    /// server.listen_https("127.0.0.1:6767", ssl);
+    /// server.listen_https("127.0.0.1:6767", ssl).unwrap();
     /// # }
     /// ```
     impl <D: Sync + Send + 'static> Nickel<D> {
-        pub fn listen_https<T,S>(mut self, addr: T, ssl: S)
+        pub fn listen_https<T,S>(mut self, addr: T, ssl: S) -> Result<ListeningServer, Box<StdError>>
         where T: ToSocketAddrs,
               S: Ssl + Send + Clone + 'static {
             self.middleware_stack.add_middleware(middleware! {
@@ -296,29 +297,53 @@ mod ssl {
             let listener = if is_test_harness {
                 // If we're under a test harness, we'll pass zero to get assigned a random
                 // port. See http://doc.rust-lang.org/std/net/struct.TcpListener.html#method.bind
-                server.serve_https("localhost:0",
-                                   self.keep_alive_timeout,
-                                   self.options.thread_count,
-                                   ssl)
-                      .unwrap()
+                try!(server.serve_https("localhost:0",
+                                       self.keep_alive_timeout,
+                                       self.options.thread_count,
+                                       ssl))
             } else {
-                server.serve_https(addr,
-                                   self.keep_alive_timeout,
-                                   self.options.thread_count,
-                                   ssl)
-                      .unwrap()
+                try!(server.serve_https(addr,
+                                       self.keep_alive_timeout,
+                                       self.options.thread_count,
+                                       ssl))
             };
 
             if self.options.output_on_listen {
-                println!("Listening on https://{}", listener.socket);
+                println!("Listening on https://{}", listener.socket());
                 println!("Ctrl-C to shutdown server");
             }
+
+
+            Ok(listener)
         }
     }
 }
 
-#[test]
-#[should_panic]
-fn invalid_listen_addr() {
-    Nickel::new().listen("127.0.0.1.6667");
+#[cfg(test)]
+mod tests {
+    use Nickel;
+    use std::str::FromStr;
+    use std::net::SocketAddr;
+
+    #[test]
+    #[should_panic(expected = "invalid socket address")]
+    fn invalid_listen_addr() {
+        Nickel::new().listen("127.0.0.1.6667").unwrap();
+    }
+
+    #[test]
+    fn can_get_server_address() {
+        let server = Nickel::new().listen("127.0.0.1:12345").unwrap();
+
+        assert_eq!(server.socket(), SocketAddr::from_str("127.0.0.1:12345").unwrap());
+        server.detach();
+    }
+
+    #[test]
+    fn can_get_server_address_with_random_port() {
+        let server = Nickel::new().listen("127.0.0.1:0").unwrap();
+
+        assert_eq!(server.socket().ip().to_string(), "127.0.0.1");
+        server.detach();
+    }
 }

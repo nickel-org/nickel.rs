@@ -13,5 +13,5 @@ fn main() {
         format!("Hello {}", request.param("name").unwrap())
     });
 
-    server.listen("127.0.0.1:6767");
+    server.listen("127.0.0.1:6767").unwrap();
 }

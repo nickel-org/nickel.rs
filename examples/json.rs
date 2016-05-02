@@ -52,5 +52,5 @@ fn main() {
         r#"{ "foo": "bar" }"#
     });
 
-    server.listen("127.0.0.1:6767");
+    server.listen("127.0.0.1:6767").unwrap();
 }
