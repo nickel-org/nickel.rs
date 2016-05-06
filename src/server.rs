@@ -41,13 +41,20 @@ impl<D: Sync + Send + 'static> Server<D> {
         }
     }
 
-    pub fn serve<A: ToSocketAddrs>(self, addr: A, keep_alive_timeout: Option<Duration>) -> HttpResult<Listening> {
+    pub fn serve<A: ToSocketAddrs>(self,
+                                   addr: A,
+                                   keep_alive_timeout: Option<Duration>,
+                                   thread_count: Option<usize>)
+                                   -> HttpResult<Listening> {
         let arc = ArcServer(Arc::new(self));
         let mut server = try!(HyperServer::http(addr));
 
         server.keep_alive(keep_alive_timeout);
 
-        server.handle(arc)
+        match thread_count {
+            Some(threads) => server.handle_threads(arc, threads),
+            None => server.handle(arc),
+        }
     }
 }
 
@@ -64,7 +71,12 @@ mod ssl {
     use super::{Server,ArcServer};
 
     impl<D: Sync + Send + 'static> Server<D> {
-        pub fn serve_https<A,S>(self, addr: A, keep_alive_timeout: Option<Duration>, ssl: S) -> HttpResult<Listening>
+        pub fn serve_https<A,S>(self,
+                                addr: A,
+                                keep_alive_timeout: Option<Duration>,
+                                thread_count: Option<usize>,
+                                ssl: S)
+                                -> HttpResult<Listening>
             where A: ToSocketAddrs,
                   S: Ssl + Clone + Send + 'static {
             let arc = ArcServer(Arc::new(self));
@@ -72,7 +84,10 @@ mod ssl {
 
             server.keep_alive(keep_alive_timeout);
 
-            server.handle(arc)
+            match thread_count {
+                Some(threads) => server.handle_threads(arc, threads),
+                None => server.handle(arc),
+            }
         }
     }
 }
