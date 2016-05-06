@@ -19,11 +19,15 @@ use default_error_handler::DefaultErrorHandler;
 /// use nickel::{Nickel, Options};
 /// let mut server = Nickel::new();
 ///
-/// // Don't print to stdout when starting the server.
-/// server.options = Options::default().output_on_listen(false);
+/// // Don't print to stdout when starting the server
+/// // and force using 8 threads.
+/// server.options = Options::default()
+///                      .output_on_listen(false)
+///                      .thread_count(Some(8));
 /// ```
 pub struct Options {
     output_on_listen: bool,
+    thread_count: Option<usize>,
 }
 
 impl Options {
@@ -34,12 +38,22 @@ impl Options {
         self.output_on_listen = output;
         self
     }
+
+    /// The number of threads the server should use or `None` to use the
+    /// `hyper`'s default of `1.25 * core_count`.
+    ///
+    /// Defaults to `None`.
+    pub fn thread_count(mut self, thread_count: Option<usize>) -> Self {
+        self.thread_count = thread_count;
+        self
+    }
 }
 
 impl Default for Options {
     fn default() -> Self {
         Options {
             output_on_listen: true,
+            thread_count: None,
         }
     }
 }
@@ -201,9 +215,15 @@ impl<D: Sync + Send + 'static> Nickel<D> {
         let listener = if is_test_harness {
             // If we're under a test harness, we'll pass zero to get assigned a random
             // port. See http://doc.rust-lang.org/std/net/struct.TcpListener.html#method.bind
-            server.serve("localhost:0", self.keep_alive_timeout).unwrap()
+            server.serve("localhost:0",
+                         self.keep_alive_timeout,
+                         self.options.thread_count)
+                  .unwrap()
         } else {
-            server.serve(addr, self.keep_alive_timeout).unwrap()
+            server.serve(addr,
+                         self.keep_alive_timeout,
+                         self.options.thread_count)
+                  .unwrap()
         };
 
         if self.options.output_on_listen {
@@ -276,9 +296,17 @@ mod ssl {
             let listener = if is_test_harness {
                 // If we're under a test harness, we'll pass zero to get assigned a random
                 // port. See http://doc.rust-lang.org/std/net/struct.TcpListener.html#method.bind
-                server.serve_https("localhost:0", self.keep_alive_timeout, ssl).unwrap()
+                server.serve_https("localhost:0",
+                                   self.keep_alive_timeout,
+                                   self.options.thread_count,
+                                   ssl)
+                      .unwrap()
             } else {
-                server.serve_https(addr, self.keep_alive_timeout, ssl).unwrap()
+                server.serve_https(addr,
+                                   self.keep_alive_timeout,
+                                   self.options.thread_count,
+                                   ssl)
+                      .unwrap()
             };
 
             println!("Listening on https://{}", listener.socket);
