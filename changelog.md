@@ -1,3 +1,18 @@
+<a name="0.8.1"></a>
+### 0.8.1 (2016-05-09)
+
+
+#### Features
+
+* **options:**  add an option for thread count ([2d91a0a8](https://github.com/nickel-org/nickel.rs/commit/2d91a0a85de9ef9e47c630948e173c69460b0e9c))
+* **urlencoded:**  add `application/x-www-form-urlencoded` parser ([f3d194a8](https://github.com/nickel-org/nickel.rs/commit/f3d194a8e43a1eb5f5ae660bcf2f7e2c3c6bcb39), closes [#329](https://github.com/nickel-org/nickel.rs/issues/329))
+
+#### Bug Fixes
+
+* **travis:**  don't fail the build if our min rustc version fails ([81a76fab](https://github.com/nickel-org/nickel.rs/commit/81a76fabadadcb25324b3f87f459ab52e37f9034))
+
+
+
 <a name="0.8.0"></a>
 ## 0.8.0 (2016-04-01)
 
