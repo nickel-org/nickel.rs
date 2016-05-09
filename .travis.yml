@@ -2,7 +2,7 @@ language: rust
 sudo: false
 
 rust:
-  - 1.7.0 # minimum supported rustc version
+  - 1.8.0 # minimum supported rustc version
   - stable
   - beta
   - nightly
@@ -11,8 +11,11 @@ matrix:
   fast_finish: true
   allow_failures:
     - rust: nightly
+    # Don't fail the build if a dependency updates, but at least have a canary so
+    # we know when it happens.
+    - rust: 1.8.0
   include:
-      - rust: 1.7.0 # minimum supported rustc version
+      - rust: 1.8.0 # minimum supported rustc version
         env: FEATURES="--no-default-features"
 
 before_script:
