@@ -14,7 +14,6 @@ fn main() {
 
     server.get("**", |_, res| res.send("Hello World!"));
     //~^ ERROR type mismatch resolving `for<'
-    //~^^ ERROR the type of this value must be known in this context
 
     server.listen("127.0.0.1:6767");
 }
