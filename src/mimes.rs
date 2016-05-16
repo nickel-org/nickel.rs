@@ -21,24 +21,24 @@ macro_rules! mimes {
                 match mt {
                     $(
                         $(
-                            MediaType::$name => (concat!($t, "/", $subt)).parse().unwrap()
+                            MediaType::$name => concat!($t, "/", $subt)
                         ),*
                     ),*
-                }
+                }.parse().unwrap()
             }
         }
 
         impl FromStr for MediaType {
             type Err = &'static str;
             fn from_str(s: &str) -> Result<MediaType, &'static str> {
-                match s {
+                Ok(match s {
                     $(
                         $(
-                            $as_s => Ok(MediaType::$name)
+                            $as_s => MediaType::$name
                         ),*
                     ),*,
-                    _ => Err("Not a valid MediaType.")
-                }
+                    _ => return Err("Not a valid MediaType.")
+                })
             }
         }
     )
