@@ -2,7 +2,7 @@ use groupable::Groupable;
 use hyper::uri::RequestUri;
 use hyper::uri::RequestUri::{Star, AbsoluteUri, AbsolutePath, Authority};
 use std::collections::HashMap;
-use url::{form_urlencoded, UrlParser};
+use url::{form_urlencoded, Url};
 
 type QueryStore = HashMap<String, Vec<String>>;
 
@@ -30,20 +30,15 @@ impl Params {
 }
 
 pub fn parse(encoded_string : &str) -> Params {
-    Params(form_urlencoded::parse(encoded_string.as_bytes()).into_iter().group())
+    Params(form_urlencoded::parse(encoded_string.as_bytes()).into_owned().group())
 }
 
 pub fn parse_uri(origin: &RequestUri) -> Params {
-    let f = |query: Option<&String>| query.map(|q| parse(&*q));
+    let f = |query: Option<&str>| query.map(|q| parse(&*q));
 
     let result = match *origin {
-        AbsoluteUri(ref url) => f(url.query.as_ref()),
-        AbsolutePath(ref s) => UrlParser::new().parse_path(&*s)
-                                                // FIXME: If this fails to parse,
-                                                // then it really shouldn't have
-                                                // reached here.
-                                               .ok()
-                                               .and_then(|(_, query, _)| f(query.as_ref())),
+        AbsoluteUri(ref url) => f(url.query()),
+        AbsolutePath(ref s) => f(s.splitn(2, '?').nth(1)),
         Star | Authority(..) => None
     };
 

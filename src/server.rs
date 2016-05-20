@@ -5,6 +5,7 @@ use std::time::Duration;
 use hyper::Result as HttpResult;
 use hyper::server::{Request, Response, Handler, Listening};
 use hyper::server::Server as HyperServer;
+use hyper::net::SslServer;
 
 use middleware::MiddlewareStack;
 use request;
@@ -58,41 +59,26 @@ impl<D: Sync + Send + 'static> Server<D> {
 
         listening.map(ListeningServer)
     }
-}
 
-#[cfg(feature = "ssl")]
-mod ssl {
-    use std::net::ToSocketAddrs;
-    use std::sync::{Arc};
-    use std::time::Duration;
-    use hyper::Result as HttpResult;
-    use hyper::server::{Handler, Listening};
-    use hyper::server::Server as HyperServer;
-    use hyper::net::Ssl;
+    pub fn serve_https<A,S>(self,
+                            addr: A,
+                            keep_alive_timeout: Option<Duration>,
+                            thread_count: Option<usize>,
+                            ssl: S)
+                            -> HttpResult<ListeningServer>
+        where A: ToSocketAddrs,
+              S: SslServer + Clone + Send + 'static {
+        let arc = ArcServer(Arc::new(self));
+        let mut server = try!(HyperServer::https(addr, ssl));
 
-    use super::{Server,ArcServer, ListeningServer};
+        server.keep_alive(keep_alive_timeout);
 
-    impl<D: Sync + Send + 'static> Server<D> {
-        pub fn serve_https<A,S>(self,
-                                addr: A,
-                                keep_alive_timeout: Option<Duration>,
-                                thread_count: Option<usize>,
-                                ssl: S)
-                                -> HttpResult<ListeningServer>
-            where A: ToSocketAddrs,
-                  S: Ssl + Clone + Send + 'static {
-            let arc = ArcServer(Arc::new(self));
-            let mut server = try!(HyperServer::https(addr, ssl));
+        let listening = match thread_count {
+            Some(threads) => server.handle_threads(arc, threads),
+            None => server.handle(arc),
+        };
 
-            server.keep_alive(keep_alive_timeout);
-
-            let listening = match thread_count {
-                Some(threads) => server.handle_threads(arc, threads),
-                None => server.handle(arc),
-            };
-
-            listening.map(ListeningServer)
-        }
+        listening.map(ListeningServer)
     }
 }
 
