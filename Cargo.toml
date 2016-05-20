@@ -17,7 +17,7 @@ unstable = ["hyper/nightly", "compiletest_rs"]
 ssl = ["hyper/ssl"]
 
 [dependencies]
-url = "0.5"
+url = "1.0"
 time = "0.1"
 typemap = "0.3"
 plugin = "0.2"
@@ -30,7 +30,7 @@ lazy_static = "0.1"
 modifier = "0.1"
 
 [dependencies.hyper]
-version = "=0.8"
+version = "0.9.6"
 default-features = false
 
 [dependencies.compiletest_rs]
