@@ -6,6 +6,7 @@ use router::{Router, HttpRouter, Matcher};
 use middleware::{MiddlewareStack, Middleware, ErrorHandler};
 use server::{Server, ListeningServer};
 use hyper::method::Method;
+use hyper::net::SslServer;
 use hyper::status::StatusCode;
 
 //pre defined middleware
@@ -248,18 +249,6 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     pub fn keep_alive_timeout(&mut self, timeout: Option<Duration>){
         self.keep_alive_timeout = timeout;
     }
-}
-
-#[cfg(feature = "ssl")]
-mod ssl {
-    use std::net::ToSocketAddrs;
-    use std::env;
-    use std::error::Error as StdError;
-    use server::{Server, ListeningServer};
-    use hyper::status::StatusCode;
-    use hyper::net::Ssl;
-
-    use super::Nickel;
 
     /// Bind and listen for connections on the given host and port.
     /// Only accepts SSL connections
@@ -273,49 +262,51 @@ mod ssl {
     /// # extern crate nickel;
     /// extern crate hyper;
     ///
+    /// # #[cfg(feature = "ssl")]
     /// use nickel::Nickel;
+    /// # #[cfg(feature = "ssl")]
     /// use hyper::net::Openssl;
     ///
+    /// # #[cfg(feature = "ssl")]
     /// # fn main() {
     /// let server = Nickel::new();
     /// let ssl = Openssl::with_cert_and_key("foo.crt", "key.pem").unwrap();
     /// server.listen_https("127.0.0.1:6767", ssl).unwrap();
     /// # }
+    /// # #[cfg(not(feature = "ssl"))]
+    /// # fn main() {}
     /// ```
-    impl <D: Sync + Send + 'static> Nickel<D> {
-        pub fn listen_https<T,S>(mut self, addr: T, ssl: S) -> Result<ListeningServer, Box<StdError>>
-        where T: ToSocketAddrs,
-              S: Ssl + Send + Clone + 'static {
-            self.middleware_stack.add_middleware(middleware! {
-                (StatusCode::NotFound, "File Not Found")
-            });
+    pub fn listen_https<T,S>(mut self, addr: T, ssl: S) -> Result<ListeningServer, Box<StdError>>
+    where T: ToSocketAddrs,
+          S: SslServer + Send + Clone + 'static {
+        self.middleware_stack.add_middleware(middleware! {
+            (StatusCode::NotFound, "File Not Found")
+        });
 
-            let server = Server::new(self.middleware_stack, self.data);
+        let server = Server::new(self.middleware_stack, self.data);
 
-            let is_test_harness = env::vars().any(|(ref k, _)| k == "NICKEL_TEST_HARNESS");
+        let is_test_harness = env::vars().any(|(ref k, _)| k == "NICKEL_TEST_HARNESS");
 
-            let listener = if is_test_harness {
-                // If we're under a test harness, we'll pass zero to get assigned a random
-                // port. See http://doc.rust-lang.org/std/net/struct.TcpListener.html#method.bind
-                try!(server.serve_https("localhost:0",
-                                       self.keep_alive_timeout,
-                                       self.options.thread_count,
-                                       ssl))
-            } else {
-                try!(server.serve_https(addr,
-                                       self.keep_alive_timeout,
-                                       self.options.thread_count,
-                                       ssl))
-            };
+        let listener = if is_test_harness {
+            // If we're under a test harness, we'll pass zero to get assigned a random
+            // port. See http://doc.rust-lang.org/std/net/struct.TcpListener.html#method.bind
+            try!(server.serve_https("localhost:0",
+                                   self.keep_alive_timeout,
+                                   self.options.thread_count,
+                                   ssl))
+        } else {
+            try!(server.serve_https(addr,
+                                   self.keep_alive_timeout,
+                                   self.options.thread_count,
+                                   ssl))
+        };
 
-            if self.options.output_on_listen {
-                println!("Listening on https://{}", listener.socket());
-                println!("Ctrl-C to shutdown server");
-            }
-
-
-            Ok(listener)
+        if self.options.output_on_listen {
+            println!("Listening on https://{}", listener.socket());
+            println!("Ctrl-C to shutdown server");
         }
+
+        Ok(listener)
     }
 }
 
