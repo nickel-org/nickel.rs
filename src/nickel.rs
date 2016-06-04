@@ -309,8 +309,10 @@ mod ssl {
                       .unwrap()
             };
 
-            println!("Listening on https://{}", listener.socket);
-            println!("Ctrl-C to shutdown server");
+            if self.options.output_on_listen {
+                println!("Listening on https://{}", listener.socket);
+                println!("Ctrl-C to shutdown server");
+            }
         }
     }
 }
