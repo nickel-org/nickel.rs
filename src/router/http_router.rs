@@ -1,4 +1,4 @@
-use hyper::method::Method;
+use method::Method;
 use middleware::Middleware;
 use router::Matcher;
 
