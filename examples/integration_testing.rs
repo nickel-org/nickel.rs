@@ -1,4 +1,6 @@
-#[macro_use]
+// This attribute being conditional is an implementation detail of the nickel
+// test setup for testing examples. Usually, it should just require `#[macro_use]`.
+#[cfg_attr(not(test), macro_use)]
 extern crate nickel;
 extern crate hyper;
 extern crate rustc_serialize;
