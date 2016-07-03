@@ -126,3 +126,8 @@ path = "examples/form_data/form_data.rs"
 
 name = "https"
 path = "examples/https.rs"
+
+[[example]]
+
+name = "no_macro_custom_data"
+path = "examples/no_macro_custom_data.rs"
