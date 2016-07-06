@@ -1,8 +1,10 @@
+
 use std::net::ToSocketAddrs;
 use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
 use std::time::Duration;
 use hyper::Result as HttpResult;
+use hyper::header::{ContentLength, Connection};
 use hyper::server::{Request, Response, Handler, Listening};
 use hyper::server::Server as HyperServer;
 
@@ -21,12 +23,21 @@ struct ArcServer<D>(Arc<Server<D>>);
 
 impl<D: Sync + Send + 'static> Handler for ArcServer<D> {
     fn handle<'a, 'k>(&'a self, req: Request<'a, 'k>, res: Response<'a>) {
+        let request_has_body = match req.headers.get::<ContentLength>() {
+            Some(len) if **len > 0 => true,
+            _ => false
+        };
+
         let nickel_req = request::Request::from_internal(req,
                                                          &self.0.shared_data);
 
-        let nickel_res = response::Response::from_internal(res,
-                                                           &self.0.templates,
-                                                           &self.0.shared_data);
+        let mut nickel_res = response::Response::from_internal(res,
+                                                               &self.0.templates,
+                                                               &self.0.shared_data);
+
+        if request_has_body {
+            nickel_res.on_send(move |res| { res.set(Connection::close()); });
+        };
 
         self.0.middleware_stack.invoke(nickel_req, nickel_res);
     }
