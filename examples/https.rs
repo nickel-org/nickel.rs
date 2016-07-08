@@ -11,18 +11,12 @@ fn main() {
     let mut server = Nickel::new();
     server.get("**", middleware!("Hello World from HTTPS"));
     
-    /*
-     * Hint: If you want to use the `listen_https` function in your own crate / module / project, you need to
-     * add `nickel/ssl` to the features section of your crate configuration, to get nickel compiled
-     * with ssl feature activated:
-     * 
-     * Cargo.toml >
-     *      [features]
-     *      ssl = ["nickel/ssl"]
-     *
-     * As you can see, to append `hyper/ssl` in the features section is obsolete, as hyper will get compiled with
-     * ssl feature activated via `nickel/ssl`.
-    */
+    // To get nickel compiled with ssl feature activated, you need to configure the module like shown below:
+    //
+    // Cargo.toml >
+    //      [dependencies.nickel]
+    //      version = "0.8"
+    //      features = ["ssl"]
     server.listen_https("127.0.0.1:6767", ssl);
 }
 
