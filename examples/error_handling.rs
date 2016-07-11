@@ -2,10 +2,11 @@
 extern crate rustc_serialize;
 
 use nickel::{Nickel, Request, Response, MiddlewareResult, HttpRouter, NickelError};
-use nickel::IntoError;
+use nickel::{Action, IntoError};
 use nickel::status::StatusCode;
 use rustc_serialize::json::{self, Json};
 use std::{error,io, fmt};
+use std::io::Write;
 
 /// The crate-local server data type.
 struct MyData;
@@ -51,7 +52,7 @@ fn will_fail() -> AppResult<String> {
 }
 
 fn will_work() -> AppResult<&'static str> {
-  Ok("foo")
+  Ok("Everything went to plan!")
 }
 
 fn success_handler<'a, D>(_: &mut Request<D>, res: Response<'a, D>) -> MiddlewareResult<'a, D> {
@@ -84,6 +85,32 @@ fn main() {
     let json = try_with!(res, Json::from_str("Not json"));
 
     return res.send(json)
+  });
+
+  server.handle_error(|err: &mut NickelError<_>, req: &mut Request<_>| {
+    // Print the internal error message and path to the console
+    println!("[{}] ERROR: {}",
+            req.path_without_query().unwrap(),
+            err.message);
+
+    // If we still have a stream available then render a customised response
+    // for some StatusCodes.
+    if let Some(ref mut res) = err.stream {
+      match res.status() {
+        StatusCode::ImATeapot => {
+          // Discard the result as if it fails there's not much we can do.
+          let _ = res.write_all(b"<h2>I'm a Teapot!</h2>");
+        }
+        StatusCode::NotFound => {
+          let _ = res.write_all(b"<h1>404 - Not Found</h1>");
+        }
+        // Let the next ErrorHandler do something.
+        _ => return Action::Continue(())
+      }
+    }
+
+    // Send nothing else, just let the client interpret the StatusCode.
+    Action::Halt(())
   });
 
   server.listen("127.0.0.1:6767").unwrap();
