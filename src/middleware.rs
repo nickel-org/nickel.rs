@@ -32,7 +32,8 @@ pub trait ErrorHandler<D>: Send + 'static + Sync {
     fn handle_error(&self, &mut NickelError<D>, &mut Request<D>) -> Action;
 }
 
-impl<D: 'static> ErrorHandler<D> for fn(&mut NickelError<D>, &mut Request<D>) -> Action {
+impl<D: 'static, F> ErrorHandler<D> for F
+where F: Send + Sync + 'static + Fn(&mut NickelError<D>, &mut Request<D>) -> Action {
     fn handle_error(&self, err: &mut NickelError<D>, req: &mut Request<D>) -> Action {
         (*self)(err, req)
     }

@@ -42,9 +42,6 @@ fn main() {
         Action::Continue(())
     }
 
-    // issue #20178
-    let custom_handler: fn(&mut NickelError<()>, &mut Request<()>) -> Action = custom_handler;
-
     server.handle_error(custom_handler);
 
     server.listen("127.0.0.1:6767").unwrap();
