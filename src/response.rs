@@ -413,6 +413,7 @@ mod modifier_impls {
         AcceptRanges,
         Allow,
         Authorization<Basic>,
+        Authorization<Bearer>,
         Authorization<String>,
         CacheControl,
         Cookie,
