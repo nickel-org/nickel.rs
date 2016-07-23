@@ -7,7 +7,6 @@ extern crate serde_json;
 #[cfg(feature = "with-serde")]
 extern crate serde;
 
-use std::collections::BTreeMap;
 use nickel::status::StatusCode;
 use nickel::{Nickel, JsonBody, HttpRouter, MediaType};
 
@@ -31,18 +30,16 @@ mod json {
 
 use json::to_json;
 
-#[cfg_attr(not(feature = "with-serde"), derive(RustcDecodable, RustcEncodable))]
-struct Person {
-    first_name: String,
-    last_name:  String,
-}
-
 #[cfg(not(feature = "with-serde"))]
-mod rustc_serialize_impls {
+mod person {
     use std::collections::BTreeMap;
     use rustc_serialize;
-    use super::Person;
-
+    
+    #[derive(RustcEncodable, RustcDecodable)]
+    pub struct Person {
+        pub first_name: String,
+        pub last_name:  String,
+    }
     impl rustc_serialize::json::ToJson for Person {
         fn to_json(&self) -> rustc_serialize::json::Json {
             let mut map = BTreeMap::new();
@@ -54,10 +51,13 @@ mod rustc_serialize_impls {
 }
 
 #[cfg(feature = "with-serde")]
-mod serde_impls {
+mod person {
     use serde;
-    use super::Person;
 
+    pub struct Person {
+        pub first_name: String,
+        pub last_name:  String,
+    }
     impl serde::Serialize for Person {
         fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
             where S: serde::Serializer
@@ -167,6 +167,8 @@ mod serde_impls {
         }
     }
 }
+
+use self::person::Person;
 
 fn main() {
     let mut server = Nickel::new();

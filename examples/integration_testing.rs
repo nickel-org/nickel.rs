@@ -94,13 +94,17 @@ impl ServerData {
     }
 }
 
-#[cfg_attr(not(feature = "with-serde"), derive(RustcEncodable, RustcDecodable))]
-struct Data { name: String, age: Option<u32> }
+#[cfg(not(feature = "with-serde"))]
+mod data {
+    #[derive(RustcEncodable, RustcDecodable)]
+    pub struct Data { pub name: String, pub age: Option<u32> }
+}
 
 #[cfg(feature = "with-serde")]
-mod serde_impls {
+mod data {
     use serde;
-    use super::Data;
+    
+    pub struct Data { pub name: String, pub age: Option<u32> }
     impl serde::Serialize for Data {
         fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
             where S: serde::Serializer
@@ -210,6 +214,8 @@ mod serde_impls {
         }
     }
 }
+
+use self::data::Data;
 
 fn main() {
     let port = env::var("PORT").map(|s| s.parse().unwrap()).unwrap_or(3000);

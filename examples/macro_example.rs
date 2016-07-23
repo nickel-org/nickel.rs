@@ -18,19 +18,17 @@ use nickel::{
 use regex::Regex;
 use hyper::header::Location;
 
-#[cfg_attr(not(feature = "with-serde"), derive(RustcDecodable, RustcEncodable))]
-struct Person {
-    firstname: String,
-    lastname:  String,
-}
-
 #[cfg(not(feature = "with-serde"))]
-mod rustc_serialize_impls {
+mod person {
     use std::collections::BTreeMap;
     use rustc_serialize;
     use rustc_serialize::json::{ ToJson, Json };
-    use super::Person;
-
+    
+    #[derive(RustcEncodable, RustcDecodable)]
+    pub struct Person {
+        pub firstname: String,
+        pub lastname:  String,
+    }
     impl ToJson for Person {
         fn to_json(&self) -> Json {
             let mut map = BTreeMap::new();
@@ -42,10 +40,13 @@ mod rustc_serialize_impls {
 }
 
 #[cfg(feature = "with-serde")]
-mod serde_impls {
+mod person {
     use serde;
-    use super::Person;
 
+    pub struct Person {
+        pub firstname: String,
+        pub lastname:  String,
+    }
     impl serde::Serialize for Person {
         fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
             where S: serde::Serializer
@@ -155,6 +156,8 @@ mod serde_impls {
         }
     }
 }
+
+use self::person::Person;
 
 //this is an example middleware function that just logs each request
 fn logger<'a, D>(request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
