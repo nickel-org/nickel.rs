@@ -1,4 +1,10 @@
+#[cfg(not(feature = "with-serde"))]
 extern crate rustc_serialize;
+#[cfg(feature = "with-serde")]
+extern crate serde_json;
+#[cfg(feature = "with-serde")]
+extern crate serde;
+
 extern crate hyper;
 // HACK: integration_testing example refers to `nickel::foo`
 // and this import helps that resolve rather than requiring `self::nickel::foo`

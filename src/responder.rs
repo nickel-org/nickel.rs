@@ -12,9 +12,13 @@
 use {Response, NickelError, MiddlewareResult, Halt};
 use hyper::status::{StatusCode, StatusClass};
 use hyper::header;
-use serialize::json;
 use mimes::MediaType;
 use std::io::Write;
+
+#[cfg(not(feature = "with-serde"))]
+use serialize::json;
+#[cfg(feature = "with-serde")]
+use serde_json;
 
 /// This trait provides convenience for translating a number
 /// of common return types into a `MiddlewareResult` while
@@ -31,10 +35,19 @@ impl<D> Responder<D> for () {
     }
 }
 
+#[cfg(not(feature = "with-serde"))]
 impl<D> Responder<D> for json::Json {
     fn respond<'a>(self, mut res: Response<'a, D>) -> MiddlewareResult<'a, D> {
         maybe_set_type(&mut res, MediaType::Json);
         res.send(json::encode(&self)
+                      .map_err(|e| format!("Failed to parse JSON: {}", e)))
+    }
+}
+#[cfg(feature = "with-serde")]
+impl<D> Responder<D> for serde_json::Value {
+    fn respond<'a>(self, mut res: Response<'a, D>) -> MiddlewareResult<'a, D> {
+        maybe_set_type(&mut res, MediaType::Json);
+        res.send(serde_json::to_string(&self)
                       .map_err(|e| format!("Failed to parse JSON: {}", e)))
     }
 }

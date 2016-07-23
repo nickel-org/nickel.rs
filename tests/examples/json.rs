@@ -10,6 +10,25 @@ fn with_path<F>(path: &str, f: F) where F: FnOnce(&mut Response) {
     })
 }
 
+#[cfg(not(feature = "with-serde"))]
+mod json {
+    use std::collections::HashMap;
+    use rustc_serialize::json;
+
+    pub fn decode(s: &str) -> HashMap<String, String> {
+        json::decode(s).unwrap()
+    }
+}
+#[cfg(feature = "with-serde")]
+mod json {
+    use std::collections::HashMap;
+    use serde_json;
+
+    pub fn decode(s: &str) -> HashMap<String, String> {
+        serde_json::from_str(s).unwrap()
+    }
+}
+
 mod incoming {
     use util::*;
 
@@ -45,19 +64,16 @@ mod incoming {
 
 mod outgoing {
     mod to_json {
-        use super::super::with_path;
+        use super::super::{ with_path, json };
         use util::*;
 
-        use rustc_serialize::json;
-
-        use std::collections::HashMap;
         use hyper::{mime, header};
 
         #[test]
         fn serializes_valid_json() {
             with_path("/Pea/Nut", |res| {
                 let s = read_body_to_string(res);
-                let map: HashMap<String, String> = json::decode(&s).unwrap();
+                let map = json::decode(&s);
                 assert_eq!(map["first_name"], "Pea");
                 assert_eq!(map["last_name"], "Nut");
             })
@@ -74,19 +90,16 @@ mod outgoing {
     }
 
     mod raw {
-        use super::super::with_path;
+        use super::super::{ with_path, json };
         use util::*;
 
-        use rustc_serialize::json;
-
-        use std::collections::HashMap;
         use hyper::{mime, header};
 
         #[test]
         fn serializes_valid_json() {
             with_path("/raw", |res| {
                 let s = read_body_to_string(res);
-                let map: HashMap<String, String> = json::decode(&s).unwrap();
+                let map = json::decode(&s);
                 assert_eq!(map["foo"], "bar");
             })
         }

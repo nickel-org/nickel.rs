@@ -1,7 +1,13 @@
 #![doc(test(attr(deny(warnings))))]
 
-extern crate time;
+#[cfg(not(feature = "with-serde"))]
 extern crate rustc_serialize as serialize;
+#[cfg(feature = "with-serde")]
+extern crate serde_json;
+#[cfg(feature = "with-serde")]
+extern crate serde;
+
+extern crate time;
 extern crate hyper;
 extern crate regex;
 extern crate typemap;

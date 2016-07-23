@@ -4,7 +4,6 @@ use std::sync::RwLock;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::path::Path;
-use serialize::Encodable;
 use hyper::status::StatusCode;
 use hyper::server::Response as HyperResponse;
 use hyper::header::{
@@ -22,6 +21,11 @@ use {NickelError, Halt, MiddlewareResult, Responder, Action};
 use modifier::Modifier;
 use plugin::{Extensible, Pluggable};
 use typemap::TypeMap;
+
+#[cfg(not(feature = "with-serde"))]
+use serialize::Encodable;
+#[cfg(feature = "with-serde")]
+use serde::Serialize as Encodable;
 
 pub type TemplateCache = RwLock<HashMap<String, Template>>;
 

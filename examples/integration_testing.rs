@@ -3,12 +3,54 @@
 #[cfg_attr(not(test), macro_use)]
 extern crate nickel;
 extern crate hyper;
+
+#[cfg(not(feature = "with-serde"))]
 extern crate rustc_serialize;
+#[cfg(feature = "with-serde")]
+extern crate serde_json;
+#[cfg(feature = "with-serde")]
+extern crate serde;
 
 use nickel::{Nickel, ListeningServer, HttpRouter, JsonBody};
 use nickel::status::StatusCode;
 
-use rustc_serialize::json::Json;
+#[cfg(not(feature = "with-serde"))]
+mod json {
+    use super::rustc_serialize::json::Json;
+
+    pub fn from_str(json: &str) -> Json {
+        Json::from_str(json).unwrap()
+    }
+
+    pub trait GetKey {
+        fn get<'a>(&'a self, key: &str) -> &'a Json;
+    }
+
+    impl GetKey for Json {
+        fn get<'a>(&'a self, key: &str) -> &'a Json {
+            &self[key]
+        }
+    }
+}
+#[cfg(feature = "with-serde")]
+mod json {
+    use serde_json;
+    use serde_json::Value;
+
+    pub fn from_str(json: &str) -> Value {
+        serde_json::from_str(json).unwrap()
+    }
+
+    pub trait GetKey {
+        fn get<'a>(&'a self, key: &str) -> &'a Value;
+    }
+
+    impl GetKey for Value {
+        fn get<'a>(&'a self, key: &str) -> &'a Value {
+            self.find(key).unwrap()
+        }
+    }
+}
 
 use std::error::Error as StdError;
 use std::{env, str};
@@ -52,6 +94,123 @@ impl ServerData {
     }
 }
 
+#[cfg_attr(not(feature = "with-serde"), derive(RustcEncodable, RustcDecodable))]
+struct Data { name: String, age: Option<u32> }
+
+#[cfg(feature = "with-serde")]
+mod serde_impls {
+    use serde;
+    use super::Data;
+    impl serde::Serialize for Data {
+        fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
+            where S: serde::Serializer
+        {
+            serializer.serialize_struct("Data", DataMapVisitor {
+                value: self,
+                state: 0,
+            })
+        }
+    }
+
+    struct DataMapVisitor<'a> {
+        value: &'a Data,
+        state: u8,
+    }
+
+    impl<'a> serde::ser::MapVisitor for DataMapVisitor<'a> {
+        fn visit<S>(&mut self, serializer: &mut S) -> Result<Option<()>, S::Error>
+            where S: serde::Serializer
+        {
+            match self.state {
+                0 => {
+                    self.state += 1;
+                    Ok(Some(try!(serializer.serialize_struct_elt("name", &self.value.name))))
+                }
+                1 => {
+                    self.state += 1;
+                    Ok(Some(try!(serializer.serialize_struct_elt("age", &self.value.age))))
+                }
+                _ => {
+                    Ok(None)
+                }
+            }
+        }
+    }
+
+    enum DataField {
+        Name,
+        Age,
+    }
+
+    impl serde::Deserialize for DataField {
+        fn deserialize<D>(deserializer: &mut D) -> Result<DataField, D::Error>
+            where D: serde::de::Deserializer
+        {
+            struct DataFieldVisitor;
+
+            impl serde::de::Visitor for DataFieldVisitor {
+                type Value = DataField;
+
+                fn visit_str<E>(&mut self, value: &str) -> Result<DataField, E>
+                    where E: serde::de::Error
+                {
+                    match value {
+                        "name" => Ok(DataField::Name),
+                        "age" => Ok(DataField::Age),
+                        _ => Err(serde::de::Error::custom("expected name or age")),
+                    }
+                }
+            }
+
+            deserializer.deserialize(DataFieldVisitor)
+        }
+    }
+
+    impl serde::Deserialize for Data {
+        fn deserialize<D>(deserializer: &mut D) -> Result<Data, D::Error>
+            where D: serde::de::Deserializer
+        {
+            static FIELDS: &'static [&'static str] = &["name", "age"];
+            deserializer.deserialize_struct("Data", FIELDS, DataVisitor)
+        }
+    }
+
+    struct DataVisitor;
+
+    impl serde::de::Visitor for DataVisitor {
+        type Value = Data;
+
+        fn visit_map<V>(&mut self, mut visitor: V) -> Result<Data, V::Error>
+            where V: serde::de::MapVisitor
+        {
+            let mut name = None;
+            let mut age = None;
+
+            loop {
+                match try!(visitor.visit_key()) {
+                    Some(DataField::Name) => { name = Some(try!(visitor.visit_value())); }
+                    Some(DataField::Age) => { age = Some(try!(visitor.visit_value())); }
+                    None => { break; }
+                }
+            }
+
+            let name = match name {
+                Some(name) => name,
+                None => try!(visitor.missing_field("name")),
+            };
+
+            let age = match age {
+                Some(age) => age,
+                None => try!(visitor.missing_field("age")),
+            };
+
+            try!(visitor.end());
+
+            Ok(Data{ name: name, age: age })
+        }
+    }
+}
+
 fn main() {
     let port = env::var("PORT").map(|s| s.parse().unwrap()).unwrap_or(3000);
     let address = &format!("0.0.0.0:{}", port);
@@ -81,29 +240,26 @@ where D: Database {
     server.get("/users", middleware! { |_, res| <ServerData>
         let users = res.data().get_users();
 
-        Json::from_str(&format!(r#"{{ "users": {:?} }}"#, users)).unwrap()
+        json::from_str(&format!(r#"{{ "users": {:?} }}"#, users))
     });
 
     // Json example
     server.post("/", middleware! { |req, res|
-        #[derive(RustcEncodable, RustcDecodable)]
-        struct Data { name: String, age: Option<u32> }
-
         let client = try_with!(res, req.json_as::<Data>().map_err(|e| (StatusCode::BadRequest, e)));
 
         match client.age {
             Some(age) => {
-                Json::from_str(&format!(
+                json::from_str(&format!(
                     r#"{{ "message": "Hello {}, your age is {}" }}"#,
                     client.name,
                     age
-                )).unwrap()
+                ))
             }
             None => {
-                Json::from_str(&format!(
+                json::from_str(&format!(
                     r#"{{ "message": "Hello {}, I don't know your age" }}"#,
                     client.name
-                )).unwrap()
+                ))
             }
         }
     });
@@ -118,11 +274,12 @@ where D: Database {
 
 #[cfg(test)]
 mod tests {
+    use super::json;
+    use super::json::GetKey;
     use self::support::{Body, Server, STATIC_SERVER, get, post};
 
     use hyper::header;
     use nickel::status::StatusCode;
-    use rustc_serialize::json::Json;
 
     use std::{thread, time};
 
@@ -152,9 +309,9 @@ mod tests {
     fn root_responds_with_modified_json() {
         let mut response = post("/", r#"{ "name": "Rust", "age": 1 }"#);
 
-        let json = Json::from_str(&response.body()).unwrap();
+        let json = json::from_str(&response.body());
 
-        assert_eq!(json["message"].as_string(), Some("Hello Rust, your age is 1"));
+        assert_eq!(json.get("message").as_string(), Some("Hello Rust, your age is 1"));
         assert_eq!(response.status, StatusCode::Ok);
         assert_eq!(
             response.headers.get::<header::ContentType>(),
@@ -166,9 +323,9 @@ mod tests {
     fn accepts_json_with_missing_fields() {
         let mut response = post("/", r#"{ "name": "Rust" }"#);
 
-        let json = Json::from_str(&response.body()).unwrap();
+        let json = json::from_str(&response.body());
 
-        assert_eq!(json["message"].as_string(), Some("Hello Rust, I don't know your age"));
+        assert_eq!(json.get("message").as_string(), Some("Hello Rust, I don't know your age"));
         assert_eq!(response.status, StatusCode::Ok);
         assert_eq!(
             response.headers.get::<header::ContentType>(),
@@ -197,9 +354,9 @@ mod tests {
     fn has_no_users_by_default() {
         let mut response = get("/users");
 
-        let json = Json::from_str(&response.body()).unwrap();
+        let json = json::from_str(&response.body());
 
-        assert_eq!(json["users"].as_array().unwrap().len(), 0);
+        assert_eq!(json.get("users").as_array().unwrap().len(), 0);
         assert_eq!(response.status, StatusCode::Ok);
         assert_eq!(
             response.headers.get::<header::ContentType>(),
@@ -217,9 +374,9 @@ mod tests {
 
         let mut response = server.get("/users");
 
-        let json = Json::from_str(&response.body()).unwrap();
+        let json = json::from_str(&response.body());
 
-        assert_eq!(json["users"].as_array().unwrap().len(), 3);
+        assert_eq!(json.get("users").as_array().unwrap().len(), 3);
         assert_eq!(response.status, StatusCode::Ok);
         assert_eq!(
             response.headers.get::<header::ContentType>(),

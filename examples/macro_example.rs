@@ -1,7 +1,13 @@
 #[macro_use] extern crate nickel;
 extern crate regex;
-extern crate rustc_serialize;
 extern crate hyper;
+
+#[cfg(not(feature = "with-serde"))]
+extern crate rustc_serialize;
+#[cfg(feature = "with-serde")]
+extern crate serde_json;
+#[cfg(feature = "with-serde")]
+extern crate serde;
 
 use std::io::Write;
 use nickel::status::StatusCode::{self, NotFound};
@@ -12,10 +18,142 @@ use nickel::{
 use regex::Regex;
 use hyper::header::Location;
 
-#[derive(RustcDecodable, RustcEncodable)]
+#[cfg_attr(not(feature = "with-serde"), derive(RustcDecodable, RustcEncodable))]
 struct Person {
     firstname: String,
     lastname:  String,
+}
+
+#[cfg(not(feature = "with-serde"))]
+mod rustc_serialize_impls {
+    use std::collections::BTreeMap;
+    use rustc_serialize;
+    use rustc_serialize::json::{ ToJson, Json };
+    use super::Person;
+
+    impl ToJson for Person {
+        fn to_json(&self) -> Json {
+            let mut map = BTreeMap::new();
+            map.insert("firstname".to_string(), self.firstname.to_json());
+            map.insert("lastname".to_string(), self.lastname.to_json());
+            Json::Object(map)
+        }
+    }
+}
+
+#[cfg(feature = "with-serde")]
+mod serde_impls {
+    use serde;
+    use super::Person;
+
+    impl serde::Serialize for Person {
+        fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
+            where S: serde::Serializer
+        {
+            serializer.serialize_struct("Person", PersonMapVisitor {
+                value: self,
+                state: 0,
+            })
+        }
+    }
+
+    struct PersonMapVisitor<'a> {
+        value: &'a Person,
+        state: u8,
+    }
+
+    impl<'a> serde::ser::MapVisitor for PersonMapVisitor<'a> {
+        fn visit<S>(&mut self, serializer: &mut S) -> Result<Option<()>, S::Error>
+            where S: serde::Serializer
+        {
+            match self.state {
+                0 => {
+                    self.state += 1;
+                    Ok(Some(try!(serializer.serialize_struct_elt("firstname", &self.value.firstname))))
+                }
+                1 => {
+                    self.state += 1;
+                    Ok(Some(try!(serializer.serialize_struct_elt("lastname", &self.value.lastname))))
+                }
+                _ => {
+                    Ok(None)
+                }
+            }
+        }
+    }
+
+    enum PersonField {
+        FirstName,
+        LastName,
+    }
+
+    impl serde::Deserialize for PersonField {
+        fn deserialize<D>(deserializer: &mut D) -> Result<PersonField, D::Error>
+            where D: serde::de::Deserializer
+        {
+            struct PersonFieldVisitor;
+
+            impl serde::de::Visitor for PersonFieldVisitor {
+                type Value = PersonField;
+
+                fn visit_str<E>(&mut self, value: &str) -> Result<PersonField, E>
+                    where E: serde::de::Error
+                {
+                    match value {
+                        "firstname" => Ok(PersonField::FirstName),
+                        "lastname" => Ok(PersonField::LastName),
+                        _ => Err(serde::de::Error::custom("expected firstname or lastname")),
+                    }
+                }
+            }
+
+            deserializer.deserialize(PersonFieldVisitor)
+        }
+    }
+
+    impl serde::Deserialize for Person {
+        fn deserialize<D>(deserializer: &mut D) -> Result<Person, D::Error>
+            where D: serde::de::Deserializer
+        {
+            static FIELDS: &'static [&'static str] = &["firstname", "lastname"];
+            deserializer.deserialize_struct("Person", FIELDS, PersonVisitor)
+        }
+    }
+
+    struct PersonVisitor;
+
+    impl serde::de::Visitor for PersonVisitor {
+        type Value = Person;
+
+        fn visit_map<V>(&mut self, mut visitor: V) -> Result<Person, V::Error>
+            where V: serde::de::MapVisitor
+        {
+            let mut firstname = None;
+            let mut lastname = None;
+
+            loop {
+                match try!(visitor.visit_key()) {
+                    Some(PersonField::FirstName) => { firstname = Some(try!(visitor.visit_value())); }
+                    Some(PersonField::LastName) => { lastname = Some(try!(visitor.visit_value())); }
+                    None => { break; }
+                }
+            }
+
+            let firstname = match firstname {
+                Some(firstname) => firstname,
+                None => try!(visitor.missing_field("firstname")),
+            };
+
+            let lastname = match lastname {
+                Some(lastname) => lastname,
+                None => try!(visitor.missing_field("lastname")),
+            };
+
+            try!(visitor.end());
+
+            Ok(Person{ firstname: firstname, lastname: lastname })
+        }
+    }
 }
 
 //this is an example middleware function that just logs each request

@@ -13,7 +13,9 @@ readme = "README.md"
 keywords = ["nickel", "server", "web", "express"]
 
 [features]
+default = ["rustc-serialize"]
 unstable = ["hyper/nightly", "compiletest_rs"]
+with-serde = ["serde", "serde_json", "mustache/serde"]
 ssl = ["hyper/ssl"]
 
 [dependencies]
@@ -22,10 +24,9 @@ time = "0.1"
 typemap = "0.3"
 plugin = "0.2"
 regex = "0.1"
-rustc-serialize = "0.3"
 log = "0.3"
 groupable = "0.2"
-mustache = "0.6"
+mustache = { git = "https://github.com/Ryman/rust-mustache.git", branch="serde", version = "*" }
 lazy_static = "0.1"
 modifier = "0.1"
 
@@ -35,6 +36,18 @@ default-features = false
 
 [dependencies.compiletest_rs]
 version = "0.1"
+optional = true
+
+[dependencies.rustc-serialize]
+version = "0.3"
+optional = true
+
+[dependencies.serde]
+version = "0.7"
+optional = true
+
+[dependencies.serde_json]
+version = "0.7"
 optional = true
 
 [[example]]

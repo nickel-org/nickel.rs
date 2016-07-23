@@ -1,6 +1,5 @@
 use hyper::header::ContentType;
 use hyper::mime::{Mime, SubLevel, TopLevel};
-use serialize::{Decodable, json};
 use request::Request;
 use plugin::{Plugin, Pluggable};
 use status::StatusCode;
@@ -9,6 +8,13 @@ use std::fmt;
 use std::io::{self, ErrorKind, Read};
 use typemap::Key;
 use urlencoded::{self, Params};
+
+#[cfg(not(feature = "with-serde"))]
+use serialize::{Decodable, json};
+#[cfg(feature = "with-serde")]
+use serde::Deserialize as Decodable;
+#[cfg(feature = "with-serde")]
+use serde_json;
 
 struct BodyReader;
 
@@ -82,9 +88,18 @@ impl<'mw, 'conn, D> JsonBody for Request<'mw, 'conn, D> {
     // FIXME: Update the error type.
     // Would be good to capture parsing error rather than a generic io::Error.
     // FIXME: Do the content-type check
+    #[cfg(not(feature = "with-serde"))]
     fn json_as<T: Decodable>(&mut self) -> Result<T, io::Error> {
         self.get_ref::<BodyReader>().and_then(|body|
             json::decode::<T>(&*body).map_err(|err|
+                io::Error::new(ErrorKind::Other, format!("Parse error: {}", err))
+            )
+        )
+    }
+    #[cfg(feature = "with-serde")]
+    fn json_as<T: Decodable>(&mut self) -> Result<T, io::Error> {
+        self.get_ref::<BodyReader>().and_then(|body|
+            serde_json::from_str::<T>(&*body).map_err(|err|
                 io::Error::new(ErrorKind::Other, format!("Parse error: {}", err))
             )
         )
