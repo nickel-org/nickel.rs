@@ -15,7 +15,7 @@ use time;
 use mimes::MediaType;
 use mustache;
 use mustache::Template;
-use std::io::{self, Read, Write, copy};
+use std::io::{self, Write, copy};
 use std::fs::File;
 use std::any::Any;
 use {NickelError, Halt, MiddlewareResult, Responder, Action};

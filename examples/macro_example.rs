@@ -7,7 +7,7 @@ use std::io::Write;
 use nickel::status::StatusCode::{self, NotFound};
 use nickel::{
     Nickel, NickelError, Continue, Halt, Request, Response, MediaType,
-    QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter, Action
+    QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, Action
 };
 use regex::Regex;
 use hyper::header::Location;
