@@ -13,4 +13,4 @@ install:
   - cargo -vV
 build: false
 test_script:
-  - cargo test --verbose --no-default-features
+  - cargo test --verbose
