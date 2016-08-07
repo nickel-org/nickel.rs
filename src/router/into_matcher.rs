@@ -21,10 +21,10 @@ lazy_static! {
 pub static FORMAT_PARAM:      &'static str = "format";
 // FIXME: Once const fn lands this could be defined in terms of the above
 static FORMAT_VAR:            &'static str = ":format";
-static VAR_SEQ:               &'static str = "[,a-zA-Z0-9_-.]*";
-static VAR_SEQ_WITH_SLASH:    &'static str = "[,/a-zA-Z0-9_-.]*";
+static VAR_SEQ:               &'static str = "[,a-zA-Z0-9_-]*";
+static VAR_SEQ_WITH_SLASH:    &'static str = "[,/a-zA-Z0-9_-]*";
 // matches request params (e.g. ?foo=true&bar=false)
-static REGEX_PARAM_SEQ:       &'static str = "(\\?[a-zA-Z0-9%_=&-.]*)?";
+static REGEX_PARAM_SEQ:       &'static str = "(\\?[a-zA-Z0-9%_=&-]*)?";
 
 impl From<String> for Matcher {
     fn from(s: String) -> Matcher {
@@ -49,7 +49,7 @@ impl From<String> for Matcher {
         let named_captures = REGEX_VAR_SEQ.replace_all(&wildcarded, |captures: &Captures| {
             // There should only ever be one match (after subgroup 0)
             let c = captures.iter().skip(1).next().unwrap();
-            format!("(?P<{}>[,a-zA-Z0-9%_-.]*)", c.unwrap())
+            format!("(?P<{}>[,a-zA-Z0-9%_-]*)", c.unwrap())
         });
 
         let line_regex = format!("^{}{}$", named_captures, REGEX_PARAM_SEQ);
