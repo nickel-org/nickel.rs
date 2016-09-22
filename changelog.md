@@ -1,3 +1,23 @@
+<a name="0.9.0"></a>
+## 0.9.0 (2016-09-22)
+
+
+#### Features
+
+* **response:**  add Authorization<Bearer> as a `set`table type ([d5b9271b](https://github.com/nickel-org/nickel.rs/commit/d5b9271b18d22e858c9dc858ef52deef95d7f11a))
+* **server:**  expose ListeningServer which can query the socket the server is listening on ([da7d5295](https://github.com/nickel-org/nickel.rs/commit/da7d52951c295e6f064c359e06c5a2e99d12c1f2), breaks [#](https://github.com/nickel-org/nickel.rs/issues/))
+
+#### Bug Fixes
+
+* **options:**  obey `output_on_listen` for HTTPS ([f7658fa4](https://github.com/nickel-org/nickel.rs/commit/f7658fa442a613c7924c953ca913a31055ca474c))
+* **test:**  fix examples::template::renders_data test on Windows ([c3aeb722](https://github.com/nickel-org/nickel.rs/commit/c3aeb72245846e7bb65678615f96e5cfdd5d2532))
+
+#### Breaking Changes
+
+* **server:**  expose ListeningServer which can query the socket the server is listening on ([da7d5295](https://github.com/nickel-org/nickel.rs/commit/da7d52951c295e6f064c359e06c5a2e99d12c1f2), breaks [#](https://github.com/nickel-org/nickel.rs/issues/))
+
+
+
 <a name="0.8.1"></a>
 ### 0.8.1 (2016-05-09)
 
