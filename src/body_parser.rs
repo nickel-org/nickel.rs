@@ -52,7 +52,9 @@ impl<'mw, 'conn, D> Plugin<Request<'mw, 'conn, D>> for FormBodyParser {
 
 pub trait FormBody {
     /// Extracts URL encoded data from the request body.
+    ///
     /// # Examples
+    ///
     /// ```{rust}
     /// #[macro_use] extern crate nickel;
     /// use nickel::{Nickel, HttpRouter, FormBody};
