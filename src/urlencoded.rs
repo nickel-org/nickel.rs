@@ -2,7 +2,7 @@ use groupable::Groupable;
 use hyper::uri::RequestUri;
 use hyper::uri::RequestUri::{Star, AbsoluteUri, AbsolutePath, Authority};
 use std::collections::HashMap;
-use url::{form_urlencoded, Url};
+use url::form_urlencoded;
 
 type QueryStore = HashMap<String, Vec<String>>;
 
