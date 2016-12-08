@@ -14,7 +14,7 @@ keywords = ["nickel", "server", "web", "express"]
 
 [features]
 unstable = ["hyper/nightly", "compiletest_rs"]
-ssl = ["hyper/ssl"]
+ssl = ["hyper/ssl", "bitflags"]
 
 [dependencies]
 url = "1.0"
@@ -32,6 +32,11 @@ modifier = "0.1"
 [dependencies.hyper]
 version = "0.9"
 default-features = false
+
+[dependencies.bitflags]
+# This lets us compile openssl on rustc below v1.8.0
+version = "0.5"
+optional = true
 
 [dependencies.compiletest_rs]
 version = "0.1"
