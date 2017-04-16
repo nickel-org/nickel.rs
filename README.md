@@ -2,7 +2,7 @@
 
 [nickel.rs](http://nickel.rs) is a simple and lightweight foundation for web applications written in Rust. Its API is inspired by the popular express framework for JavaScript.
 
-##Hello world
+## Hello world
 
 ```rust,no_run
 #[macro_use] extern crate nickel;
