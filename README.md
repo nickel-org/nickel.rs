@@ -45,7 +45,7 @@ You can then compile this using *Cargo build* and run it using *Cargo run*. Afte
 
 More examples can be found [in the examples directory](/examples/) and the full documentation can be [found here](http://docs.nickel.rs).
 
-##Contributing
+## Contributing
 
 [nickel.rs](http://nickel.rs) is a community effort. We welcome new contributors with open arms. Please read the [contributing guide here](/contributing.md) first.
 
