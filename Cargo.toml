@@ -59,6 +59,12 @@ path = "examples/template.rs"
 
 [[example]]
 
+name = "template_helpers"
+path = "examples/template_helpers.rs"
+
+
+[[example]]
+
 name = "macro_example"
 path = "examples/macro_example.rs"
 
