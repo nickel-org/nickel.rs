@@ -1,7 +1,7 @@
 [package]
 
 name = "nickel"
-version = "0.9.0"
+version = "0.10.0"
 authors = [ "Christoph Burgdorf <christoph@thoughtram.io>",
             "Kevin Butler <haqkrs@gmail.com>",
             "Simon Persson <simon@flaskpost.org>" ]
@@ -14,27 +14,26 @@ keywords = ["nickel", "server", "web", "express"]
 
 [features]
 unstable = ["hyper/nightly", "compiletest_rs"]
-ssl = ["hyper/ssl"]
 
 [dependencies]
 url = "1.0"
 time = "0.1"
 typemap = "0.3"
 plugin = "0.2"
-regex = "0.1"
+regex = "0.2"
 rustc-serialize = "0.3"
 log = "0.3"
 groupable = "0.2"
-mustache = "0.6"
-lazy_static = "0.1"
+mustache = "0.8"
+lazy_static = "0.2"
 modifier = "0.1"
 
 [dependencies.hyper]
-version = "0.9"
+version = "0.10"
 default-features = false
 
 [dependencies.compiletest_rs]
-version = "0.1"
+version = "0.2"
 optional = true
 
 [[example]]
