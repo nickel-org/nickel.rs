@@ -696,7 +696,7 @@ mimes!(
         G3, "g3", "g3fax",
         Gif, "gif", "gif",
         Ief, "ief", "ief",
-        Jpeg, "jpeg", "jpeg",
+        Jpeg, "jpg", "jpeg",
         Ktx, "ktx", "ktx",
         Png, "png", "png",
         Btif, "btif", "prs.btif",
