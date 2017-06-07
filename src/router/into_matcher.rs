@@ -49,7 +49,7 @@ impl From<String> for Matcher {
         let named_captures = REGEX_VAR_SEQ.replace_all(&wildcarded, |captures: &Captures| {
             // There should only ever be one match (after subgroup 0)
             let c = captures.iter().skip(1).next().unwrap();
-            format!("(?P<{}>[,a-zA-Z0-9%_-]*)", c.unwrap())
+            format!("(?P<{}>[,a-zA-Z0-9%_-]*)", c.unwrap().as_str())
         });
 
         let line_regex = format!("^{}{}$", named_captures, REGEX_PARAM_SEQ);

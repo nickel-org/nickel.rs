@@ -70,16 +70,25 @@ impl<D> Router<D> {
 }
 
 fn extract_params<D>(route: &Route<D>, path: &str) -> Vec<(String, String)> {
-    match route.matcher.captures(path) {
-        Some(captures) => {
-            captures.iter_named()
-                    .filter_map(|(name, subcap)| {
-                        subcap.map(|cap| (name.to_string(), cap.to_string()))
-                    })
-                    .collect()
-        }
-        None => vec![]
-    }
+    let captures = match route.matcher.captures(path) {
+        Some(cap) => cap,
+        None => { return vec![]; },
+    };
+    route.matcher.capture_names()
+        .filter_map(|n| {
+            let name = if let Some(name) = n {
+                name
+            } else {
+                return None;
+            };
+            let capture = if let Some(capture) = captures.name(name) {
+                capture
+            } else {
+                return None;
+            };
+            Some((name.to_string(), capture.as_str().to_string()))
+        })
+        .collect()
 }
 
 impl<D> HttpRouter<D> for Router<D> {
@@ -124,29 +133,29 @@ fn creates_regex_with_captures () {
     let caps = matcher.captures("foo/4711/bar/5490").unwrap();
 
     assert_eq!(matcher.path(), "foo/:uid/bar/:groupid(\\.:format)?");
-    assert_eq!(caps.at(1).unwrap(), "4711");
-    assert_eq!(caps.at(2).unwrap(), "5490");
+    assert_eq!(caps.get(1).unwrap().as_str(), "4711");
+    assert_eq!(caps.get(2).unwrap().as_str(), "5490");
 
     let matcher: Matcher = "foo/*/:uid/bar/:groupid".into();
     let caps = matcher.captures("foo/test/4711/bar/5490").unwrap();
 
     assert_eq!(matcher.path(), "foo/*/:uid/bar/:groupid(\\.:format)?");
-    assert_eq!(caps.at(1).unwrap(), "4711");
-    assert_eq!(caps.at(2).unwrap(), "5490");
+    assert_eq!(caps.get(1).unwrap().as_str(), "4711");
+    assert_eq!(caps.get(2).unwrap().as_str(), "5490");
 
     let matcher: Matcher = "foo/**/:uid/bar/:groupid".into();
     let caps = matcher.captures("foo/test/another/4711/bar/5490").unwrap();
 
     assert_eq!(matcher.path(), "foo/**/:uid/bar/:groupid(\\.:format)?");
-    assert_eq!(caps.at(1).unwrap(), "4711");
-    assert_eq!(caps.at(2).unwrap(), "5490");
+    assert_eq!(caps.get(1).unwrap().as_str(), "4711");
+    assert_eq!(caps.get(2).unwrap().as_str(), "5490");
 
     let matcher: Matcher = "foo/**/:format/bar/:groupid".into();
     let caps = matcher.captures("foo/test/another/4711/bar/5490").unwrap();
 
     assert_eq!(matcher.path(), "foo/**/:format/bar/:groupid");
-    assert_eq!(caps.name("format").unwrap(), "4711");
-    assert_eq!(caps.name("groupid").unwrap(), "5490");
+    assert_eq!(caps.name("format").unwrap().as_str(), "4711");
+    assert_eq!(caps.name("groupid").unwrap().as_str(), "5490");
 }
 
 #[test]
