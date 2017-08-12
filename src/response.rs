@@ -166,7 +166,6 @@ impl<'a, D> Response<'a, D, Fresh> {
     /// Sets the header if not already set.
     ///
     /// If the header is not set then `f` will be called.
-    /// Renders the given template bound with the given data.
     ///
     /// # Examples
     /// ```{rust}
