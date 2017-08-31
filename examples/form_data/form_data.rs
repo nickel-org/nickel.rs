@@ -26,5 +26,5 @@ fn main() {
         return res.render("examples/form_data/views/confirmation.html", &data)
     });
 
-    server.listen("0.0.0.0:8080").unwrap();
+    server.listen("127.0.0.1:6767").unwrap().wait();
 }

@@ -2,9 +2,8 @@ use std::fs::File;
 use std::path::{PathBuf, Path};
 use std::io::Read;
 
-use hyper::uri::RequestUri::AbsolutePath;
-use hyper::method::Method::{Get, Head, Options};
-use hyper::status::StatusCode;
+use hyper::Method::{Get, Head, Options};
+use hyper::StatusCode;
 use hyper::header;
 
 use request::Request;
@@ -18,7 +17,7 @@ pub struct FaviconHandler {
 }
 
 impl<D> Middleware<D> for FaviconHandler {
-    fn invoke<'a, 'server>(&'a self, req: &mut Request<'a, 'server, D>, res: Response<'a, D>)
+    fn invoke<'a>(&'a self, req: &mut Request<'a, D>, res: Response<'a, D>)
             -> MiddlewareResult<'a, D> {
         if FaviconHandler::is_favicon_request(req) {
             self.handle_request(req, res)
@@ -53,10 +52,7 @@ impl FaviconHandler {
 
     #[inline]
     pub fn is_favicon_request<D>(req: &Request<D>) -> bool {
-        match req.origin.uri {
-            AbsolutePath(ref path) => &**path == "/favicon.ico",
-            _                      => false
-        }
+        req.path == "/favicon.ico"
     }
 
     pub fn handle_request<'a, D>(&self, req: &Request<D>, mut res: Response<'a, D>) -> MiddlewareResult<'a, D> {

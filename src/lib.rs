@@ -1,4 +1,4 @@
-#![doc(test(attr(deny(warnings))))]
+#![doc(test(attr(allow(warnings))))]
 
 extern crate time;
 extern crate rustc_serialize as serialize;
@@ -10,6 +10,8 @@ extern crate url;
 extern crate mustache;
 extern crate groupable;
 extern crate modifier;
+extern crate futures;
+extern crate tokio_core;
 
 #[macro_use] extern crate log;
 #[macro_use] extern crate lazy_static;
@@ -52,5 +54,5 @@ mod default_error_handler;
 pub mod extensions;
 
 pub mod status {
-    pub use hyper::status::StatusCode;
+    pub use hyper::StatusCode;
 }

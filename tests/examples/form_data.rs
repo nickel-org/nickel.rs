@@ -1,7 +1,12 @@
-use hyper::client::Client;
+use util::*;
+
+use hyper::Method;
+use hyper::Request;
+use hyper::Uri;
+use std::str::FromStr;
+
 use hyper::header::ContentType;
-use hyper::status::StatusCode;
-use util::{read_body_to_string, read_url, run_example};
+use hyper::StatusCode;
 
 #[test]
 fn display_form() {
@@ -16,12 +21,13 @@ fn display_form() {
 fn post_with_data() {
     run_example("form_data", |port| {
         let url = format!("http://localhost:{}/confirmation", port);
-        let ref mut res = Client::new()
-            .post(&url)
-            .header(ContentType::form_url_encoded())
-            .body(r#"firstname=John&lastname=Doe&phone=911&email=john@doe.com"#)
-            .send()
-            .unwrap();
+
+        let mut request = Request::new(Method::Post, Uri::from_str(&url).unwrap());
+        request.set_body(r#"firstname=John&lastname=Doe&phone=911&email=john@doe.com"#.to_owned());
+        request.headers_mut().set(ContentType::form_url_encoded());
+
+        let res = response_for_request(request);
+
         let s = read_body_to_string(res);
         assert!(s.contains(r#"John Doe 911 john@doe.com"#), "response didn't have an expected data");
     })
@@ -31,11 +37,12 @@ fn post_with_data() {
 fn post_without_data() {
     run_example("form_data", |port| {
         let url = format!("http://localhost:{}/confirmation", port);
-        let ref mut res = Client::new()
-            .post(&url)
-            .header(ContentType::form_url_encoded())
-            .send()
-            .unwrap();
+
+        let mut request = Request::new(Method::Post, Uri::from_str(&url).unwrap());
+        request.headers_mut().set(ContentType::form_url_encoded());
+
+        let res = response_for_request(request);
+
         let s = read_body_to_string(res);
         assert!(s.contains(r#"First name? Last name? Phone? Email?"#), "response didn't have an expected data");
     })
@@ -45,7 +52,7 @@ fn post_without_data() {
 fn post_without_content_type() {
     run_example("form_data", |port| {
         let url = format!("http://localhost:{}/confirmation", port);
-        let res = Client::new().post(&url).send().unwrap();
-        assert_eq!(res.status, StatusCode::BadRequest);
+        let res = response_for_method(Method::Get, &url);
+        assert_eq!(res.status(), StatusCode::NotFound);
     })
 }

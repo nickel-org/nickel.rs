@@ -1,8 +1,7 @@
 use groupable::Groupable;
-use hyper::uri::RequestUri;
-use hyper::uri::RequestUri::{Star, AbsoluteUri, AbsolutePath, Authority};
+use hyper::Uri;
 use std::collections::HashMap;
-use url::{form_urlencoded, Url};
+use url::{form_urlencoded};
 
 type QueryStore = HashMap<String, Vec<String>>;
 
@@ -33,14 +32,9 @@ pub fn parse(encoded_string : &str) -> Params {
     Params(form_urlencoded::parse(encoded_string.as_bytes()).into_owned().group())
 }
 
-pub fn parse_uri(origin: &RequestUri) -> Params {
-    let f = |query: Option<&str>| query.map(|q| parse(&*q));
-
-    let result = match *origin {
-        AbsoluteUri(ref url) => f(url.query()),
-        AbsolutePath(ref s) => f(s.splitn(2, '?').nth(1)),
-        Star | Authority(..) => None
-    };
+pub fn parse_uri(origin: &Uri) -> Params {
+    
+    let result = origin.query().map(|q| parse(&*q));
 
     result.unwrap_or_else(|| Params(HashMap::new()))
 }
@@ -68,7 +62,7 @@ fn parses_urlencoded_characters() {
 
 #[test]
 fn splits_and_parses_an_url() {
-    use url::Url;
+    use std::str::FromStr;
     let t = |url| {
         let store = parse_uri(&url);
         assert_eq!(store.get("foo"), Some("bar"));
@@ -80,12 +74,12 @@ fn splits_and_parses_an_url() {
     };
 
     let raw = "http://www.foo.bar/query/test?foo=bar&message=hello&message=world";
-    t(AbsoluteUri(Url::parse(raw).unwrap()));
+    t(Uri::from_str(raw).unwrap());
 
-    t(AbsolutePath("/query/test?foo=bar&message=hello&message=world".to_string()));
+    t(Uri::from_str("/query/test?foo=bar&message=hello&message=world").unwrap());
 
-    assert_eq!(parse_uri(&Star), Params(HashMap::new()));
+    assert_eq!(parse_uri(&Uri::from_str("*").unwrap()), Params(HashMap::new()));
 
-    let store = parse_uri(&Authority("host.com".to_string()));
+    let store = parse_uri(&Uri::from_str("host.com").unwrap());
     assert_eq!(store, Params(HashMap::new()));
 }

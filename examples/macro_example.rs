@@ -80,7 +80,7 @@ fn main() {
 
         // go to http://localhost:6767/redirect to see this route in action
         get "/redirect" => |_, mut response| {
-            response.set(Location("http://nickel.rs".into()));
+            response.set(Location::new("http://nickel.rs"));
 
             StatusCode::PermanentRedirect
         }
@@ -127,5 +127,5 @@ fn main() {
     server.handle_error(custom_handler);
 
     println!("Running server!");
-    server.listen("127.0.0.1:6767").unwrap();
+    server.listen("127.0.0.1:6767").unwrap().wait();
 }

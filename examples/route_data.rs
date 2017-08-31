@@ -28,5 +28,5 @@ fn main() {
         format!("{}", shared_visits.fetch_add(1, Relaxed))
     });
 
-    server.listen("127.0.0.1:6767").unwrap();
+    server.listen("127.0.0.1:6767").unwrap().wait();
 }

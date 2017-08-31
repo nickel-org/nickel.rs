@@ -1,7 +1,7 @@
 #[macro_use] extern crate nickel;
 extern crate hyper;
 
-use hyper::method::Method;
+use hyper::Method;
 use nickel::{Nickel, HttpRouter};
 
 fn main() {
@@ -13,5 +13,5 @@ fn main() {
           .patch("/patch", middleware!("patch"))
           .delete("/delete", middleware!("delete"));
 
-    server.listen("127.0.0.1:6767").unwrap();
+    server.listen("127.0.0.1:6767").unwrap().wait();
 }

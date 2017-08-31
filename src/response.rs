@@ -5,19 +5,18 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::path::Path;
 use serialize::Encodable;
-use hyper::status::StatusCode;
+use hyper::StatusCode;
 use hyper::server::Response as HyperResponse;
 use hyper::header::{
-    Headers, Date, HttpDate, Server, ContentType, ContentLength, Header, HeaderFormat
+    Headers, Date, HttpDate, Server, ContentType, ContentLength, Header
 };
-use hyper::net::{Fresh, Streaming};
-use time;
+
+use hyper::Body;
 use mimes::MediaType;
 use mustache;
 use mustache::Template;
-use std::io::{self, Read, Write, copy};
+use std::io::{self, Write, copy};
 use std::fs::File;
-use std::any::Any;
 use {NickelError, Halt, MiddlewareResult, Responder, Action};
 use modifier::Modifier;
 use plugin::{Extensible, Pluggable};
@@ -26,23 +25,25 @@ use typemap::TypeMap;
 pub type TemplateCache = RwLock<HashMap<String, Template>>;
 
 ///A container for the response
-pub struct Response<'a, D: 'a = (), T: 'static + Any = Fresh> {
+pub struct Response<'a, D: 'a = ()> {
     ///the original `hyper::server::Response`
-    origin: HyperResponse<'a, T>,
+    origin: &'a mut HyperResponse<Body>,
+    body_buffer: Vec<u8>,
     templates: &'a TemplateCache,
     data: &'a D,
     map: TypeMap,
     // This should be FnBox, but that's currently unstable
-    on_send: Vec<Box<FnMut(&mut Response<'a, D, Fresh>)>>
+    on_send: Vec<Box<FnMut(&mut Response<'a, D>)>>
 }
 
-impl<'a, D> Response<'a, D, Fresh> {
-    pub fn from_internal<'c, 'd>(response: HyperResponse<'c, Fresh>,
+impl<'a, D> Response<'a, D> {
+    pub fn from_internal<'c, 'd>(response: &'c mut HyperResponse<Body>,
                                  templates: &'c TemplateCache,
                                  data: &'c D)
-                                -> Response<'c, D, Fresh> {
+                                -> Response<'c, D> {
         Response {
             origin: response,
+            body_buffer: Vec::new(),
             templates: templates,
             data: data,
             map: TypeMap::new(),
@@ -51,8 +52,8 @@ impl<'a, D> Response<'a, D, Fresh> {
     }
 
     /// Get a mutable reference to the status.
-    pub fn status_mut(&mut self) -> &mut StatusCode {
-        self.origin.status_mut()
+    pub fn set_status(&mut self, status_code: StatusCode) {
+        self.origin.set_status(status_code)
     }
 
     /// Get a mutable reference to the Headers.
@@ -77,7 +78,7 @@ impl<'a, D> Response<'a, D, Fresh> {
     ///             // set the Status
     ///         res.set(StatusCode::PermanentRedirect)
     ///             // update a Header value
-    ///            .set(Location("http://nickel.rs".into()));
+    ///            .set(Location::new("http://nickel.rs"));
     ///
     ///         ""
     ///     });
@@ -151,8 +152,9 @@ impl<'a, D> Response<'a, D, Fresh> {
     //
     // Also, it should only set them if not already set.
     fn set_fallback_headers(&mut self) {
-        self.set_header_fallback(|| Date(HttpDate(time::now_utc())));
-        self.set_header_fallback(|| Server("Nickel".to_string()));
+        use std::time::SystemTime;
+        self.set_header_fallback(|| Date(HttpDate::from(SystemTime::now())));
+        self.set_header_fallback(|| Server::new("Nickel"));
         self.set_header_fallback(|| ContentType(MediaType::Html.into()));
     }
 
@@ -192,7 +194,7 @@ impl<'a, D> Response<'a, D, Fresh> {
     /// }
     /// ```
     pub fn set_header_fallback<F, H>(&mut self, f: F)
-            where H: Header + HeaderFormat, F: FnOnce() -> H {
+            where H: Header, F: FnOnce() -> H {
         let headers = self.origin.headers_mut();
         if !headers.has::<H>() { headers.set(f()) }
     }
@@ -249,7 +251,7 @@ impl<'a, D> Response<'a, D, Fresh> {
         render(self, template, data)
     }
 
-    pub fn start(mut self) -> Result<Response<'a, D, Streaming>, NickelError<'a, D>> {
+    pub fn start(mut self) -> Result<Response<'a, D>, NickelError<'a, D>> {
         let on_send = mem::replace(&mut self.on_send, vec![]);
         for mut f in on_send.into_iter().rev() {
             // TODO: Ensure `f` doesn't call on_send again
@@ -260,22 +262,7 @@ impl<'a, D> Response<'a, D, Fresh> {
         // on_send then it would possibly set redundant things.
         self.set_fallback_headers();
 
-        let Response { origin, templates, data, map, on_send } = self;
-        match origin.start() {
-            Ok(origin) => {
-                Ok(Response {
-                    origin: origin,
-                    templates: templates,
-                    data: data,
-                    map: map,
-                    on_send: on_send
-                })
-            },
-            Err(e) =>
-                unsafe {
-                    Err(NickelError::without_response(format!("Failed to start response: {}", e)))
-                }
-        }
+        Ok(self)
     }
 
     pub fn server_data(&self) -> &'a D {
@@ -283,7 +270,7 @@ impl<'a, D> Response<'a, D, Fresh> {
     }
 
     pub fn on_send<F>(&mut self, f: F)
-            where F: FnMut(&mut Response<'a, D, Fresh>) + 'static {
+            where F: FnMut(&mut Response<'a, D>) + 'static {
         self.on_send.push(Box::new(f))
     }
 
@@ -296,19 +283,19 @@ impl<'a, D> Response<'a, D, Fresh> {
     }
 }
 
-impl<'a, 'b, D> Write for Response<'a, D, Streaming> {
+impl<'a, 'b, D> Write for Response<'a, D> {
     #[inline(always)]
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.origin.write(buf)
+        self.body_buffer.write(buf)
     }
 
     #[inline(always)]
     fn flush(&mut self) -> io::Result<()> {
-        self.origin.flush()
+        self.body_buffer.flush()
     }
 }
 
-impl<'a, 'b, D> Response<'a, D, Streaming> {
+impl<'a, 'b, D> Response<'a, D> {
     /// In the case of an unrecoverable error while a stream is already in
     /// progress, there is no standard way to signal to the client that an
     /// error has occurred. `bail` will drop the connection and log an error
@@ -321,11 +308,12 @@ impl<'a, 'b, D> Response<'a, D, Streaming> {
 
     /// Flushes all writing of a response to the client.
     pub fn end(self) -> io::Result<()> {
-        self.origin.end()
+        self.origin.set_body(self.body_buffer);
+        Ok(())
     }
 }
 
-impl <'a, D, T: 'static + Any> Response<'a, D, T> {
+impl <'a, D> Response<'a, D> {
     /// The status of this response.
     pub fn status(&self) -> StatusCode {
         self.origin.status()
@@ -341,7 +329,7 @@ impl <'a, D, T: 'static + Any> Response<'a, D, T> {
     }
 }
 
-impl<'a, D, T: 'static + Any> Extensible for Response<'a, D, T> {
+impl<'a, D> Extensible for Response<'a, D> {
     fn extensions(&self) -> &TypeMap {
         &self.map
     }
@@ -351,7 +339,7 @@ impl<'a, D, T: 'static + Any> Extensible for Response<'a, D, T> {
     }
 }
 
-impl<'a, D, T: 'static + Any> Pluggable for Response<'a, D, T> {}
+impl<'a, D> Pluggable for Response<'a, D> {}
 
 fn mime_from_filename<P: AsRef<Path>>(path: P) -> Option<MediaType> {
     path.as_ref()
@@ -370,13 +358,13 @@ fn matches_content_type () {
 
 mod modifier_impls {
     use hyper::header::*;
-    use hyper::status::StatusCode;
+    use hyper::StatusCode;
     use modifier::Modifier;
     use {Response, MediaType};
 
     impl<'a, D> Modifier<Response<'a, D>> for StatusCode {
         fn modify(self, res: &mut Response<'a, D>) {
-            *res.status_mut() = self
+            res.set_status(self)
         }
     }
 

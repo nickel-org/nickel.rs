@@ -35,7 +35,7 @@ fn create_context() -> Openssl {
 fn read_url_https(url: &str, ssl: Openssl) -> String {
     let connector = HttpsConnector::new(ssl);
     let client = Client::with_connector(connector);
-    let mut res = client.get(url)
+    let res = client.get(url)
                         .send()
                         .unwrap();
     read_body_to_string(&mut res)

@@ -1,3 +1,4 @@
+#[allow(resolve_trait_on_defaulted_unit)] // https://github.com/nickel-org/nickel.rs/issues/399
 extern crate rustc_serialize;
 extern crate hyper;
 // HACK: integration_testing example refers to `nickel::foo`
@@ -9,14 +10,18 @@ extern crate nickel;
 
 #[macro_use] extern crate lazy_static;
 
+extern crate unicase;
+extern crate tokio_core;
+extern crate futures;
+
 mod util;
 
 mod examples {
     mod hello_world;
-    mod mount;
+    // mod mount;
     mod route_data;
     mod routing;
-    mod template;
+    // mod template;
     mod moved_ownership;
     mod chaining;
     mod json;
@@ -28,6 +33,6 @@ mod examples {
     mod form_data;
     mod integration_testing;
 
-    #[cfg(feature = "ssl")]
-    mod https;
+    // #[cfg(feature = "ssl")]
+    // mod https;
 }

@@ -24,6 +24,13 @@ impl ToJson for Person {
 fn main() {
     let mut server = Nickel::new();
 
+    #[allow(resolve_trait_on_defaulted_unit)]
+    server.utilize(middleware! { |req, res|
+        // res.data().log_hit();
+        println!("{:?}", req.origin);
+        return res.next_middleware()
+    });
+
     // try it with curl
     // curl 'http://localhost:6767/a/post/request' -H 'Content-Type: application/json;charset=UTF-8'  --data-binary $'{ "firstname": "John","lastname": "Connor" }'
     server.post("/", middleware! { |request, response|
@@ -52,5 +59,5 @@ fn main() {
         r#"{ "foo": "bar" }"#
     });
 
-    server.listen("127.0.0.1:6767").unwrap();
+    server.listen("127.0.0.1:6767").unwrap().wait();
 }

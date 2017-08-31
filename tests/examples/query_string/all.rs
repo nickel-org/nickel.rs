@@ -3,7 +3,7 @@ use util::*;
 
 use hyper::client::Response;
 
-fn with_query<F>(query: &str, f: F) where F: FnOnce(&mut Response) {
+fn with_query<F>(query: &str, f: F) where F: FnOnce(Response) {
     with_path(&format!("/all?{}", query), f)
 }
 

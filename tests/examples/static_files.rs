@@ -1,15 +1,15 @@
 use util::*;
 
-use hyper::status::StatusCode;
+use hyper::StatusCode;
 use hyper::client::Response;
 
 use std::io::{Read, Write};
 use std::net::TcpStream;
 
-fn with_path<F>(path: &str, f: F) where F: FnOnce(&mut Response) {
+fn with_path<F>(path: &str, f: F) where F: FnOnce(Response) {
     run_example("static_files", |port| {
         let url = format!("http://localhost:{}{}", port, path);
-        let ref mut res = response_for(&url);
+        let res = response_for(&url);
         f(res)
     })
 }
@@ -17,7 +17,7 @@ fn with_path<F>(path: &str, f: F) where F: FnOnce(&mut Response) {
 #[test]
 fn returns_expected_files() {
     with_path("/thoughtram_logo_brain.png", |res| {
-        assert_eq!(res.status, StatusCode::Ok);
+        assert_eq!(res.status(), StatusCode::Ok);
     });
 }
 

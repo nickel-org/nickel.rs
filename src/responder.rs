@@ -10,7 +10,7 @@
 //!
 //! Please see the examples for usage.
 use {Response, NickelError, MiddlewareResult, Halt};
-use hyper::status::{StatusCode, StatusClass};
+use hyper::StatusCode;
 use hyper::header;
 use serialize::json;
 use mimes::MediaType;
@@ -88,8 +88,8 @@ dual_impl!((StatusCode, &'static str),
             |self, res| {
                 let (status, message) = self;
 
-                match status.class() {
-                    StatusClass::ClientError | StatusClass::ServerError => {
+                match status {
+                    s if s.is_client_error() || s.is_server_error() => {
                         res.error(status, message)
                     },
                     _ => {
@@ -124,7 +124,7 @@ dual_impl!((u16, &'static str),
            (u16, String),
            |self, res| {
                 let (status, message) = self;
-                res.send((StatusCode::from_u16(status), message))
+                res.send((StatusCode::try_from(status).unwrap(), message))
             });
 
 // FIXME: Hyper uses traits for headers, so this needs to be a Vec of

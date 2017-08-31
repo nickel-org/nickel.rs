@@ -1,13 +1,13 @@
 use std::net::ToSocketAddrs;
 use std::time::Duration;
+
 use std::env;
 use std::error::Error as StdError;
 use router::{Router, HttpRouter, Matcher};
 use middleware::{MiddlewareStack, Middleware, ErrorHandler};
-use server::{Server, ListeningServer};
-use hyper::method::Method;
-use hyper::net::SslServer;
-use hyper::status::StatusCode;
+use server::{Server};
+use hyper::Method;
+use hyper::StatusCode;
 
 //pre defined middleware
 use default_error_handler::DefaultErrorHandler;
@@ -21,15 +21,15 @@ use default_error_handler::DefaultErrorHandler;
 /// use nickel::{Nickel, Options};
 /// let mut server = Nickel::new();
 ///
-/// // Don't print to stdout when starting the server
-/// // and force using 8 threads.
+/// // Don't print to stdout when starting the server.
 /// server.options = Options::default()
-///                      .output_on_listen(false)
-///                      .thread_count(Some(8));
+///                      .output_on_listen(false);
 /// ```
+use server::ListeningServer;
+
 pub struct Options {
     output_on_listen: bool,
-    thread_count: Option<usize>,
+    shutdown_timeout: Option<Duration>,
 }
 
 impl Options {
@@ -45,8 +45,8 @@ impl Options {
     /// `hyper`'s default of `1.25 * core_count`.
     ///
     /// Defaults to `None`.
-    pub fn thread_count(mut self, thread_count: Option<usize>) -> Self {
-        self.thread_count = thread_count;
+    pub fn shutdown_timeout(mut self, shutdown_timeout: Option<Duration>) -> Self {
+        self.shutdown_timeout = shutdown_timeout;
         self
     }
 }
@@ -55,7 +55,7 @@ impl Default for Options {
     fn default() -> Self {
         Options {
             output_on_listen: true,
-            thread_count: None,
+            shutdown_timeout: None,
         }
     }
 }
@@ -65,7 +65,7 @@ impl Default for Options {
 pub struct Nickel<D: Sync + Send + 'static = ()> {
     middleware_stack: MiddlewareStack<D>,
     data: D,
-    keep_alive_timeout: Option<Duration>,
+    keep_alive: bool,
 
     /// Configuration options for the server.
     pub options: Options,
@@ -101,8 +101,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
             middleware_stack: middleware_stack,
             options: Options::default(),
             data: data,
-            // Default value from nginx
-            keep_alive_timeout: Some(Duration::from_secs(75))
+            keep_alive: true
         }
     }
 
@@ -217,16 +216,16 @@ impl<D: Sync + Send + 'static> Nickel<D> {
             // If we're under a test harness, we'll pass zero to get assigned a random
             // port. See http://doc.rust-lang.org/std/net/struct.TcpListener.html#method.bind
             try!(server.serve("localhost:0",
-                              self.keep_alive_timeout,
-                              self.options.thread_count))
+                              self.keep_alive,
+                              self.options.shutdown_timeout))
         } else {
             try!(server.serve(addr,
-                              self.keep_alive_timeout,
-                              self.options.thread_count))
+                              self.keep_alive,
+                              self.options.shutdown_timeout))
         };
 
         if self.options.output_on_listen {
-            println!("Listening on http://{}", listener.socket());
+            println!("Listening on http://{}", listener.local_addr);
             println!("Ctrl-C to shutdown server");
         }
 
@@ -246,68 +245,68 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     /// # Default
     ///
     /// The default value is 75 seconds.
-    pub fn keep_alive_timeout(&mut self, timeout: Option<Duration>){
-        self.keep_alive_timeout = timeout;
+    pub fn keep_alive(&mut self, keep_alive: bool){
+        self.keep_alive = keep_alive;
     }
 
-    /// Bind and listen for connections on the given host and port.
-    /// Only accepts SSL connections
-    ///
-    /// # Panics
-    ///
-    /// Panics if `addr` is an invalid `SocketAddr`.
-    ///
-    /// # Examples
-    /// ```{rust,no_run}
-    /// # extern crate nickel;
-    /// extern crate hyper;
-    ///
-    /// # #[cfg(feature = "ssl")]
-    /// use nickel::Nickel;
-    /// # #[cfg(feature = "ssl")]
-    /// use hyper::net::Openssl;
-    ///
-    /// # #[cfg(feature = "ssl")]
-    /// # fn main() {
-    /// let server = Nickel::new();
-    /// let ssl = Openssl::with_cert_and_key("foo.crt", "key.pem").unwrap();
-    /// server.listen_https("127.0.0.1:6767", ssl).unwrap();
-    /// # }
-    /// # #[cfg(not(feature = "ssl"))]
-    /// # fn main() {}
-    /// ```
-    pub fn listen_https<T,S>(mut self, addr: T, ssl: S) -> Result<ListeningServer, Box<StdError>>
-    where T: ToSocketAddrs,
-          S: SslServer + Send + Clone + 'static {
-        self.middleware_stack.add_middleware(middleware! {
-            (StatusCode::NotFound, "File Not Found")
-        });
+    // /// Bind and listen for connections on the given host and port.
+    // /// Only accepts SSL connections
+    // ///
+    // /// # Panics
+    // ///
+    // /// Panics if `addr` is an invalid `SocketAddr`.
+    // ///
+    // /// # Examples
+    // /// ```{rust,no_run}
+    // /// # extern crate nickel;
+    // /// extern crate hyper;
+    // ///
+    // /// # #[cfg(feature = "ssl")]
+    // /// use nickel::Nickel;
+    // /// # #[cfg(feature = "ssl")]
+    // /// use hyper::net::Openssl;
+    // ///
+    // /// # #[cfg(feature = "ssl")]
+    // /// # fn main() {
+    // /// let server = Nickel::new();
+    // /// let ssl = Openssl::with_cert_and_key("foo.crt", "key.pem").unwrap();
+    // /// server.listen_https("127.0.0.1:6767", ssl).unwrap();
+    // /// # }
+    // /// # #[cfg(not(feature = "ssl"))]
+    // /// # fn main() {}
+    // /// ```
+    // pub fn listen_https<T,S>(mut self, addr: T, ssl: S) -> Result<ListeningServer, Box<StdError>>
+    // where T: ToSocketAddrs,HttpResult
+    //       S: SslServer + Send + Clone + 'static {
+    //     self.middleware_stack.add_middleware(middleware! {
+    //         (StatusCode::NotFound, "File Not Found")
+    //     });
 
-        let server = Server::new(self.middleware_stack, self.data);
+    //     let server = Server::new(self.middleware_stack, self.data);
 
-        let is_test_harness = env::vars().any(|(ref k, _)| k == "NICKEL_TEST_HARNESS");
+    //     let is_test_harness = env::vars().any(|(ref k, _)| k == "NICKEL_TEST_HARNESS");
 
-        let listener = if is_test_harness {
-            // If we're under a test harness, we'll pass zero to get assigned a random
-            // port. See http://doc.rust-lang.org/std/net/struct.TcpListener.html#method.bind
-            try!(server.serve_https("localhost:0",
-                                   self.keep_alive_timeout,
-                                   self.options.thread_count,
-                                   ssl))
-        } else {
-            try!(server.serve_https(addr,
-                                   self.keep_alive_timeout,
-                                   self.options.thread_count,
-                                   ssl))
-        };
+    //     let listener = if is_test_harness {
+    //         // If we're under a test harness, we'll pass zero to get assigned a random
+    //         // port. See http://doc.rust-lang.org/std/net/struct.TcpListener.html#method.bind
+    //         try!(server.serve_https("localhost:0",
+    //                                self.keep_alive_timeout,
+    //                                self.options.thread_count,
+    //                                ssl))
+    //     } else {
+    //         try!(server.serve_https(addr,
+    //                                self.keep_alive_timeout,
+    //                                self.options.thread_count,
+    //                                ssl))
+    //     };
 
-        if self.options.output_on_listen {
-            println!("Listening on https://{}", listener.socket());
-            println!("Ctrl-C to shutdown server");
-        }
+    //     if self.options.output_on_listen {
+    //         println!("Listening on https://{}", listener.socket());
+    //         println!("Ctrl-C to shutdown server");
+    //     }
 
-        Ok(listener)
-    }
+    //     Ok(listener)
+    // }
 }
 
 #[cfg(test)]

@@ -2,10 +2,10 @@ use util::*;
 
 use hyper::client::Response;
 
-fn with_path<F>(path: &str, f: F) where F: FnOnce(&mut Response) {
+fn with_path<F>(path: &str, f: F) where F: FnOnce(Response) {
     run_example("json", |port| {
         let url = format!("http://localhost:{}{}", port, path);
-        let ref mut res = response_for(&url);
+        let res = response_for(&url);
         f(res)
     })
 }
@@ -13,13 +13,13 @@ fn with_path<F>(path: &str, f: F) where F: FnOnce(&mut Response) {
 mod incoming {
     use util::*;
 
-    use hyper::status::StatusCode;
+    use hyper::StatusCode;
     use hyper::client::Response;
 
-    fn send_body<F>(body: &str, f: F) where F: FnOnce(&mut Response) {
+    fn send_body<F>(body: &str, f: F) where F: FnOnce(Response) {
         run_example("json", |port| {
             let url = format!("http://localhost:{}", port);
-            let ref mut res = response_for_post(&url, body);
+            let res = response_for_post(&url, body);
             f(res)
         })
     }
@@ -38,7 +38,7 @@ mod incoming {
         // Missing 'firstname'
         let body = r#"{ "lastname": "World" }"#;
         send_body(body, |res| {
-            assert_eq!(res.status, StatusCode::BadRequest);
+            assert_eq!(res.status(), StatusCode::BadRequest);
         })
     }
 }
@@ -66,7 +66,7 @@ mod outgoing {
         #[test]
         fn sets_content_type_header() {
             with_path("/Pea/Nut", |res| {
-                let content_type = res.headers.get::<header::ContentType>().unwrap();
+                let content_type = res.headers().get::<header::ContentType>().unwrap();
                 let expected: mime::Mime = "application/json".parse().unwrap();
                 assert_eq!(content_type, &header::ContentType(expected));
             })
@@ -94,7 +94,7 @@ mod outgoing {
         #[test]
         fn sets_content_type_header() {
             with_path("/raw", |res| {
-                let content_type = res.headers.get::<header::ContentType>().unwrap();
+                let content_type = res.headers().get::<header::ContentType>().unwrap();
                 let expected: mime::Mime = "application/json".parse().unwrap();
                 assert_eq!(content_type, &header::ContentType(expected));
             })

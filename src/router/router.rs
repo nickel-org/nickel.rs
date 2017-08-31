@@ -3,8 +3,8 @@ use middleware::{Middleware, MiddlewareResult};
 use request::Request;
 use response::Response;
 use router::HttpRouter;
-use hyper::method::Method;
-use hyper::status::StatusCode;
+use hyper::Method;
+use hyper::StatusCode;
 use router::{Matcher, FORMAT_PARAM};
 
 /// A Route is the basic data structure that stores both the path
@@ -105,7 +105,7 @@ impl<D> HttpRouter<D> for Router<D> {
 }
 
 impl<D: 'static> Middleware<D> for Router<D> {
-    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, 'conn, D>, mut res: Response<'mw, D>)
+    fn invoke<'mw>(&'mw self, req: &mut Request<'mw, D>, mut res: Response<'mw, D>)
                           -> MiddlewareResult<'mw, D> {
         debug!("Router::invoke for '{:?}'", req.origin.uri);
 

@@ -2,4 +2,4 @@
 
 #![allow(dead_code)]
 #![allow(unused_attributes)]
-include!("../../examples/integration_testing.rs");
+// include!("../../examples/integration_testing.rs");

@@ -2,7 +2,7 @@
 extern crate hyper;
 
 use nickel::{Nickel, HttpRouter};
-use hyper::method::Method;
+use hyper::Method;
 
 fn main() {
     let mut server = Nickel::new();
@@ -28,7 +28,7 @@ fn main() {
         format!("Foo is '{}'. The requested format is '{}'", foo, format)
     });
 
-    server.listen("127.0.0.1:6767").unwrap();
+    server.listen("127.0.0.1:6767").unwrap().wait();
 }
 
 fn explicit_router() -> nickel::Router {

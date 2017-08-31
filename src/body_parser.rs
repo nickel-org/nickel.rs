@@ -1,14 +1,15 @@
-use hyper::header::ContentType;
-use hyper::mime::{Mime, SubLevel, TopLevel};
 use serialize::{Decodable, json};
 use request::Request;
 use plugin::{Plugin, Pluggable};
-use status::StatusCode;
+use hyper::StatusCode;
 use std::error::Error as StdError;
 use std::fmt;
-use std::io::{self, ErrorKind, Read};
+use std::io::{self, ErrorKind};
 use typemap::Key;
-use urlencoded::{self, Params};
+use urlencoded::Params;
+use urlencoded;
+use hyper::header::ContentType;
+use hyper::mime;
 
 struct BodyReader;
 
@@ -16,13 +17,18 @@ impl Key for BodyReader {
     type Value = String;
 }
 
-impl<'mw, 'conn, D> Plugin<Request<'mw, 'conn, D>> for BodyReader {
+impl<'mw, D> Plugin<Request<'mw, D>> for BodyReader {
     type Error = io::Error;
 
     fn eval(req: &mut Request<D>) -> Result<String, io::Error> {
-        let mut buf = String::new();
-        try!(req.origin.read_to_string(&mut buf));
-        Ok(buf)
+    
+        match req.body() {
+            Some(body) => {
+                let body_as_string = String::from_utf8(body).unwrap();
+                Ok(body_as_string)
+            },
+            None => Ok("".to_owned())
+        }
     }
 }
 
@@ -32,20 +38,20 @@ impl Key for FormBodyParser {
     type Value = Params;
 }
 
-impl<'mw, 'conn, D> Plugin<Request<'mw, 'conn, D>> for FormBodyParser {
+impl<'mw, D> Plugin<Request<'mw, D>> for FormBodyParser {
     type Error = BodyError;
 
     fn eval(req: &mut Request<D>) -> Result<Params, BodyError> {
         match req.origin.headers.get::<ContentType>() {
-            Some(&ContentType(Mime(
-                TopLevel::Application,
-                SubLevel::WwwFormUrlEncoded,
-                _
-            ))) => {
-                let body = try!(req.get_ref::<BodyReader>());
-                Ok(urlencoded::parse(&*body))
-            },
-            _ => Err(BodyError::WrongContentType)
+            Some(&ContentType(ref mime1)) => {
+                if mime1.type_() == mime::APPLICATION && mime1.subtype() == mime::WWW_FORM_URLENCODED {
+                    let body = try!(req.get_ref::<BodyReader>());
+                    Ok(urlencoded::parse(&*body))
+                } else {
+                    Err(BodyError::WrongContentType)
+                }
+            }
+            _ => Err(BodyError::WrongContentType),
         }
     }
 }
@@ -68,7 +74,7 @@ pub trait FormBody {
     fn form_body(&mut self) -> Result<&Params, (StatusCode, BodyError)>;
 }
 
-impl<'mw, 'conn, D> FormBody for Request<'mw, 'conn, D> {
+impl<'mw, D> FormBody for Request<'mw, D> {
     fn form_body(&mut self) -> Result<&Params, (StatusCode, BodyError)> {
         self.get_ref::<FormBodyParser>().map_err(|e| (StatusCode::BadRequest, e))
     }
@@ -78,16 +84,16 @@ pub trait JsonBody {
     fn json_as<T: Decodable>(&mut self) -> Result<T, io::Error>;
 }
 
-impl<'mw, 'conn, D> JsonBody for Request<'mw, 'conn, D> {
+impl<'mw, D> JsonBody for Request<'mw, D> {
     // FIXME: Update the error type.
     // Would be good to capture parsing error rather than a generic io::Error.
     // FIXME: Do the content-type check
     fn json_as<T: Decodable>(&mut self) -> Result<T, io::Error> {
-        self.get_ref::<BodyReader>().and_then(|body|
-            json::decode::<T>(&*body).map_err(|err|
-                io::Error::new(ErrorKind::Other, format!("Parse error: {}", err))
-            )
-        )
+        self.get_ref::<BodyReader>().and_then(|body| {
+            println!("{:?}", body);
+            json::decode::<T>(&*body)
+                .map_err(|err| io::Error::new(ErrorKind::Other, format!("Parse error: {}", err)))
+        })
     }
 }
 
@@ -107,14 +113,14 @@ impl StdError for BodyError {
     fn description(&self) -> &str {
         match *self {
             BodyError::Io(ref err) => err.description(),
-            BodyError::WrongContentType => "Wrong content type"
+            BodyError::WrongContentType => "Wrong content type",
         }
     }
 
     fn cause(&self) -> Option<&StdError> {
         match *self {
             BodyError::Io(ref err) => Some(err),
-            _ => None
+            _ => None,
         }
     }
 }
@@ -124,4 +130,3 @@ impl fmt::Display for BodyError {
         write!(out, "{}", self.description())
     }
 }
-

@@ -1,4 +1,4 @@
-use hyper::method::Method;
+use hyper::Method;
 use middleware::Middleware;
 use router::Matcher;
 
@@ -14,7 +14,7 @@ pub trait HttpRouter<D> {
     /// extern crate regex;
     ///
     /// use nickel::{Nickel, HttpRouter};
-    /// use hyper::method::Method::{Get, Post, Put, Delete};
+    /// use hyper::Method::{Get, Post, Put, Delete};
     /// use regex::Regex;
     ///
     /// fn main() {
