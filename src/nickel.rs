@@ -5,9 +5,9 @@ use std::error::Error as StdError;
 use router::{Router, HttpRouter, Matcher};
 use middleware::{MiddlewareStack, Middleware, ErrorHandler};
 use server::{Server, ListeningServer};
-use hyper::method::Method;
+use method::Method;
+use status::StatusCode;
 use hyper::net::SslServer;
-use hyper::status::StatusCode;
 
 //pre defined middleware
 use default_error_handler::DefaultErrorHandler;

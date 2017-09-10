@@ -54,3 +54,7 @@ pub mod extensions;
 pub mod status {
     pub use hyper::status::StatusCode;
 }
+
+pub mod method {
+    pub use hyper::method::Method;
+}

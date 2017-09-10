@@ -3,12 +3,12 @@ use std::path::{PathBuf, Path};
 use std::io::Read;
 
 use hyper::uri::RequestUri::AbsolutePath;
-use hyper::method::Method::{Get, Head, Options};
 use hyper::status::StatusCode;
 use hyper::header;
 
 use request::Request;
 use response::Response;
+use method::Method::{Get, Head, Options};
 use middleware::{Middleware, MiddlewareResult};
 use mimes::MediaType;
 
