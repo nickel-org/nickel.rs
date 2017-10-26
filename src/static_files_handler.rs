@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 use std::io::ErrorKind::NotFound;
 use std::fs;
 
-use hyper::method::Method::{Get, Head};
+use hyper::Method::{Get, Head};
 
 use status::StatusCode;
 use request::Request;

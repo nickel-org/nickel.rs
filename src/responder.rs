@@ -10,7 +10,7 @@
 //!
 //! Please see the examples for usage.
 use {Response, NickelError, MiddlewareResult, Halt};
-use hyper::status::{StatusCode, StatusClass};
+use hyper::{StatusCode, StatusClass};
 use hyper::header;
 use serialize::json;
 use mimes::MediaType;

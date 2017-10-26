@@ -3,8 +3,8 @@ use std::path::{PathBuf, Path};
 use std::io::Read;
 
 use hyper::uri::RequestUri::AbsolutePath;
-use hyper::method::Method::{Get, Head, Options};
-use hyper::status::StatusCode;
+use hyper::Method::{Get, Head, Options};
+use hyper::StatusCode;
 use hyper::header;
 
 use request::Request;

@@ -52,5 +52,5 @@ mod default_error_handler;
 pub mod extensions;
 
 pub mod status {
-    pub use hyper::status::StatusCode;
+    pub use hyper::StatusCode;
 }

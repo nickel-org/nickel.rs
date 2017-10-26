@@ -1,4 +1,4 @@
-use hyper::status::StatusCode::{NotFound, BadRequest};
+use hyper::StatusCode::{NotFound, BadRequest};
 use request::Request;
 use middleware::{ErrorHandler, Action, Halt};
 use nickel_error::NickelError;

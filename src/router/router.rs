@@ -3,8 +3,8 @@ use middleware::{Middleware, MiddlewareResult};
 use request::Request;
 use response::Response;
 use router::HttpRouter;
-use hyper::method::Method;
-use hyper::status::StatusCode;
+use hyper::Method;
+use hyper::StatusCode;
 use router::{Matcher, FORMAT_PARAM};
 
 /// A Route is the basic data structure that stores both the path

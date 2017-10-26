@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::path::Path;
 use serialize::Encodable;
-use hyper::status::StatusCode;
+use hyper::StatusCode;
 use hyper::server::Response as HyperResponse;
 use hyper::header::{
     Headers, Date, HttpDate, Server, ContentType, ContentLength, Header, HeaderFormat
@@ -370,7 +370,7 @@ fn matches_content_type () {
 
 mod modifier_impls {
     use hyper::header::*;
-    use hyper::status::StatusCode;
+    use hyper::StatusCode;
     use modifier::Modifier;
     use {Response, MediaType};
 
