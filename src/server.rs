@@ -5,7 +5,7 @@ use std::time::Duration;
 use hyper::Result as HttpResult;
 use hyper::server::{Request, Response, Handler, Listening};
 use hyper::server::Server as HyperServer;
-use hyper::net::SslServer;
+// use hyper::net::SslServer; not supported in hyper 0.11
 
 use middleware::MiddlewareStack;
 use request;
@@ -60,6 +60,7 @@ impl<D: Sync + Send + 'static> Server<D> {
         listening.map(ListeningServer)
     }
 
+    /* Ssl support changed in hyper 0.11
     pub fn serve_https<A,S>(self,
                             addr: A,
                             keep_alive_timeout: Option<Duration>,
@@ -80,6 +81,7 @@ impl<D: Sync + Send + 'static> Server<D> {
 
         listening.map(ListeningServer)
     }
+    */
 }
 
 /// A server listeing on a socket

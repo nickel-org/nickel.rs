@@ -6,7 +6,7 @@ use router::{Router, HttpRouter, Matcher};
 use middleware::{MiddlewareStack, Middleware, ErrorHandler};
 use server::{Server, ListeningServer};
 use hyper::Method;
-use hyper::net::SslServer;
+// use hyper::net::SslServer; not supported in hyper 0.11
 use hyper::StatusCode;
 
 //pre defined middleware
@@ -250,6 +250,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
         self.keep_alive_timeout = timeout;
     }
 
+    /* Ssl support changed in hyper 0.11
     /// Bind and listen for connections on the given host and port.
     /// Only accepts SSL connections
     ///
@@ -308,6 +309,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
 
         Ok(listener)
     }
+    */
 }
 
 #[cfg(test)]
