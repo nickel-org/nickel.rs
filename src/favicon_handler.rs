@@ -2,7 +2,6 @@ use std::fs::File;
 use std::path::{PathBuf, Path};
 use std::io::Read;
 
-use hyper::uri::RequestUri::AbsolutePath;
 use hyper::Method::{Get, Head, Options};
 use hyper::StatusCode;
 use hyper::header;
@@ -53,10 +52,10 @@ impl FaviconHandler {
 
     #[inline]
     pub fn is_favicon_request<D>(req: &Request<D>) -> bool {
-        match req.origin.uri {
-            AbsolutePath(ref path) => &**path == "/favicon.ico",
-            _                      => false
-        }
+        // Todo: migration cleanup
+        // do we need to check req.origin.uri.is_absolute here?
+        // would just req.origin.uri.path() work?
+        &**req.origin.uri.path() == "/favicon.ico"
     }
 
     pub fn handle_request<'a, D>(&self, req: &Request<D>, mut res: Response<'a, D>) -> MiddlewareResult<'a, D> {
