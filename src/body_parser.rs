@@ -1,5 +1,5 @@
 use hyper::header::ContentType;
-use hyper::mime::{Mime, SubLevel, TopLevel};
+use hyper::mime::APPLICATION_WWW_FORM_URLENCODED;
 use serialize::{Decodable, json};
 use request::Request;
 use plugin::{Plugin, Pluggable};

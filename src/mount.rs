@@ -75,7 +75,15 @@ impl<M> Mount<M> {
 
 impl<D, M: Middleware<D>> Middleware<D> for Mount<M> {
     fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, 'conn, D>, res: Response<'mw, D>)
-        -> MiddlewareResult<'mw, D> {
+                          -> MiddlewareResult<'mw, D> {
+        // Todo: migration cleanup
+        //
+        // This is somewhat tricky. The new hyper::Uri does not
+        // provide an easy way to rewrite the uri. It appears we'll
+        // need to take apart the uri and put together a string with a
+        // new path, then create a new Uri from that. Ugh. It may be
+        // better to add a target field to nickel::Request that is
+        // derived from req.origin.uri.
         let subpath = match req.origin.uri {
             AbsolutePath(ref path) if path.starts_with(&*self.mount_point) => {
                 AbsolutePath(format!("/{}", &path[self.mount_point.len()..]))
