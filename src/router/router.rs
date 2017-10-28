@@ -10,9 +10,9 @@ use router::{Matcher, FORMAT_PARAM};
 /// A Route is the basic data structure that stores both the path
 /// and the handler that gets executed for the route.
 /// The path can contain variable pattern such as `user/:userid/invoices`
-pub struct Route<D=()> {
+pub struct Route<B, D=()> {
     pub method: Method,
-    pub handler: Box<Middleware<D> + Send + Sync + 'static>,
+    pub handler: Box<Middleware<B, D> + Send + Sync + 'static>,
     matcher: Matcher
 }
 
@@ -91,8 +91,8 @@ fn extract_params<D>(route: &Route<D>, path: &str) -> Vec<(String, String)> {
         .collect()
 }
 
-impl<D> HttpRouter<D> for Router<D> {
-    fn add_route<M: Into<Matcher>, H: Middleware<D>>(&mut self, method: Method, matcher: M, handler: H) -> &mut Self {
+impl<B, D> HttpRouter<D> for Router<D> {
+    fn add_route<M: Into<Matcher>, H: Middleware<B, D>>(&mut self, method: Method, matcher: M, handler: H) -> &mut Self {
         let route = Route {
             matcher: matcher.into(),
             method: method,
@@ -104,9 +104,9 @@ impl<D> HttpRouter<D> for Router<D> {
     }
 }
 
-impl<D: 'static> Middleware<D> for Router<D> {
-    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, 'conn, D>, mut res: Response<'mw, D>)
-                          -> MiddlewareResult<'mw, D> {
+impl<B, D: 'static> Middleware<B, D> for Router<D> {
+    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, 'conn, D>, mut res: Response<'mw, B, D>)
+                          -> MiddlewareResult<'mw, B, D> {
         debug!("Router::invoke for '{:?}'", req.origin.uri);
 
         // Strip off the querystring when matching a route

@@ -1,29 +1,27 @@
 use request::Request;
 use response::Response;
 use nickel_error::NickelError;
-use hyper::net;
 
 pub use self::Action::{Continue, Halt};
 
-pub type MiddlewareResult<'mw, D= ()> = Result<Action<Response<'mw, D, net::Fresh>,
-                                                      Response<'mw, D, net::Streaming>>,
-                                               NickelError<'mw, D>>;
+pub type MiddlewareResult<'mw, B, D= ()> = Result<Action<Response<'mw, B, D>>,
+                                                      NickelError<'mw, D>>;
 
-pub enum Action<T=(), U=()> {
+pub enum Action<T=()> {
     Continue(T),
-    Halt(U)
+    Halt(T)
 }
 
 // the usage of + Send is weird here because what we really want is + Static
 // but that's not possible as of today. We have to use + Send for now.
-pub trait Middleware<D>: Send + 'static + Sync {
-    fn invoke<'mw, 'conn>(&'mw self, _req: &mut Request<'mw, 'conn, D>, res: Response<'mw, D, net::Fresh>) -> MiddlewareResult<'mw, D> {
+pub trait Middleware<B, D>: Send + 'static + Sync {
+    fn invoke<'mw, 'conn>(&'mw self, _req: &mut Request<'mw, 'conn, D>, res: Response<'mw, B, D>) -> MiddlewareResult<'mw, D> {
         res.next_middleware()
     }
 }
 
-impl<T, D> Middleware<D> for T where T: for<'r, 'mw, 'conn> Fn(&'r mut Request<'mw, 'conn, D>, Response<'mw, D>) -> MiddlewareResult<'mw, D> + Send + Sync + 'static {
-    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, 'conn, D>, res: Response<'mw, D>) -> MiddlewareResult<'mw, D> {
+impl<T, B, D> Middleware<B, D> for T where T: for<'r, 'mw, 'conn> Fn(&'r mut Request<'mw, 'conn, D>, Response<'mw, B, D>) -> MiddlewareResult<'mw, B, D> + Send + Sync + 'static {
+    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, 'conn, D>, res: Response<'mw, B, D>) -> MiddlewareResult<'mw, B, D> {
         (*self)(req, res)
     }
 }

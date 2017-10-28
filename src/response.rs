@@ -11,13 +11,11 @@ use hyper::server::Response as HyperResponse;
 use hyper::header::{
     Headers, Date, Server, ContentType, ContentLength, Header
 };
-use hyper::net::{Fresh, Streaming};
 use mimes::MediaType;
 use mustache;
 use mustache::Template;
 use std::io::{self, Read, Write, copy};
 use std::fs::File;
-use std::any::Any;
 use {NickelError, Halt, MiddlewareResult, Responder, Action};
 use modifier::Modifier;
 use plugin::{Extensible, Pluggable};
@@ -26,21 +24,21 @@ use typemap::TypeMap;
 pub type TemplateCache = RwLock<HashMap<String, Template>>;
 
 ///A container for the response
-pub struct Response<'a, D: 'a = (), T: 'static + Any = Fresh> {
+pub struct Response<'a, B, D: 'a = ()> {
     ///the original `hyper::server::Response`
-    origin: HyperResponse<'a, T>,
+    origin: HyperResponse<B>,
     templates: &'a TemplateCache,
     data: &'a D,
     map: TypeMap,
     // This should be FnBox, but that's currently unstable
-    on_send: Vec<Box<FnMut(&mut Response<'a, D, Fresh>)>>
+    on_send: Vec<Box<FnMut(&mut Response<'a, D>)>>
 }
 
-impl<'a, D> Response<'a, D, Fresh> {
-    pub fn from_internal<'c, 'd>(response: HyperResponse<'c, Fresh>,
+impl<'a, B, D> Response<'a, B, D> {
+    pub fn from_internal<'c, 'd>(response: HyperResponse<B>,
                                  templates: &'c TemplateCache,
                                  data: &'c D)
-                                -> Response<'c, D, Fresh> {
+                                -> Response<'c, D, B> {
         Response {
             origin: response,
             templates: templates,
@@ -249,7 +247,7 @@ impl<'a, D> Response<'a, D, Fresh> {
         render(self, template, data)
     }
 
-    pub fn start(mut self) -> Result<Response<'a, D, Streaming>, NickelError<'a, D>> {
+    pub fn start(mut self) -> Result<Response<'a, B, D>, NickelError<'a, D>> {
         let on_send = mem::replace(&mut self.on_send, vec![]);
         for mut f in on_send.into_iter().rev() {
             // TODO: Ensure `f` doesn't call on_send again
@@ -283,7 +281,7 @@ impl<'a, D> Response<'a, D, Fresh> {
     }
 
     pub fn on_send<F>(&mut self, f: F)
-            where F: FnMut(&mut Response<'a, D, Fresh>) + 'static {
+            where F: FnMut(&mut Response<'a, B, D>) + 'static {
         self.on_send.push(Box::new(f))
     }
 
@@ -296,7 +294,7 @@ impl<'a, D> Response<'a, D, Fresh> {
     }
 }
 
-impl<'a, 'b, D> Write for Response<'a, D, Streaming> {
+impl<'a, 'b, B, D> Write for Response<'a, B, D> {
     #[inline(always)]
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.origin.write(buf)
@@ -308,7 +306,7 @@ impl<'a, 'b, D> Write for Response<'a, D, Streaming> {
     }
 }
 
-impl<'a, 'b, D> Response<'a, D, Streaming> {
+impl<'a, 'b, B, D> Response<'a, B, D> {
     /// In the case of an unrecoverable error while a stream is already in
     /// progress, there is no standard way to signal to the client that an
     /// error has occurred. `bail` will drop the connection and log an error
@@ -325,7 +323,7 @@ impl<'a, 'b, D> Response<'a, D, Streaming> {
     }
 }
 
-impl <'a, D, T: 'static + Any> Response<'a, D, T> {
+impl <'a, B, D> Response<'a, B, D> {
     /// The status of this response.
     pub fn status(&self) -> StatusCode {
         self.origin.status()
@@ -341,7 +339,7 @@ impl <'a, D, T: 'static + Any> Response<'a, D, T> {
     }
 }
 
-impl<'a, D, T: 'static + Any> Extensible for Response<'a, D, T> {
+impl<'a, B, D> Extensible for Response<'a, B, D> {
     fn extensions(&self) -> &TypeMap {
         &self.map
     }
@@ -351,7 +349,7 @@ impl<'a, D, T: 'static + Any> Extensible for Response<'a, D, T> {
     }
 }
 
-impl<'a, D, T: 'static + Any> Pluggable for Response<'a, D, T> {}
+impl<'a, B, D> Pluggable for Response<'a, B, D> {}
 
 fn mime_from_filename<P: AsRef<Path>>(path: P) -> Option<MediaType> {
     path.as_ref()
