@@ -37,11 +37,7 @@ impl<'mw, 'conn, D> Plugin<Request<'mw, 'conn, D>> for FormBodyParser {
 
     fn eval(req: &mut Request<D>) -> Result<Params, BodyError> {
         match req.origin.headers.get::<ContentType>() {
-            Some(&ContentType(Mime(
-                TopLevel::Application,
-                SubLevel::WwwFormUrlEncoded,
-                _
-            ))) => {
+            Some(&ContentType(APPLICATION_WWW_FORM_URLENCODED)) => {
                 let body = try!(req.get_ref::<BodyReader>());
                 Ok(urlencoded::parse(&*body))
             },
