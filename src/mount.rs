@@ -1,9 +1,10 @@
 use nickel::Nickel;
+use nickel_error::NickelError;
 use request::Request;
 use response::Response;
 use middleware::{Continue, Middleware, MiddlewareResult};
 
-use hyper::uri::RequestUri::AbsolutePath;
+use hyper::{StatusCode, Uri};
 
 use std::mem;
 
@@ -84,13 +85,32 @@ impl<D, M: Middleware<D>> Middleware<D> for Mount<M> {
         // new path, then create a new Uri from that. Ugh. It may be
         // better to add a target field to nickel::Request that is
         // derived from req.origin.uri.
-        let subpath = match req.origin.uri {
-            AbsolutePath(ref path) if path.starts_with(&*self.mount_point) => {
-                AbsolutePath(format!("/{}", &path[self.mount_point.len()..]))
-            },
-            _ => return Ok(Continue(res))
-        };
+        // let subpath = match req.origin.uri {
+        //     AbsolutePath(ref path) if path.starts_with(&*self.mount_point) => {
+        //         AbsolutePath(format!("/{}", &path[self.mount_point.len()..]))
+        //     },
+        //     _ => return Ok(Continue(res))
+        // };
 
+        let subpath = if req.origin.uri.path().starts_with(&*self.mount_point) {
+            let new_uri = req.origin.uri.as_ref().replacen(&*self.mount_point, "", 1);
+            match new_uri.parse::<Uri>() {
+                Ok(uri) => uri,
+                Err(e) => {
+                    // This implies a badly formatted mount point, so
+                    // let's log a detailed error message. Ideally
+                    // Mount::new() will prevent this, but stuff
+                    // happens. If it does occur, we should treat it
+                    // as a bug and modify Mount::new() to catch it.
+                    let mce = "Mount consistency error";
+                    error!("{}: {:?}, uri: {:?}, mount_point: {:?}",
+                           mce, e, req.origin.uri, self.mount_point);
+                    return Err(NickelError::new(res, mce, StatusCode::InternalServerError));
+                }
+            }
+        } else {
+            return Ok(Continue(res));
+        };
         let original = mem::replace(&mut req.origin.uri, subpath);
         let result = self.middleware.invoke(req, res);
         req.origin.uri = original;

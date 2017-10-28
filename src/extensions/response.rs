@@ -40,7 +40,7 @@ impl<'a, D> Redirect for Response<'a, D> {
 
     fn redirect_with<T>(mut self, target: T, status: StatusCode) -> Self::Result
     where T: Into<String> {
-        self.set(header::Location(target.into()));
+        self.set(header::Location::new(target.into()));
 
         let code = status.to_u16();
         if code < 300 || code >= 400 {
