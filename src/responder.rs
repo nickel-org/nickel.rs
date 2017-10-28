@@ -10,7 +10,7 @@
 //!
 //! Please see the examples for usage.
 use {Response, NickelError, MiddlewareResult, Halt};
-use hyper::{StatusCode, StatusClass};
+use hyper::StatusCode;
 use hyper::header;
 use serialize::json;
 use mimes::MediaType;
@@ -88,14 +88,11 @@ dual_impl!((StatusCode, &'static str),
             |self, res| {
                 let (status, message) = self;
 
-                match status.class() {
-                    StatusClass::ClientError | StatusClass::ServerError => {
-                        res.error(status, message)
-                    },
-                    _ => {
-                        res.set(status);
-                        res.send(message)
-                    }
+                if status.is_client_error() | status.is_server_error() {
+                    res.error(status, message)
+                } else {
+                    res.set(status);
+                    res.send(message)
                 }
             });
 
