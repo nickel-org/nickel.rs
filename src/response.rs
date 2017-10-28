@@ -4,14 +4,14 @@ use std::sync::RwLock;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::path::Path;
+use std::time::SystemTime;
 use serialize::Encodable;
 use hyper::StatusCode;
 use hyper::server::Response as HyperResponse;
 use hyper::header::{
-    Headers, Date, HttpDate, Server, ContentType, ContentLength, Header, HeaderFormat
+    Headers, Date, Server, ContentType, ContentLength, Header
 };
 use hyper::net::{Fresh, Streaming};
-use time;
 use mimes::MediaType;
 use mustache;
 use mustache::Template;
@@ -151,8 +151,8 @@ impl<'a, D> Response<'a, D, Fresh> {
     //
     // Also, it should only set them if not already set.
     fn set_fallback_headers(&mut self) {
-        self.set_header_fallback(|| Date(HttpDate(time::now_utc())));
-        self.set_header_fallback(|| Server("Nickel".to_string()));
+        self.set_header_fallback(|| Date(SystemTime::now().into()));
+        self.set_header_fallback(|| Server::new("Nickel"));
         self.set_header_fallback(|| ContentType(MediaType::Html.into()));
     }
 
@@ -192,7 +192,7 @@ impl<'a, D> Response<'a, D, Fresh> {
     /// }
     /// ```
     pub fn set_header_fallback<F, H>(&mut self, f: F)
-            where H: Header + HeaderFormat, F: FnOnce() -> H {
+            where H: Header, F: FnOnce() -> H {
         let headers = self.origin.headers_mut();
         if !headers.has::<H>() { headers.set(f()) }
     }
