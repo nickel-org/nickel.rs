@@ -32,7 +32,7 @@ impl<'a, B, D> NickelError<'a, B, D> {
     /// ```
     pub fn new<T>(mut stream: Response<'a, B, D>,
                   message: T,
-                  status_code: StatusCode) -> NickelError<'a, D>
+                  status_code: StatusCode) -> NickelError<'a, B, D>
             where T: Into<Cow<'static, str>> {
         stream.set(status_code);
 
@@ -55,7 +55,7 @@ impl<'a, B, D> NickelError<'a, B, D> {
     ///
     /// This is considered `unsafe` as deadlock can occur if the `Response`
     /// does not have the underlying stream flushed when processing is finished.
-    pub unsafe fn without_response<T>(message: T) -> NickelError<'a, D>
+    pub unsafe fn without_response<T>(message: T) -> NickelError<'a, B, D>
             where T: Into<Cow<'static, str>> {
         NickelError {
             stream: None,
@@ -68,22 +68,22 @@ impl<'a, B, D> NickelError<'a, B, D> {
     }
 }
 
-impl<'a, T, D> From<(Response<'a, D>, (StatusCode, T))> for NickelError<'a, D>
+impl<'a, T, B, D> From<(Response<'a, B, D>, (StatusCode, T))> for NickelError<'a, B, D>
         where T: Into<Box<Error + 'static>> {
-    fn from((res, (errorcode, err)): (Response<'a, D>, (StatusCode, T))) -> NickelError<'a, D> {
+    fn from((res, (errorcode, err)): (Response<'a, B, D>, (StatusCode, T))) -> NickelError<'a, B, D> {
         let err = err.into();
         NickelError::new(res, err.description().to_string(), errorcode)
     }
 }
 
-impl<'a, D> From<(Response<'a, D>, String)> for NickelError<'a, D> {
-    fn from((res, msg): (Response<'a, D>, String)) -> NickelError<'a, D> {
+impl<'a, B, D> From<(Response<'a, B, D>, String)> for NickelError<'a, B, D> {
+    fn from((res, msg): (Response<'a, B, D>, String)) -> NickelError<'a, B, D> {
         NickelError::new(res, msg, StatusCode::InternalServerError)
     }
 }
 
-impl<'a, D> From<(Response<'a, D>, StatusCode)> for NickelError<'a, D> {
-    fn from((res, code): (Response<'a, D>, StatusCode)) -> NickelError<'a, D> {
+impl<'a, B, D> From<(Response<'a, B, D>, StatusCode)> for NickelError<'a, B, D> {
+    fn from((res, code): (Response<'a, B, D>, StatusCode)) -> NickelError<'a, B, D> {
         NickelError::new(res, "", code)
     }
 }

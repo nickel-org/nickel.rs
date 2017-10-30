@@ -5,7 +5,7 @@ use nickel_error::NickelError;
 pub use self::Action::{Continue, Halt};
 
 pub type MiddlewareResult<'mw, B, D= ()> = Result<Action<Response<'mw, B, D>>,
-                                                      NickelError<'mw, D>>;
+                                                      NickelError<'mw, B, D>>;
 
 pub enum Action<T=()> {
     Continue(T),
@@ -15,49 +15,49 @@ pub enum Action<T=()> {
 // the usage of + Send is weird here because what we really want is + Static
 // but that's not possible as of today. We have to use + Send for now.
 pub trait Middleware<B, D>: Send + 'static + Sync {
-    fn invoke<'mw, 'conn>(&'mw self, _req: &mut Request<'mw, 'conn, D>, res: Response<'mw, B, D>) -> MiddlewareResult<'mw, D> {
+    fn invoke<'mw>(&'mw self, _req: &mut Request<'mw, B, D>, res: Response<'mw, B, D>) -> MiddlewareResult<'mw, B, D> {
         res.next_middleware()
     }
 }
 
-impl<T, B, D> Middleware<B, D> for T where T: for<'r, 'mw, 'conn> Fn(&'r mut Request<'mw, 'conn, D>, Response<'mw, B, D>) -> MiddlewareResult<'mw, B, D> + Send + Sync + 'static {
-    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, 'conn, D>, res: Response<'mw, B, D>) -> MiddlewareResult<'mw, B, D> {
+impl<T, B, D> Middleware<B, D> for T where T: for<'r, 'mw> Fn(&'r mut Request<'mw, B, D>, Response<'mw, B, D>) -> MiddlewareResult<'mw, B, D> + Send + Sync + 'static {
+    fn invoke<'mw>(&'mw self, req: &mut Request<'mw, B, D>, res: Response<'mw, B, D>) -> MiddlewareResult<'mw, B, D> {
         (*self)(req, res)
     }
 }
 
-pub trait ErrorHandler<D>: Send + 'static + Sync {
-    fn handle_error(&self, &mut NickelError<D>, &mut Request<D>) -> Action;
+pub trait ErrorHandler<B, D>: Send + 'static + Sync {
+    fn handle_error(&self, &mut NickelError<B, D>, &mut Request<B, D>) -> Action;
 }
 
-impl<D: 'static> ErrorHandler<D> for fn(&mut NickelError<D>, &mut Request<D>) -> Action {
-    fn handle_error(&self, err: &mut NickelError<D>, req: &mut Request<D>) -> Action {
+impl<B: 'static, D: 'static> ErrorHandler<B, D> for fn(&mut NickelError<B, D>, &mut Request<B, D>) -> Action {
+    fn handle_error(&self, err: &mut NickelError<B, D>, req: &mut Request<B, D>) -> Action {
         (*self)(err, req)
     }
 }
 
-pub struct MiddlewareStack<D=()> {
-    handlers: Vec<Box<Middleware<D> + Send + Sync>>,
-    error_handlers: Vec<Box<ErrorHandler<D> + Send + Sync>>
+pub struct MiddlewareStack<B, D=()> {
+    handlers: Vec<Box<Middleware<B, D> + Send + Sync>>,
+    error_handlers: Vec<Box<ErrorHandler<B, D> + Send + Sync>>
 }
 
-impl<D: 'static> MiddlewareStack<D> {
-    pub fn add_middleware<T: Middleware<D>> (&mut self, handler: T) {
+impl<B: 'static, D: 'static> MiddlewareStack<B, D> {
+    pub fn add_middleware<T: Middleware<B, D>> (&mut self, handler: T) {
         self.handlers.push(Box::new(handler));
     }
 
-    pub fn add_error_handler<T: ErrorHandler<D>> (&mut self, handler: T) {
+    pub fn add_error_handler<T: ErrorHandler<B, D>> (&mut self, handler: T) {
         self.error_handlers.push(Box::new(handler));
     }
 
-    pub fn invoke<'mw, 'conn>(&'mw self, mut req: Request<'mw, 'conn, D>, mut res: Response<'mw, D>) {
+    pub fn invoke<'mw, 'conn>(&'mw self, mut req: Request<'mw, B, D>, mut res: Response<'mw, B, D>) {
         for handler in self.handlers.iter() {
             match handler.invoke(&mut req, res) {
                 Ok(Halt(res)) => {
                     debug!("Halted {:?} {:?} {:?} {:?}",
-                           req.origin.method,
-                           req.origin.remote_addr,
-                           req.origin.uri,
+                           req.origin.method(),
+                           req.origin.remote_addr(),
+                           req.origin.uri(),
                            res.status());
                     let _ = res.end();
                     return
@@ -65,9 +65,9 @@ impl<D: 'static> MiddlewareStack<D> {
                 Ok(Continue(fresh)) => res = fresh,
                 Err(mut err) => {
                     warn!("{:?} {:?} {:?} {:?} {:?}",
-                          req.origin.method,
-                          req.origin.remote_addr,
-                          req.origin.uri,
+                          req.origin.method(),
+                          req.origin.remote_addr(),
+                          req.origin.uri(),
                           err.message,
                           err.stream.as_ref().map(|s| s.status()));
 
@@ -79,9 +79,9 @@ impl<D: 'static> MiddlewareStack<D> {
                     }
 
                     warn!("Unhandled error: {:?} {:?} {:?} {:?} {:?}",
-                          req.origin.method,
-                          req.origin.remote_addr,
-                          req.origin.uri,
+                          req.origin.method(),
+                          req.origin.remote_addr(),
+                          req.origin.uri(),
                           err.message,
                           err.stream.map(|s| s.status()));
                     return
@@ -90,7 +90,7 @@ impl<D: 'static> MiddlewareStack<D> {
         }
     }
 
-    pub fn new () -> MiddlewareStack<D> {
+    pub fn new () -> MiddlewareStack<B, D> {
         MiddlewareStack{
             handlers: Vec::new(),
             error_handlers: Vec::new()

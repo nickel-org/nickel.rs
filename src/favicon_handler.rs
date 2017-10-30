@@ -16,9 +16,9 @@ pub struct FaviconHandler {
     icon_path: PathBuf, // Is it useful to log where in-memory favicon came from every request?
 }
 
-impl<D> Middleware<D> for FaviconHandler {
-    fn invoke<'a, 'server>(&'a self, req: &mut Request<'a, 'server, D>, res: Response<'a, D>)
-            -> MiddlewareResult<'a, D> {
+impl<B, D> Middleware<B, D> for FaviconHandler {
+    fn invoke<'a>(&'a self, req: &mut Request<'a, B, D>, res: Response<'a, B, D>)
+            -> MiddlewareResult<'a, B, D> {
         if FaviconHandler::is_favicon_request(req) {
             self.handle_request(req, res)
         } else {
@@ -51,15 +51,15 @@ impl FaviconHandler {
     }
 
     #[inline]
-    pub fn is_favicon_request<D>(req: &Request<D>) -> bool {
+    pub fn is_favicon_request<B, D>(req: &Request<B, D>) -> bool {
         // Todo: migration cleanup
         // do we need to check req.origin.uri.is_absolute here?
         // would just req.origin.uri.path() work?
-        &**req.origin.uri.path() == "/favicon.ico"
+        req.origin.uri().path() == "/favicon.ico"
     }
 
-    pub fn handle_request<'a, D>(&self, req: &Request<D>, mut res: Response<'a, D>) -> MiddlewareResult<'a, D> {
-        match req.origin.method {
+    pub fn handle_request<'a, B, D>(&self, req: &Request<B, D>, mut res: Response<'a, B, D>) -> MiddlewareResult<'a, B, D> {
+        match *req.origin.method() {
             Get | Head => {
                 self.send_favicon(req, res)
             },
@@ -76,8 +76,8 @@ impl FaviconHandler {
         }
     }
 
-    pub fn send_favicon<'a, D>(&self, req: &Request<D>, mut res: Response<'a, D>) -> MiddlewareResult<'a, D> {
-        debug!("{:?} {:?}", req.origin.method, self.icon_path.display());
+    pub fn send_favicon<'a, B, D>(&self, req: &Request<B, D>, mut res: Response<'a, B, D>) -> MiddlewareResult<'a, B, D> {
+        debug!("{:?} {:?}", req.origin.method(), self.icon_path.display());
         res.set(MediaType::Ico);
         res.send(&*self.icon)
     }

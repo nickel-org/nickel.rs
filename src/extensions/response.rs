@@ -35,14 +35,14 @@ pub trait Redirect: Sized {
     where T: Into<String>;
 }
 
-impl<'a, D> Redirect for Response<'a, D> {
-    type Result = MiddlewareResult<'a, D>;
+impl<'a, B, D> Redirect for Response<'a, B, D> {
+    type Result = MiddlewareResult<'a, B, D>;
 
     fn redirect_with<T>(mut self, target: T, status: StatusCode) -> Self::Result
     where T: Into<String> {
         self.set(header::Location::new(target.into()));
 
-        let code = status.to_u16();
+        let code = status.as_u16();
         if code < 300 || code >= 400 {
             self.error(StatusCode::InternalServerError, "redirect_with called with non-3xx status code")
         } else {

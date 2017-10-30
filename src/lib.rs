@@ -10,6 +10,7 @@ extern crate url;
 extern crate mustache;
 extern crate groupable;
 extern crate modifier;
+extern crate futures;
 
 #[macro_use] extern crate log;
 #[macro_use] extern crate lazy_static;
@@ -29,7 +30,7 @@ pub use router::{Router, Route, RouteResult, HttpRouter};
 pub use nickel_error::NickelError;
 pub use mimes::MediaType;
 pub use responder::Responder;
-pub use server::ListeningServer;
+// pub use server::ListeningServer;
 
 #[macro_use] pub mod macros;
 

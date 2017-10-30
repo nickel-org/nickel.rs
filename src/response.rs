@@ -90,7 +90,7 @@ impl<'a, B, D> Response<'a, B, D> {
     ///     // ...
     /// }
     /// ```
-    pub fn set<T: Modifier<Response<'a, D>>>(&mut self, attribute: T) -> &mut Response<'a, D> {
+    pub fn set<T: Modifier<Response<'a, B, D>>>(&mut self, attribute: T) -> &mut Response<'a, B, D> {
         attribute.modify(self);
         self
     }
@@ -107,7 +107,7 @@ impl<'a, B, D> Response<'a, B, D> {
     /// }
     /// ```
     #[inline]
-    pub fn send<T: Responder<D>>(self, data: T) -> MiddlewareResult<'a, D> {
+    pub fn send<T: Responder<B, D>>(self, data: T) -> MiddlewareResult<'a, B, D> {
         data.respond(self)
     }
 
@@ -124,7 +124,7 @@ impl<'a, B, D> Response<'a, B, D> {
     ///     res.send_file(favicon)
     /// }
     /// ```
-    pub fn send_file<P:AsRef<Path>>(mut self, path: P) -> MiddlewareResult<'a, D> {
+    pub fn send_file<P:AsRef<Path>>(mut self, path: P) -> MiddlewareResult<'a, B, D> {
         let path = path.as_ref();
         // Chunk the response
         self.origin.headers_mut().remove::<ContentLength>();
@@ -156,7 +156,7 @@ impl<'a, B, D> Response<'a, B, D> {
 
     /// Return an error with the appropriate status code for error handlers to
     /// provide output for.
-    pub fn error<T>(self, status: StatusCode, message: T) -> MiddlewareResult<'a, D>
+    pub fn error<T>(self, status: StatusCode, message: T) -> MiddlewareResult<'a, B, D>
             where T: Into<Cow<'static, str>> {
         Err(NickelError::new(self, message, status))
     }
@@ -209,7 +209,7 @@ impl<'a, B, D> Response<'a, B, D> {
     ///     res.render("examples/assets/template.tpl", &data)
     /// }
     /// ```
-    pub fn render<T, P>(self, path: P, data: &T) -> MiddlewareResult<'a, D>
+    pub fn render<T, P>(self, path: P, data: &T) -> MiddlewareResult<'a, B, D>
             where T: Encodable, P: AsRef<str> + Into<String> {
         fn render<'a, D, T>(res: Response<'a, D>, template: &Template, data: &T)
                 -> MiddlewareResult<'a, D> where T: Encodable {
@@ -247,7 +247,7 @@ impl<'a, B, D> Response<'a, B, D> {
         render(self, template, data)
     }
 
-    pub fn start(mut self) -> Result<Response<'a, B, D>, NickelError<'a, D>> {
+    pub fn start(mut self) -> Result<Response<'a, B, D>, NickelError<'a, B, D>> {
         let on_send = mem::replace(&mut self.on_send, vec![]);
         for mut f in on_send.into_iter().rev() {
             // TODO: Ensure `f` doesn't call on_send again
@@ -289,7 +289,7 @@ impl<'a, B, D> Response<'a, B, D> {
     ///
     /// When returned from a Middleware, it allows computation to continue
     /// in any Middleware queued after the active one.
-    pub fn next_middleware(self) -> MiddlewareResult<'a, D> {
+    pub fn next_middleware(self) -> MiddlewareResult<'a, B, D> {
         Ok(Action::Continue(self))
     }
 }
@@ -311,7 +311,7 @@ impl<'a, 'b, B, D> Response<'a, B, D> {
     /// progress, there is no standard way to signal to the client that an
     /// error has occurred. `bail` will drop the connection and log an error
     /// message.
-    pub fn bail<T>(self, message: T) -> MiddlewareResult<'a, D>
+    pub fn bail<T>(self, message: T) -> MiddlewareResult<'a, B, D>
             where T: Into<Cow<'static, str>> {
         let _ = self.end();
         unsafe { Err(NickelError::without_response(message)) }
@@ -372,14 +372,14 @@ mod modifier_impls {
     use modifier::Modifier;
     use {Response, MediaType};
 
-    impl<'a, D> Modifier<Response<'a, D>> for StatusCode {
-        fn modify(self, res: &mut Response<'a, D>) {
+    impl<'a, B, D> Modifier<Response<'a, B, D>> for StatusCode {
+        fn modify(self, res: &mut Response<'a, B, D>) {
             *res.status_mut() = self
         }
     }
 
-    impl<'a, D> Modifier<Response<'a, D>> for MediaType {
-        fn modify(self, res: &mut Response<'a, D>) {
+    impl<'a, B, D> Modifier<Response<'a, B, D>> for MediaType {
+        fn modify(self, res: &mut Response<'a, B, D>) {
             ContentType(self.into()).modify(res)
         }
     }
@@ -387,8 +387,8 @@ mod modifier_impls {
     macro_rules! header_modifiers {
         ($($t:ty),+) => (
             $(
-                impl<'a, D> Modifier<Response<'a, D>> for $t {
-                    fn modify(self, res: &mut Response<'a, D>) {
+                impl<'a, B, D> Modifier<Response<'a, B, D>> for $t {
+                    fn modify(self, res: &mut Response<'a, B, D>) {
                         res.headers_mut().set(self)
                     }
                 }

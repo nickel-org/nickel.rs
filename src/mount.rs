@@ -8,12 +8,12 @@ use hyper::{StatusCode, Uri};
 
 use std::mem;
 
-pub trait Mountable<D> {
-    fn mount<S: Into<String>, M: Middleware<D>>(&mut self, mount_point: S, middleware: M);
+pub trait Mountable<B, D> {
+    fn mount<S: Into<String>, M: Middleware<B, D>>(&mut self, mount_point: S, middleware: M);
 }
 
-impl<D> Mountable<D> for Nickel<D>
-where D: Send + Sync + 'static {
+impl<B, D> Mountable<B, D> for Nickel<B, D>
+where B: 'static, D: Send + Sync + 'static {
     /// A trait that makes mounting more convenient. Works the same as
     /// manually adding a `Mount` middleware.
     ///
@@ -28,7 +28,7 @@ where D: Send + Sync + 'static {
     ///
     /// # Panics
     /// Panics if mount_point does not have a leading and trailing slash.
-    fn mount<S: Into<String>, M: Middleware<D>>(&mut self, mount_point: S, middleware: M) {
+    fn mount<S: Into<String>, M: Middleware<B, D>>(&mut self, mount_point: S, middleware: M) {
         self.utilize(Mount::new(mount_point, middleware));
     }
 }
@@ -74,9 +74,9 @@ impl<M> Mount<M> {
     }
 }
 
-impl<D, M: Middleware<D>> Middleware<D> for Mount<M> {
-    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, 'conn, D>, res: Response<'mw, D>)
-                          -> MiddlewareResult<'mw, D> {
+impl<B, D, M: Middleware<B, D>> Middleware<B, D> for Mount<M> {
+    fn invoke<'mw>(&'mw self, req: &mut Request<'mw, B, D>, res: Response<'mw, B, D>)
+                          -> MiddlewareResult<'mw, B, D> {
         // Todo: migration cleanup
         //
         // This is somewhat tricky. The new hyper::Uri does not
@@ -92,8 +92,8 @@ impl<D, M: Middleware<D>> Middleware<D> for Mount<M> {
         //     _ => return Ok(Continue(res))
         // };
 
-        let subpath = if req.origin.uri.path().starts_with(&*self.mount_point) {
-            let new_uri = req.origin.uri.as_ref().replacen(&*self.mount_point, "", 1);
+        let subpath = if req.origin.uri().path().starts_with(&*self.mount_point) {
+            let new_uri = req.origin.uri().as_ref().replacen(&*self.mount_point, "", 1);
             match new_uri.parse::<Uri>() {
                 Ok(uri) => uri,
                 Err(e) => {
@@ -104,16 +104,23 @@ impl<D, M: Middleware<D>> Middleware<D> for Mount<M> {
                     // as a bug and modify Mount::new() to catch it.
                     let mce = "Mount consistency error";
                     error!("{}: {:?}, uri: {:?}, mount_point: {:?}",
-                           mce, e, req.origin.uri, self.mount_point);
+                           mce, e, req.origin.uri(), self.mount_point);
                     return Err(NickelError::new(res, mce, StatusCode::InternalServerError));
                 }
             }
         } else {
             return Ok(Continue(res));
         };
-        let original = mem::replace(&mut req.origin.uri, subpath);
-        let result = self.middleware.invoke(req, res);
-        req.origin.uri = original;
+
+        // Todo: migration cleanup
+        //
+        // uri is now private, so this approach will neeed to be redesigned
+        //
+        // let original = mem::replace(&mut req.origin.uri, subpath);
+        // let result = self.middleware.invoke(req, res);
+        // req.origin.uri = original;
+        panic!("mount not supported yet!");
+
         result
     }
 }

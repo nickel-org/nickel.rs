@@ -6,6 +6,7 @@ use router::HttpRouter;
 use hyper::Method;
 use hyper::StatusCode;
 use router::{Matcher, FORMAT_PARAM};
+use std::marker::PhantomData;
 
 /// A Route is the basic data structure that stores both the path
 /// and the handler that gets executed for the route.
@@ -45,12 +46,13 @@ impl<'mw, D> RouteResult<'mw, D> {
 /// The Router's job is it to hold routes and to resolve them later against
 /// concrete URLs. The router is also a regular middleware and needs to be
 /// added to the middleware stack with `server.utilize(router)`.
-pub struct Router<D=()> {
+pub struct Router<B, D=()> {
     routes: Vec<Route<D>>,
+    _b: PhantomData<B>,
 }
 
-impl<D> Router<D> {
-    pub fn new() -> Router<D> {
+impl<B, D> Router<B, D> {
+    pub fn new() -> Router<B, D> {
         Router {
             routes: Vec::new()
         }
@@ -91,7 +93,7 @@ fn extract_params<D>(route: &Route<D>, path: &str) -> Vec<(String, String)> {
         .collect()
 }
 
-impl<B, D> HttpRouter<D> for Router<D> {
+impl<B, D> HttpRouter<B, D> for Router<B, D> {
     fn add_route<M: Into<Matcher>, H: Middleware<B, D>>(&mut self, method: Method, matcher: M, handler: H) -> &mut Self {
         let route = Route {
             matcher: matcher.into(),
@@ -104,8 +106,8 @@ impl<B, D> HttpRouter<D> for Router<D> {
     }
 }
 
-impl<B, D: 'static> Middleware<B, D> for Router<D> {
-    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, 'conn, D>, mut res: Response<'mw, B, D>)
+impl<B: 'static + Sync + Send, D: 'static> Middleware<B, D> for Router<B, D> {
+    fn invoke<'mw>(&'mw self, req: &mut Request<'mw, B, D>, mut res: Response<'mw, B, D>)
                           -> MiddlewareResult<'mw, B, D> {
         debug!("Router::invoke for '{:?}'", req.origin.uri);
 
