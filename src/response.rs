@@ -31,14 +31,14 @@ pub struct Response<'a, B, D: 'a = ()> {
     data: &'a D,
     map: TypeMap,
     // This should be FnBox, but that's currently unstable
-    on_send: Vec<Box<FnMut(&mut Response<'a, D>)>>
+    on_send: Vec<Box<FnMut(&mut Response<'a, B, D>)>>
 }
 
 impl<'a, B, D> Response<'a, B, D> {
     pub fn from_internal<'c, 'd>(response: HyperResponse<B>,
                                  templates: &'c TemplateCache,
                                  data: &'c D)
-                                -> Response<'c, D, B> {
+                                -> Response<'c, B, D> {
         Response {
             origin: response,
             templates: templates,
@@ -211,8 +211,8 @@ impl<'a, B, D> Response<'a, B, D> {
     /// ```
     pub fn render<T, P>(self, path: P, data: &T) -> MiddlewareResult<'a, B, D>
             where T: Encodable, P: AsRef<str> + Into<String> {
-        fn render<'a, D, T>(res: Response<'a, D>, template: &Template, data: &T)
-                -> MiddlewareResult<'a, D> where T: Encodable {
+        fn render<'a, B, D, T>(res: Response<'a, B, D>, template: &Template, data: &T)
+                -> MiddlewareResult<'a, B, D> where T: Encodable {
             let mut stream = try!(res.start());
             match template.render(&mut stream, data) {
                 Ok(()) => Ok(Halt(stream)),

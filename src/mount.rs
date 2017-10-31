@@ -121,6 +121,6 @@ impl<B, D, M: Middleware<B, D>> Middleware<B, D> for Mount<M> {
         // req.origin.uri = original;
         panic!("mount not supported yet!");
 
-        result
+        // result
     }
 }

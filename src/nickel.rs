@@ -220,12 +220,12 @@ impl<B: 'static, D: Sync + Send + 'static> Nickel<B, D> {
             try!(server.serve("localhost:0",
                               self.keep_alive_timeout,
                               self.options.thread_count));
-            "localhost:0".into()
+            "localhost:0".to_string()
         } else {
             try!(server.serve(addr,
                               self.keep_alive_timeout,
                               self.options.thread_count));
-            addr
+            addr.to_socket_addrs().expect("Invalid socket").map(|a| a.to_string()).collect::<Vec<_>>().join(", ")
         };
 
         if self.options.output_on_listen {

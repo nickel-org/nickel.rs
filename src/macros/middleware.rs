@@ -80,7 +80,7 @@ macro_rules! _middleware_inner {
         use $crate::{MiddlewareResult,Responder, Response, Request};
 
         #[inline(always)]
-        fn restrict<'mw, D, R: Responder<B, D>>(r: R, res: Response<'mw, B, D>)
+        fn restrict<'mw, B, D, R: Responder<B, D>>(r: R, res: Response<'mw, B, D>)
                 -> MiddlewareResult<'mw, B, D> {
             res.send(r)
         }

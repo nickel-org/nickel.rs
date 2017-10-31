@@ -1,4 +1,4 @@
-use std::net::{SocketAddr, ToSocketAddrs};
+use std::net::SocketAddr;
 use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
 use std::time::Duration;
@@ -8,7 +8,7 @@ use hyper::Result as HttpResult;
 // use hyper::server::{Request, Response, Handler, Listening};
 use hyper::{Error, Request, Response};
 use hyper::header::ContentLength;
-use hyper::server::Service;
+use hyper::server::{Http, Service};
 use hyper::server::Server as HyperServer;
 // use hyper::net::SslServer; not supported in hyper 0.11
 
@@ -16,14 +16,14 @@ use middleware::MiddlewareStack;
 use request;
 use response;
 
-pub struct Server<D> {
-    middleware_stack: MiddlewareStack<D>,
+pub struct Server<B, D> {
+    middleware_stack: MiddlewareStack<B, D>,
     templates: response::TemplateCache,
     shared_data: D,
 }
 
 // FIXME: Any better coherence solutions?
-struct ArcServer<D>(Arc<Server<D>>);
+struct ArcServer<B, D>(Arc<Server<B, D>>);
 
 // impl<D: Sync + Send + 'static> Handler for ArcServer<D> {
 //     fn handle<'a, 'k>(&'a self, req: Request<'a, 'k>, res: Response<'a>) {
@@ -40,7 +40,7 @@ struct ArcServer<D>(Arc<Server<D>>);
 
 const PHRASE: &'static str = "Hello, World!";
 
-impl<D: Sync + Send + 'static> Service for ArcServer<D> {
+impl<B, D: Sync + Send + 'static> Service for ArcServer<B, D> {
     type Request = Request;
     type Response = Response;
     type Error = Error;
@@ -55,8 +55,8 @@ impl<D: Sync + Send + 'static> Service for ArcServer<D> {
     }
 }
 
-impl<D: Sync + Send + 'static> Server<D> {
-    pub fn new(middleware_stack: MiddlewareStack<D>, data: D) -> Server<D> {
+impl<B, D: Sync + Send + 'static> Server<B, D> {
+    pub fn new(middleware_stack: MiddlewareStack<B, D>, data: D) -> Server<B, D> {
         Server {
             middleware_stack: middleware_stack,
             templates: RwLock::new(HashMap::new()),
@@ -64,23 +64,25 @@ impl<D: Sync + Send + 'static> Server<D> {
         }
     }
 
-    pub fn serve<A: ToSocketAddrs>(self,
-                                   addr: A,
-                                   keep_alive_timeout: Option<Duration>,
-                                   thread_count: Option<usize>)
-                                    -> HttpResult<()> {
+    pub fn serve(self,
+                 addr: &SocketAddr,
+                 keep_alive_timeout: Option<Duration>,
+                 thread_count: Option<usize>)
+                 -> HttpResult<()> {
         let arc = ArcServer(Arc::new(self));
-        let mut server = try!(HyperServer::http(addr));
+        // let mut server = try!(HyperServer::http(addr));
+        let mut http = Http::new();
 
-        server.keep_alive(keep_alive_timeout);
-
-        let listening = match thread_count {
-            Some(threads) => server.handle_threads(arc, threads),
-            None => server.handle(arc),
-        };
+        http.keep_alive(keep_alive_timeout.is_some());
+        let server = http.bind(addr, || Ok(arc))?;
+        server.run()
+        // let listening = match thread_count {
+        //     Some(threads) => server.handle_threads(arc, threads),
+        //     None => server.handle(arc),
+        // };
 
         // listening.map(ListeningServer)
-        Ok(())
+        // Ok(())
     }
 
     /* Ssl support changed in hyper 0.11
