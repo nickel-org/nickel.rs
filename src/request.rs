@@ -36,7 +36,7 @@ impl<'mw, B, D> Request<'mw, B, D> {
         self.route_result.as_ref().unwrap().param(key)
     }
 
-    pub fn path_without_query(&self) -> Option<&str> {
+    pub fn path_without_query(&self) -> &str {
         self.origin.path()
     }
 

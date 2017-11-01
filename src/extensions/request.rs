@@ -25,6 +25,6 @@ impl<'mw, D> Referer for Request<'mw, D> {
     /// ```
     fn referer(&self) -> Option<&str> {
         self.origin.headers().get::<header::Referer>()
-                           .map(|r| &***r)
+                           .map(|r| &**r)
     }
 }

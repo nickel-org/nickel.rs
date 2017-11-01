@@ -46,14 +46,17 @@ impl StaticFilesHandler {
     }
 
     fn extract_path<'a, B, D>(&self, req: &'a mut Request<B, D>) -> Option<&'a str> {
-        req.path_without_query().map(|path| {
-            debug!("{:?} {:?}{:?}", req.origin.method(), self.root_path.display(), path);
+        let path = req.path_without_query();
+        debug!("{:?} {:?}{:?}", req.origin.method(), self.root_path.display(), path);
 
-            match path {
+        if path.len() > 0 {
+            Some(match path {
                 "/" => "index.html",
                 path => &path[1..],
-            }
-        })
+            })
+        } else {
+            None
+        }
     }
 
     fn with_file<'a, 'b, B, D, P>(&self,

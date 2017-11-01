@@ -1,4 +1,4 @@
-use std::net::ToSocketAddrs;
+use std::net::{IpAddr, Ipv4Addr, SocketAddr, ToSocketAddrs};
 use std::time::Duration;
 use std::env;
 use std::error::Error as StdError;
@@ -217,16 +217,12 @@ impl<B: 'static, D: Sync + Send + 'static> Nickel<B, D> {
         let socket = if is_test_harness {
             // If we're under a test harness, we'll pass zero to get assigned a random
             // port. See http://doc.rust-lang.org/std/net/struct.TcpListener.html#method.bind
-            try!(server.serve("localhost:0",
-                              self.keep_alive_timeout,
-                              self.options.thread_count));
-            "localhost:0".to_string()
+            SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 0)
         } else {
-            try!(server.serve(addr,
-                              self.keep_alive_timeout,
-                              self.options.thread_count));
-            addr.to_socket_addrs().expect("Invalid socket").map(|a| a.to_string()).collect::<Vec<_>>().join(", ")
+            addr.to_socket_addrs().expect("Invalid socket").next().expect("Missing socket")
         };
+
+        server.serve(&socket, self.keep_alive_timeout, self.options.thread_count)?;
 
         if self.options.output_on_listen {
             println!("Listening on http://{}", socket);

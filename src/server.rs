@@ -1,3 +1,4 @@
+use std::clone::Clone;
 use std::net::SocketAddr;
 use std::sync::{Arc, RwLock};
 use std::collections::HashMap;
@@ -5,11 +6,9 @@ use std::time::Duration;
 use futures;
 use futures::future::Future;
 use hyper::Result as HttpResult;
-// use hyper::server::{Request, Response, Handler, Listening};
 use hyper::{Error, Request, Response};
 use hyper::header::ContentLength;
 use hyper::server::{Http, Service};
-use hyper::server::Server as HyperServer;
 // use hyper::net::SslServer; not supported in hyper 0.11
 
 use middleware::MiddlewareStack;
@@ -38,6 +37,12 @@ struct ArcServer<B, D>(Arc<Server<B, D>>);
 //     }
 // }
 
+impl<B, D> Clone for ArcServer<B, D> {
+    fn clone(&self) -> ArcServer<B, D> {
+        ArcServer(self.0.clone())
+    }
+}
+
 const PHRASE: &'static str = "Hello, World!";
 
 impl<B, D: Sync + Send + 'static> Service for ArcServer<B, D> {
@@ -55,7 +60,7 @@ impl<B, D: Sync + Send + 'static> Service for ArcServer<B, D> {
     }
 }
 
-impl<B, D: Sync + Send + 'static> Server<B, D> {
+impl<B: 'static, D: Sync + Send + 'static> Server<B, D> {
     pub fn new(middleware_stack: MiddlewareStack<B, D>, data: D) -> Server<B, D> {
         Server {
             middleware_stack: middleware_stack,
@@ -74,7 +79,7 @@ impl<B, D: Sync + Send + 'static> Server<B, D> {
         let mut http = Http::new();
 
         http.keep_alive(keep_alive_timeout.is_some());
-        let server = http.bind(addr, || Ok(arc))?;
+        let server = http.bind(addr, || Ok(arc.clone()))?;
         server.run()
         // let listening = match thread_count {
         //     Some(threads) => server.handle_threads(arc, threads),
