@@ -50,7 +50,7 @@ impl<B: 'static, D: 'static> MiddlewareStack<B, D> {
         self.error_handlers.push(Box::new(handler));
     }
 
-    pub fn invoke<'mw, 'conn>(&'mw self, mut req: Request<'mw, B, D>, mut res: Response<'mw, B, D>) {
+    pub fn invoke<'mw, 'conn>(&'mw self, mut req: Request<'mw, B, D>, mut res: Response<'mw, B, D>) -> Response<'mw, B, D> {
         for handler in self.handlers.iter() {
             match handler.invoke(&mut req, res) {
                 Ok(Halt(res)) => {
@@ -59,8 +59,7 @@ impl<B: 'static, D: 'static> MiddlewareStack<B, D> {
                            req.origin.remote_addr(),
                            req.origin.uri(),
                            res.status());
-                    let _ = res.end();
-                    return
+                    return res;
                 }
                 Ok(Continue(fresh)) => res = fresh,
                 Err(mut err) => {
@@ -73,8 +72,11 @@ impl<B: 'static, D: 'static> MiddlewareStack<B, D> {
 
                     for error_handler in self.error_handlers.iter().rev() {
                         if let Halt(()) = error_handler.handle_error(&mut err, &mut req) {
-                            err.end();
-                            return
+                            if let Some(res) = err.stream {
+                                return res;
+                            } else {
+                                panic!("Error without Response struct"); // Todo: migration cleanup - return error
+                            }
                         }
                     }
 
@@ -84,10 +86,12 @@ impl<B: 'static, D: 'static> MiddlewareStack<B, D> {
                           req.origin.uri(),
                           err.message,
                           err.stream.map(|s| s.status()));
-                    return
+                    panic!("Unhandled Error"); // Todo: migration cleanup - return error
                 }
             }
-        }
+        };
+        // No middleware returned Halt, go with the last one in the train
+        res
     }
 
     pub fn new () -> MiddlewareStack<B, D> {

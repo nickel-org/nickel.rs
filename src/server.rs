@@ -52,9 +52,10 @@ impl<B, D: Sync + Send + 'static> Service for ArcServer<B, D> {
     type Future = Box<Future<Item = Self::Response, Error = Error>>;
 
     fn call(&self, req: Request) -> Self::Future {
+        let nickel_req = request::Request::from_internal(req, &self.0.shared_data);
+        let nickel_res = response::Response::new(&self.0.templates, &self.0.shared_data);
         Box::new(futures::future::ok(
-            Response::new()
-                .with_header(ContentLength(PHRASE.len() as u64))
+            nickel_res.origin.with_header(ContentLength(PHRASE.len() as u64))
                 .with_body(PHRASE)
         ))
     }

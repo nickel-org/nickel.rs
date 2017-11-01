@@ -26,7 +26,7 @@ pub type TemplateCache = RwLock<HashMap<String, Template>>;
 ///A container for the response
 pub struct Response<'a, B, D: 'a = ()> {
     ///the original `hyper::server::Response`
-    origin: HyperResponse<B>,
+    pub origin: HyperResponse<B>,
     templates: &'a TemplateCache,
     data: &'a D,
     map: TypeMap,
@@ -35,12 +35,9 @@ pub struct Response<'a, B, D: 'a = ()> {
 }
 
 impl<'a, B, D> Response<'a, B, D> {
-    pub fn from_internal<'c, 'd>(response: HyperResponse<B>,
-                                 templates: &'c TemplateCache,
-                                 data: &'c D)
-                                -> Response<'c, B, D> {
+    pub fn new<'c, 'd>(templates: &'c TemplateCache, data: &'c D) -> Response<'c, B, D> {
         Response {
-            origin: response,
+            origin: HyperResponse::new(),
             templates: templates,
             data: data,
             map: TypeMap::new(),
@@ -48,9 +45,14 @@ impl<'a, B, D> Response<'a, B, D> {
         }
     }
 
-    /// Get a mutable reference to the status.
-    pub fn status_mut(&mut self) -> &mut StatusCode {
-        self.origin.status_mut()
+    /// Get the status.
+    pub fn status(&self) -> StatusCode {
+        self.origin.status()
+    }
+
+    /// Set the status.
+    pub fn set_status(&mut self, status: StatusCode) {
+        self.origin.set_status(status)
     }
 
     /// Get a mutable reference to the Headers.
@@ -324,11 +326,6 @@ impl<'a, 'b, B, D> Response<'a, B, D> {
 }
 
 impl <'a, B, D> Response<'a, B, D> {
-    /// The status of this response.
-    pub fn status(&self) -> StatusCode {
-        self.origin.status()
-    }
-
     /// The headers of this response.
     pub fn headers(&self) -> &Headers {
         self.origin.headers()
@@ -374,7 +371,7 @@ mod modifier_impls {
 
     impl<'a, B, D> Modifier<Response<'a, B, D>> for StatusCode {
         fn modify(self, res: &mut Response<'a, B, D>) {
-            *res.status_mut() = self
+            res.set_status(self)
         }
     }
 
