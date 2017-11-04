@@ -249,6 +249,10 @@ impl<'a, B, D> Response<'a, B, D> {
         render(self, template, data)
     }
 
+    // Todo: migration cleanup
+    //
+    // hyper::Response no longer has a start() method. The api has
+    // changed a lot, so this may not longer be necessary.
     pub fn start(mut self) -> Result<Response<'a, B, D>, NickelError<'a, B, D>> {
         let on_send = mem::replace(&mut self.on_send, vec![]);
         for mut f in on_send.into_iter().rev() {
@@ -298,11 +302,17 @@ impl<'a, B, D> Response<'a, B, D> {
 
 impl<'a, 'b, B, D> Write for Response<'a, B, D> {
     #[inline(always)]
+    // Todo: migration cleanup
+    //
+    // Should be easy, just change to a simple future::Stream
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.origin.write(buf)
     }
 
     #[inline(always)]
+    // Todo: migration cleanup
+    //
+    // Should be easy, may not even be needed
     fn flush(&mut self) -> io::Result<()> {
         self.origin.flush()
     }
@@ -320,6 +330,9 @@ impl<'a, 'b, B, D> Response<'a, B, D> {
     }
 
     /// Flushes all writing of a response to the client.
+    // Todo: migration cleanup
+    //
+    // Should be easy, may not even be needed
     pub fn end(self) -> io::Result<()> {
         self.origin.end()
     }
