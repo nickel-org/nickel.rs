@@ -29,7 +29,11 @@ impl Params {
 }
 
 pub fn parse(encoded_string : &str) -> Params {
-    Params(form_urlencoded::parse(encoded_string.as_bytes()).into_owned().group())
+    parse_bytes(encoded_string.as_bytes())
+}
+
+pub fn parse_bytes(data: &[u8]) -> Params {
+    Params(form_urlencoded::parse(data).into_owned().group())
 }
 
 pub fn parse_uri(origin: &Uri) -> Params {
