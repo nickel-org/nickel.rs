@@ -1,8 +1,5 @@
 use body_transformer::{BodyError, BodyTransformer};
 use futures::Future;
-use futures::stream::Stream;
-use hyper::{Body, Chunk};
-use hyper::error::Error as HyperError;
 use hyper::header::ContentType;
 use hyper::mime::APPLICATION_WWW_FORM_URLENCODED;
 use serialize::{Decodable, json};
@@ -19,10 +16,10 @@ impl Key for BodyReader {
     type Value = String;
 }
 
-impl<'mw, D> Plugin<Request<'mw, Body, D>> for BodyReader {
+impl<'mw, B, D> Plugin<Request<'mw, B, D>> for BodyReader {
     type Error = io::Error;
 
-    fn eval(req: &mut Request<'mw, Body, D>) -> Result<String, io::Error> {
+    fn eval(req: &mut Request<'mw, B, D>) -> Result<String, io::Error> {
         match req.string_future() {
             Ok(f) => f.wait(). // sychronizes the async code with serious performance impact
                 map_err(|e| io::Error::new(ErrorKind::Other, format!("Hyper Error: {:?}", e))).
@@ -39,20 +36,24 @@ impl Key for FormBodyParser {
     type Value = Params;
 }
 
-impl<'mw, D> Plugin<Request<'mw, Body, D>> for FormBodyParser {
+impl<'mw, B, D> Plugin<Request<'mw, B, D>> for FormBodyParser {
     type Error = BodyError;
 
-    fn eval(req: &mut Request<Body, D>) -> Result<Params, BodyError> {
-        match req.origin.headers().get::<ContentType>() {
-            Some(&ContentType(ref t)) => {
-                if t.type_() != APPLICATION_WWW_FORM_URLENCODED.type_() || t.subtype() != APPLICATION_WWW_FORM_URLENCODED.subtype() {
-                    return Err(BodyError::WrongContentType);
-                }
-                let body = try!(req.get_ref::<BodyReader>());
-                Ok(urlencoded::parse(&*body))
-            },
-            _ => Err(BodyError::WrongContentType)
+    fn eval(req: &mut Request<B, D>) -> Result<Params, BodyError> {
+        { // Block to manage borrowing
+            match req.origin.headers().get::<ContentType>() {
+                Some(&ContentType(ref t)) => {
+                    if t.type_() != APPLICATION_WWW_FORM_URLENCODED.type_() || t.subtype() != APPLICATION_WWW_FORM_URLENCODED.subtype() {
+                        return Err(BodyError::WrongContentType);
+                    } else {
+                        ()
+                    }
+                },
+                _ => return Err(BodyError::WrongContentType)
+            }
         }
+        let body = try!(req.get_ref::<BodyReader>());
+        Ok(urlencoded::parse(&*body))
     }
 }
 
@@ -76,7 +77,7 @@ pub trait FormBody {
 }
 
 #[deprecated(since = "0.11.0", note="Synchronizes async code with performance impact, will be removed in 0.12")]
-impl<'mw, D> FormBody for Request<'mw, Body, D> {
+impl<'mw, B, D> FormBody for Request<'mw, B, D> {
     fn form_body(&mut self) -> Result<&Params, (StatusCode, BodyError)> {
         self.get_ref::<FormBodyParser>().map_err(|e| (StatusCode::BadRequest, e))
     }
@@ -88,7 +89,7 @@ pub trait JsonBody {
 }
 
 #[deprecated(since = "0.11.0", note="Synchronizes async code with performance impact, will be removed in 0.12")]
-impl<'mw, D> JsonBody for Request<'mw, Body, D> {
+impl<'mw, B, D> JsonBody for Request<'mw, B, D> {
     // FIXME: Update the error type.
     // Would be good to capture parsing error rather than a generic io::Error.
     // FIXME: Do the content-type check

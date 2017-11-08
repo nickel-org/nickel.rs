@@ -52,7 +52,7 @@ impl<B, D: Sync + Send + 'static> Service for ArcServer<B, D> {
     type Future = Box<Future<Item = Self::Response, Error = Error>>;
 
     fn call(&self, req: Request) -> Self::Future {
-        let nickel_req = request::Request::from_internal(req, &self.0.shared_data);
+        let nickel_req: request::Request<B, D> = request::Request::from_internal(req, &self.0.shared_data);
         let nickel_res = response::Response::new(&self.0.templates, &self.0.shared_data);
         Box::new(futures::future::ok(
             nickel_res.origin.with_header(ContentLength(PHRASE.len() as u64))
@@ -80,7 +80,7 @@ impl<B: 'static, D: Sync + Send + 'static> Server<B, D> {
         let mut http = Http::new();
 
         http.keep_alive(keep_alive_timeout.is_some());
-        let server = http.bind(addr, || Ok(arc.clone()))?;
+        let server = http.bind(addr, move || Ok(arc.clone()))?;
         server.run()
         // let listening = match thread_count {
         //     Some(threads) => server.handle_threads(arc, threads),

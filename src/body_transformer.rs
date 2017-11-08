@@ -1,6 +1,5 @@
 use futures::Future;
 use futures::stream::Stream;
-use hyper::{Body, Chunk};
 use hyper::error::Error as HyperError;
 use hyper::header::ContentType;
 use hyper::mime::APPLICATION_WWW_FORM_URLENCODED;
@@ -20,48 +19,60 @@ type JsonFuture<'mw, T: Decodable> = Box<Future<Item=DecodeResult<T>, Error=Hype
 pub trait BodyTransformer {
     // Could this be StrFuture wrapping an &str instead of a String,
     // and avoid an allocation?
-    fn string_future(&self) -> Result<StringFuture, BodyError>;
-    fn params_future(&self) -> Result<ParamsFuture, BodyError>;
-    fn json_future<T: Decodable>(&self) -> Result<JsonFuture<T>, BodyError>;
+    fn string_future(&mut self) -> Result<StringFuture, BodyError>;
+    fn params_future(&mut self) -> Result<ParamsFuture, BodyError>;
+    fn json_future<T: Decodable>(&mut self) -> Result<JsonFuture<T>, BodyError>;
 }
 
-impl<'mw, D> BodyTransformer for Request<'mw, Body, D> {
-    fn string_future(&self) -> Result<StringFuture, BodyError> {
-        let future: Box<Future<Item=_, Error=_>> = Box::new(self.origin.body().concat2().map(|body| {
-            from_utf8(&body).map(|s| s.to_string())
-        }));
+impl<'mw, B, D> BodyTransformer for Request<'mw, B, D> {
+    fn string_future(&mut self) -> Result<StringFuture, BodyError> {
+        let future: Box<Future<Item=_, Error=_>> = match self.origin.take_body() {
+            Some(b) => {
+                Box::new(b.concat2().map(|body| {
+                    from_utf8(&body).map(|s| s.to_string())
+                }))
+            },
+            None => { return Err(BodyError::MissingBody); }
+        };
         Ok(future)
     }
 
-    fn params_future(&self) -> Result<ParamsFuture, BodyError> {
-        match self.origin.headers().get::<ContentType>() {
-            Some(&ContentType(ref t)) => {
-                if t.type_() != APPLICATION_WWW_FORM_URLENCODED.type_() || t.subtype() != APPLICATION_WWW_FORM_URLENCODED.subtype() {
-                    return Err(BodyError::WrongContentType);
-                }
-                let future: Box<Future<Item=_, Error=_>> = Box::new( match self.origin.body_ref() {
-                    Some(b) => b.concat2().map(|body| {
-                        parse_bytes(&body)
-                    }),
-                    None => { return Err(BodyError::MissingBody); }
-                });
-                Ok(future)
-            },
-            _ => Err(BodyError::WrongContentType)
+    fn params_future(&mut self) -> Result<ParamsFuture, BodyError> {
+        { // Block to manage borrowing
+            match self.origin.headers().get::<ContentType>() {
+                Some(&ContentType(ref t)) => {
+                    if t.type_() != APPLICATION_WWW_FORM_URLENCODED.type_() || t.subtype() != APPLICATION_WWW_FORM_URLENCODED.subtype() {
+                        return Err(BodyError::WrongContentType);
+                    } else {
+                        ()
+                    }
+                },
+                _ => return Err(BodyError::WrongContentType)
+            }
         }
+        let future: Box<Future<Item=_, Error=_>> = match self.origin.take_body() {
+            Some(b) => {
+                Box::new(b.concat2().map(|body| {
+                    parse_bytes(&body)
+                }))
+            },
+            None => { return Err(BodyError::MissingBody); }
+        };
+        Ok(future)
     }
 
-    fn json_future<T: Decodable>(&self) -> Result<JsonFuture<T>, BodyError> {
+    fn json_future<T: Decodable>(&mut self) -> Result<JsonFuture<T>, BodyError> {
         // Todo: Add a content type check here. What will that break?
-        let future: Box<Future<Item=_, Error=_>> = Box::new(match self.origin.body_ref()
-        {
-            Some(b) => b.concat2().map(|body| {
-                from_utf8(&body).
-                    map_err(|_| DecoderError::ParseError(ParserError::SyntaxError(ErrorCode::NotUtf8, 0, 0))).
-                    and_then(|s| decode::<T>(s))
-            }),
+        let future: Box<Future<Item=_, Error=_>> = match self.origin.take_body() {
+            Some(b) => {
+                Box::new(b.concat2().map(|body| {
+                    from_utf8(&body).
+                        map_err(|_| DecoderError::ParseError(ParserError::SyntaxError(ErrorCode::NotUtf8, 0, 0))).
+                        and_then(|s| decode::<T>(s))
+                }))
+            },
             None => { return Err(BodyError::MissingBody); }
-        });
+        };
         Ok(future)
     }
 }
