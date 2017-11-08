@@ -1,7 +1,7 @@
 use body_transformer::{BodyError, BodyTransformer};
 use futures::Future;
 use futures::stream::Stream;
-use hyper::Chunk;
+use hyper::{Body, Chunk};
 use hyper::error::Error as HyperError;
 use hyper::header::ContentType;
 use hyper::mime::APPLICATION_WWW_FORM_URLENCODED;
@@ -19,10 +19,10 @@ impl Key for BodyReader {
     type Value = String;
 }
 
-impl<'mw, B: Stream<Item=Chunk, Error=HyperError>, D> Plugin<Request<'mw, B, D>> for BodyReader {
+impl<'mw, D> Plugin<Request<'mw, Body, D>> for BodyReader {
     type Error = io::Error;
 
-    fn eval(req: &mut Request<'mw, B, D>) -> Result<String, io::Error> {
+    fn eval(req: &mut Request<'mw, Body, D>) -> Result<String, io::Error> {
         match req.string_future() {
             Ok(f) => f.wait(). // sychronizes the async code with serious performance impact
                 map_err(|e| io::Error::new(ErrorKind::Other, format!("Hyper Error: {:?}", e))).
@@ -39,10 +39,10 @@ impl Key for FormBodyParser {
     type Value = Params;
 }
 
-impl<'mw, B: Stream<Item=Chunk, Error=HyperError>, D> Plugin<Request<'mw, B, D>> for FormBodyParser {
+impl<'mw, D> Plugin<Request<'mw, Body, D>> for FormBodyParser {
     type Error = BodyError;
 
-    fn eval(req: &mut Request<B, D>) -> Result<Params, BodyError> {
+    fn eval(req: &mut Request<Body, D>) -> Result<Params, BodyError> {
         match req.origin.headers().get::<ContentType>() {
             Some(&ContentType(ref t)) => {
                 if t.type_() != APPLICATION_WWW_FORM_URLENCODED.type_() || t.subtype() != APPLICATION_WWW_FORM_URLENCODED.subtype() {

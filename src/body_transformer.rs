@@ -1,6 +1,6 @@
 use futures::Future;
 use futures::stream::Stream;
-use hyper::Chunk;
+use hyper::{Body, Chunk};
 use hyper::error::Error as HyperError;
 use hyper::header::ContentType;
 use hyper::mime::APPLICATION_WWW_FORM_URLENCODED;
@@ -25,15 +25,11 @@ pub trait BodyTransformer {
     fn json_future<T: Decodable>(&self) -> Result<JsonFuture<T>, BodyError>;
 }
 
-impl<'mw, B: Stream<Item=Chunk, Error=HyperError>, D> BodyTransformer for Request<'mw, B, D> {
+impl<'mw, D> BodyTransformer for Request<'mw, Body, D> {
     fn string_future(&self) -> Result<StringFuture, BodyError> {
-        let future: Box<Future<Item=_, Error=_>> = Box::new(match self.origin.body_ref()
-        {
-            Some(b) => b.concat2().map(|body| {
-                from_utf8(&body).map(|s| s.to_string())
-            }),
-            None => { return Err(BodyError::MissingBody); }
-        });
+        let future: Box<Future<Item=_, Error=_>> = Box::new(self.origin.body().concat2().map(|body| {
+            from_utf8(&body).map(|s| s.to_string())
+        }));
         Ok(future)
     }
 
