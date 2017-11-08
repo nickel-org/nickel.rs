@@ -39,7 +39,10 @@ impl<'mw, B: Stream<Item=Chunk, Error=HyperError>, D> BodyTransformer for Reques
 
     fn params_future(&self) -> Result<ParamsFuture, BodyError> {
         match self.origin.headers().get::<ContentType>() {
-            Some(&ContentType(APPLICATION_WWW_FORM_URLENCODED)) => {
+            Some(&ContentType(ref t)) => {
+                if t.type_() != APPLICATION_WWW_FORM_URLENCODED.type_() || t.subtype() != APPLICATION_WWW_FORM_URLENCODED.subtype() {
+                    return Err(BodyError::WrongContentType);
+                }
                 let future: Box<Future<Item=_, Error=_>> = Box::new( match self.origin.body_ref() {
                     Some(b) => b.concat2().map(|body| {
                         parse_bytes(&body)
@@ -93,6 +96,7 @@ impl StdError for BodyError {
         match *self {
             BodyError::Io(ref err) => err.description(),
             BodyError::Hyper(ref err) => err.description(),
+            BodyError::MissingBody => "Missing body",
             BodyError::WrongContentType => "Wrong content type"
         }
     }

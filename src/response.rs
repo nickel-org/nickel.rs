@@ -264,22 +264,27 @@ impl<'a, B, D> Response<'a, B, D> {
         // on_send then it would possibly set redundant things.
         self.set_fallback_headers();
 
-        let Response { origin, templates, data, map, on_send } = self;
-        match origin.start() {
-            Ok(origin) => {
-                Ok(Response {
-                    origin: origin,
-                    templates: templates,
-                    data: data,
-                    map: map,
-                    on_send: on_send
-                })
-            },
-            Err(e) =>
-                unsafe {
-                    Err(NickelError::without_response(format!("Failed to start response: {}", e)))
-                }
-        }
+        // Todo: migration cleanup
+        //
+        // hyper::Response no longer has a start method, so just return self
+        Ok(self)
+
+        // let Response { origin, templates, data, map, on_send } = self;
+        // match origin.start() {
+        //     Ok(origin) => {
+        //         Ok(Response {
+        //             origin: origin,
+        //             templates: templates,
+        //             data: data,
+        //             map: map,
+        //             on_send: on_send
+        //         })
+        //     },
+        //     Err(e) =>
+        //         unsafe {
+        //             Err(NickelError::without_response(format!("Failed to start response: {}", e)))
+        //         }
+        // }
     }
 
     pub fn server_data(&self) -> &'a D {
@@ -306,7 +311,8 @@ impl<'a, 'b, B, D> Write for Response<'a, B, D> {
     //
     // Should be easy, just change to a simple future::Stream
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.origin.write(buf)
+        // self.origin.write(buf)
+        Ok(0)
     }
 
     #[inline(always)]
@@ -314,7 +320,8 @@ impl<'a, 'b, B, D> Write for Response<'a, B, D> {
     //
     // Should be easy, may not even be needed
     fn flush(&mut self) -> io::Result<()> {
-        self.origin.flush()
+        // self.origin.flush()
+        Ok(())
     }
 }
 
@@ -334,7 +341,8 @@ impl<'a, 'b, B, D> Response<'a, B, D> {
     //
     // Should be easy, may not even be needed
     pub fn end(self) -> io::Result<()> {
-        self.origin.end()
+        // self.origin.end()
+        Ok(())
     }
 }
 

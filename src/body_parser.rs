@@ -44,7 +44,10 @@ impl<'mw, B: Stream<Item=Chunk, Error=HyperError>, D> Plugin<Request<'mw, B, D>>
 
     fn eval(req: &mut Request<B, D>) -> Result<Params, BodyError> {
         match req.origin.headers().get::<ContentType>() {
-            Some(&ContentType(APPLICATION_WWW_FORM_URLENCODED)) => {
+            Some(&ContentType(ref t)) => {
+                if t.type_() != APPLICATION_WWW_FORM_URLENCODED.type_() || t.subtype() != APPLICATION_WWW_FORM_URLENCODED.subtype() {
+                    return Err(BodyError::WrongContentType);
+                }
                 let body = try!(req.get_ref::<BodyReader>());
                 Ok(urlencoded::parse(&*body))
             },
