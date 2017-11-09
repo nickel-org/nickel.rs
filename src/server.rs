@@ -45,23 +45,25 @@ impl<B, D> Clone for ArcServer<B, D> {
 
 const PHRASE: &'static str = "Hello, World!";
 
-impl<B, D: Sync + Send + 'static> Service for ArcServer<B, D> {
+impl<B: futures::Stream + 'static, D: Sync + Send + 'static> Service for ArcServer<B, D> {
     type Request = Request;
-    type Response = Response;
+    type Response = Response<B>;
     type Error = Error;
     type Future = Box<Future<Item = Self::Response, Error = Error>>;
 
     fn call(&self, req: Request) -> Self::Future {
         let nickel_req: request::Request<B, D> = request::Request::from_internal(req, &self.0.shared_data);
         let nickel_res = response::Response::new(&self.0.templates, &self.0.shared_data);
-        Box::new(futures::future::ok(
-            nickel_res.origin.with_header(ContentLength(PHRASE.len() as u64))
-                .with_body(PHRASE)
-        ))
+        // Box::new(futures::future::ok(
+        //     nickel_res.origin.with_header(ContentLength(PHRASE.len() as u64))
+        //         .with_body(PHRASE)
+        // ))
+        let final_res = self.0.middleware_stack.invoke(nickel_req, nickel_res);
+        Box::new(futures::future::ok(final_res.origin))
     }
 }
 
-impl<B: 'static, D: Sync + Send + 'static> Server<B, D> {
+impl<B: futures::Stream + 'static, D: Sync + Send + 'static> Server<B, D> {
     pub fn new(middleware_stack: MiddlewareStack<B, D>, data: D) -> Server<B, D> {
         Server {
             middleware_stack: middleware_stack,

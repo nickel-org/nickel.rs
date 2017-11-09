@@ -97,7 +97,7 @@ impl<'a, B, D> Response<'a, B, D> {
         self
     }
 
-    /// Writes a response
+    /// Writes a response and halts middleware processing.
     ///
     /// # Examples
     /// ```{rust}
@@ -113,7 +113,7 @@ impl<'a, B, D> Response<'a, B, D> {
         data.respond(self)
     }
 
-    /// Writes a file to the output.
+    /// Writes a file to the output and Halts middleware processing.
     ///
     /// # Examples
     /// ```{rust}
@@ -197,7 +197,7 @@ impl<'a, B, D> Response<'a, B, D> {
         if !headers.has::<H>() { headers.set(f()) }
     }
 
-    /// Renders the given template bound with the given data.
+    /// Renders the given template bound with the given data and halts middlware processing.
     ///
     /// # Examples
     /// ```{rust}
