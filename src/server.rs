@@ -15,14 +15,14 @@ use middleware::MiddlewareStack;
 use request;
 use response;
 
-pub struct Server<B, D> {
-    middleware_stack: MiddlewareStack<B, D>,
+pub struct Server<D> {
+    middleware_stack: MiddlewareStack<D>,
     templates: response::TemplateCache,
     shared_data: D,
 }
 
 // FIXME: Any better coherence solutions?
-struct ArcServer<B, D>(Arc<Server<B, D>>);
+struct ArcServer<D>(Arc<Server<D>>);
 
 // impl<D: Sync + Send + 'static> Handler for ArcServer<D> {
 //     fn handle<'a, 'k>(&'a self, req: Request<'a, 'k>, res: Response<'a>) {
@@ -37,34 +37,31 @@ struct ArcServer<B, D>(Arc<Server<B, D>>);
 //     }
 // }
 
-impl<B, D> Clone for ArcServer<B, D> {
-    fn clone(&self) -> ArcServer<B, D> {
+impl<D> Clone for ArcServer<D> {
+    fn clone(&self) -> ArcServer<D> {
         ArcServer(self.0.clone())
     }
 }
 
 const PHRASE: &'static str = "Hello, World!";
 
-impl<B: futures::Stream + 'static, D: Sync + Send + 'static> Service for ArcServer<B, D> {
+impl<D: Sync + Send + 'static> Service for ArcServer<D> {
     type Request = Request;
-    type Response = Response<B>;
+    type Response = Response<response::ResponseStream>;
     type Error = Error;
     type Future = Box<Future<Item = Self::Response, Error = Error>>;
 
     fn call(&self, req: Request) -> Self::Future {
-        let nickel_req: request::Request<B, D> = request::Request::from_internal(req, &self.0.shared_data);
+        let nickel_req = request::Request::from_internal(req, &self.0.shared_data);
         let nickel_res = response::Response::new(&self.0.templates, &self.0.shared_data);
-        // Box::new(futures::future::ok(
-        //     nickel_res.origin.with_header(ContentLength(PHRASE.len() as u64))
-        //         .with_body(PHRASE)
-        // ))
+
         let final_res = self.0.middleware_stack.invoke(nickel_req, nickel_res);
         Box::new(futures::future::ok(final_res.origin))
     }
 }
 
-impl<B: futures::Stream + 'static, D: Sync + Send + 'static> Server<B, D> {
-    pub fn new(middleware_stack: MiddlewareStack<B, D>, data: D) -> Server<B, D> {
+impl<D: Sync + Send + 'static> Server<D> {
+    pub fn new(middleware_stack: MiddlewareStack<D>, data: D) -> Server<D> {
         Server {
             middleware_stack: middleware_stack,
             templates: RwLock::new(HashMap::new()),

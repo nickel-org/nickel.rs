@@ -16,9 +16,9 @@ pub struct StaticFilesHandler {
     root_path: PathBuf
 }
 
-impl<B, D> Middleware<B, D> for StaticFilesHandler {
-    fn invoke<'a>(&self, req: &mut Request<B, D>, res: Response<'a, B, D>)
-            -> MiddlewareResult<'a, B, D> {
+impl<D> Middleware<D> for StaticFilesHandler {
+    fn invoke<'a>(&self, req: &mut Request<D>, res: Response<'a, D>)
+            -> MiddlewareResult<'a, D> {
         match *req.origin.method() {
             Get | Head => self.with_file(self.extract_path(req), res),
             _ => res.next_middleware()
@@ -45,7 +45,7 @@ impl StaticFilesHandler {
         }
     }
 
-    fn extract_path<'a, B, D>(&self, req: &'a mut Request<B, D>) -> Option<&'a str> {
+    fn extract_path<'a, D>(&self, req: &'a mut Request<D>) -> Option<&'a str> {
         let path = req.path_without_query();
         debug!("{:?} {:?}{:?}", req.origin.method(), self.root_path.display(), path);
 
@@ -59,10 +59,10 @@ impl StaticFilesHandler {
         }
     }
 
-    fn with_file<'a, 'b, B, D, P>(&self,
+    fn with_file<'a, 'b, D, P>(&self,
                             relative_path: Option<P>,
-                            res: Response<'a, B, D>)
-            -> MiddlewareResult<'a, B, D> where P: AsRef<Path> {
+                            res: Response<'a, D>)
+            -> MiddlewareResult<'a, D> where P: AsRef<Path> {
         if let Some(path) = relative_path {
             let path = path.as_ref();
             if !safe_path(path) {

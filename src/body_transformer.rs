@@ -12,9 +12,9 @@ use std::io;
 use std::str::{from_utf8, Utf8Error};
 use urlencoded::{parse_bytes, Params};
 
-type StringFuture<'mw> = Box<Future<Item=Result<String, Utf8Error>, Error=HyperError> + 'mw>;
-type ParamsFuture<'mw> = Box<Future<Item=Params, Error=HyperError> + 'mw>;
-type JsonFuture<'mw, T: Decodable> = Box<Future<Item=DecodeResult<T>, Error=HyperError> + 'mw>;
+pub type StringFuture<'mw> = Box<Future<Item=Result<String, Utf8Error>, Error=HyperError> + 'mw>;
+pub type ParamsFuture<'mw> = Box<Future<Item=Params, Error=HyperError> + 'mw>;
+pub type JsonFuture<'mw, T: Decodable> = Box<Future<Item=DecodeResult<T>, Error=HyperError> + 'mw>;
 
 pub trait BodyTransformer {
     // Could this be StrFuture wrapping an &str instead of a String,
@@ -24,7 +24,7 @@ pub trait BodyTransformer {
     fn json_future<T: Decodable>(&mut self) -> Result<JsonFuture<T>, BodyError>;
 }
 
-impl<'mw, B, D> BodyTransformer for Request<'mw, B, D> {
+impl<'mw, D> BodyTransformer for Request<'mw, D> {
     fn string_future(&mut self) -> Result<StringFuture, BodyError> {
         let future: Box<Future<Item=_, Error=_>> = match self.origin.take_body() {
             Some(b) => {

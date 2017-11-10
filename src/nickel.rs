@@ -63,8 +63,8 @@ impl Default for Options {
 
 /// Nickel is the application object. It's the surface that
 /// holds all public APIs.
-pub struct Nickel<B, D: Sync + Send + 'static = ()> {
-    middleware_stack: MiddlewareStack<B, D>,
+pub struct Nickel<D: Sync + Send + 'static = ()> {
+    middleware_stack: MiddlewareStack<D>,
     data: D,
     keep_alive_timeout: Option<Duration>,
 
@@ -72,8 +72,8 @@ pub struct Nickel<B, D: Sync + Send + 'static = ()> {
     pub options: Options,
 }
 
-impl<B: 'static, D: Sync + Send + 'static> HttpRouter<B, D> for Nickel<B, D> {
-    fn add_route<M: Into<Matcher>, H: Middleware<B, D>>(&mut self, method: Method, matcher: M, handler: H) -> &mut Self {
+impl<D: Sync + Send + 'static> HttpRouter<D> for Nickel<D> {
+    fn add_route<M: Into<Matcher>, H: Middleware<D>>(&mut self, method: Method, matcher: M, handler: H) -> &mut Self {
         let mut router = Router::new();
         router.add_route(method, matcher, handler);
         self.utilize(router);
@@ -88,9 +88,9 @@ impl Nickel<()> {
     }
 }
 
-impl<B: 'static, D: Sync + Send + 'static> Nickel<B, D> {
+impl<D: Sync + Send + 'static> Nickel<D> {
     /// Creates an instance of Nickel with default error handling and custom data.
-    pub fn with_data(data: D) -> Nickel<B, D> {
+    pub fn with_data(data: D) -> Nickel<D> {
         let mut middleware_stack = MiddlewareStack::new();
 
         // Hook up the default error handler by default. Users are
@@ -128,7 +128,7 @@ impl<B: 'static, D: Sync + Send + 'static> Nickel<B, D> {
     /// });
     /// # }
     /// ```
-    pub fn utilize<T: Middleware<B, D>>(&mut self, handler: T){
+    pub fn utilize<T: Middleware<D>>(&mut self, handler: T){
         self.middleware_stack.add_middleware(handler);
     }
 
@@ -166,7 +166,7 @@ impl<B: 'static, D: Sync + Send + 'static> Nickel<B, D> {
     /// server.handle_error(ehandler)
     /// # }
     /// ```
-    pub fn handle_error<T: ErrorHandler<B, D>>(&mut self, handler: T){
+    pub fn handle_error<T: ErrorHandler<D>>(&mut self, handler: T){
         self.middleware_stack.add_error_handler(handler);
     }
 

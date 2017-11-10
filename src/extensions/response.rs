@@ -35,8 +35,8 @@ pub trait Redirect: Sized {
     where T: Into<String>;
 }
 
-impl<'a, B, D> Redirect for Response<'a, B, D> {
-    type Result = MiddlewareResult<'a, B, D>;
+impl<'a, D> Redirect for Response<'a, D> {
+    type Result = MiddlewareResult<'a, D>;
 
     fn redirect_with<T>(mut self, target: T, status: StatusCode) -> Self::Result
     where T: Into<String> {
