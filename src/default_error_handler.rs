@@ -10,6 +10,7 @@ pub struct DefaultErrorHandler;
 impl<D> ErrorHandler<D> for DefaultErrorHandler {
     fn handle_error(&self, err: &mut NickelError<D>, _req: &mut Request<D>) -> Action {
         if let Some(ref mut res) = err.stream {
+            println!("Default Error: status = {:?}", res.status());
             let msg : &[u8] = match res.status() {
                 NotFound => b"Not Found",
                 BadRequest => b"Bad Request",
@@ -18,7 +19,7 @@ impl<D> ErrorHandler<D> for DefaultErrorHandler {
 
             let _ = res.write_all(msg);
         } else {
-            println!("Error: {}", err.message);
+            println!("Default Error w/o response: {}", err.message);
         }
 
         Halt(())

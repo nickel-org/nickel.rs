@@ -17,7 +17,7 @@ extern crate futures;
 
 pub use nickel::{Nickel, Options};
 pub use request::Request;
-pub use response::Response;
+pub use response::{Response, ResponseStream};
 pub use middleware::{Action, Continue, Halt, Middleware, ErrorHandler, MiddlewareResult};
 pub use static_files_handler::StaticFilesHandler;
 pub use mount::{Mount, Mountable};

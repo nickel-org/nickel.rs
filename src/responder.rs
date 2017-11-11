@@ -9,8 +9,8 @@
 //! in any request.
 //!
 //! Please see the examples for usage.
-use {Response, NickelError, MiddlewareResult, Halt};
-use hyper::StatusCode;
+use {Response, ResponseStream, NickelError, MiddlewareResult, Halt};
+use hyper::{Body, StatusCode};
 use hyper::header;
 use serialize::json;
 use mimes::MediaType;
@@ -69,11 +69,10 @@ dual_impl!(&'a [u8],
             |self, res| {
                 maybe_set_type(&mut res, MediaType::Bin);
 
-                let mut stream = try!(res.start());
-                match stream.write_all(&self[..]) {
-                    Ok(()) => Ok(Halt(stream)),
-                    Err(e) => stream.bail(format!("Failed to send: {}", e))
-                }
+                res.start();
+                let body: ResponseStream = Box::new(Body::from(self));
+                res.origin.set_body(body);
+                Ok(Halt(res))
             });
 
 dual_impl!(&'a str,
@@ -108,7 +107,7 @@ dual_impl!(&'a [&'a str],
             |self, res| {
                 maybe_set_type(&mut res, MediaType::Html);
 
-                let mut stream = try!(res.start());
+                res.start();
                 for ref s in self.iter() {
                     if let Err(e) = stream.write_all(s.as_bytes()) {
                         return stream.bail(format!("Failed to write to stream: {}", e))

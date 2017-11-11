@@ -75,6 +75,9 @@ impl<D: 'static> MiddlewareStack<D> {
                             if let Some(res) = err.stream {
                                 return res;
                             } else {
+                                error!("Error without Response struct");
+                                // Create a new Response with an InternalServerError
+                                
                                 panic!("Error without Response struct"); // Todo: migration cleanup - return error
                             }
                         }

@@ -142,11 +142,12 @@ impl<'a, D> Response<'a, D> {
                                                  path, e))
         });
 
-        let mut stream = try!(self.start());
-        match copy(&mut file, &mut stream) {
-            Ok(_) => Ok(Halt(stream)),
-            Err(e) => stream.bail(format!("Failed to send file: {}", e))
-        }
+        panic!("Migration not implemented!");
+        // let mut stream = try!(self.start());
+        // match copy(&mut file, &mut stream) {
+        //     Ok(_) => Ok(Halt(stream)),
+        //     Err(e) => stream.bail(format!("Failed to send file: {}", e))
+        // }
     }
 
     // TODO: This needs to be more sophisticated to return the correct headers
@@ -215,48 +216,54 @@ impl<'a, D> Response<'a, D> {
     /// }
     /// ```
     pub fn render<T, P>(self, path: P, data: &T) -> MiddlewareResult<'a, D>
-            where T: Encodable, P: AsRef<str> + Into<String> {
-        fn render<'a, D, T>(res: Response<'a, D>, template: &Template, data: &T)
-                -> MiddlewareResult<'a, D> where T: Encodable {
-            let mut stream = try!(res.start());
-            match template.render(&mut stream, data) {
-                Ok(()) => Ok(Halt(stream)),
-                Err(e) => stream.bail(format!("Problem rendering template: {:?}", e))
-            }
-        }
+        where T: Encodable, P: AsRef<str> + Into<String> {
+        panic!("Migration not implemented!");
 
-        // Fast path doesn't need writer lock
-        if let Some(t) = self.templates.read().unwrap().get(path.as_ref()) {
-            return render(self, t, data);
-        }
+        // fn render<'a, D, T>(res: Response<'a, D>, template: &Template, data: &T)
+        //         -> MiddlewareResult<'a, D> where T: Encodable {
+        //     let mut stream = try!(res.start());
+        //     match template.render(&mut stream, data) {
+        //         Ok(()) => Ok(Halt(stream)),
+        //         Err(e) => stream.bail(format!("Problem rendering template: {:?}", e))
+        //     }
+        // }
 
-        // We didn't find the template, get writers lock
-        let mut templates = self.templates.write().unwrap();
+        // // Fast path doesn't need writer lock
+        // if let Some(t) = self.templates.read().unwrap().get(path.as_ref()) {
+        //     return render(self, t, data);
+        // }
 
-        // Additional clone required for now as the entry api doesn't give us a key ref
-        let path = path.into();
+        // // We didn't find the template, get writers lock
+        // let mut templates = self.templates.write().unwrap();
 
-        // Search again incase there was a race to compile the template
-        let template = match templates.entry(path.clone()) {
-            Vacant(entry) => {
-                let template = try_with!(self, {
-                    mustache::compile_path(&path)
-                             .map_err(|e| format!("Failed to compile template '{}': {:?}",
-                                            path, e))
-                });
-                entry.insert(template)
-            },
-            Occupied(entry) => entry.into_mut()
-        };
+        // // Additional clone required for now as the entry api doesn't give us a key ref
+        // let path = path.into();
 
-        render(self, template, data)
+        // // Search again incase there was a race to compile the template
+        // let template = match templates.entry(path.clone()) {
+        //     Vacant(entry) => {
+        //         let template = try_with!(self, {
+        //             mustache::compile_path(&path)
+        //                      .map_err(|e| format!("Failed to compile template '{}': {:?}",
+        //                                     path, e))
+        //         });
+        //         entry.insert(template)
+        //     },
+        //     Occupied(entry) => entry.into_mut()
+        // };
+
+        // render(self, template, data)
     }
 
     // Todo: migration cleanup
     //
     // hyper::Response no longer has a start() method. The api has
     // changed a lot, so this may not longer be necessary.
-    pub fn start(mut self) -> Result<Response<'a, D>, NickelError<'a, D>> {
+    //
+    // What we are still doing is running the on_send mthods, and
+    // setting fallback headers. Do we need this dedicated method in
+    // the workflow to make sure that happens?
+    pub fn start(&mut self) {
         let on_send = mem::replace(&mut self.on_send, vec![]);
         for mut f in on_send.into_iter().rev() {
             // TODO: Ensure `f` doesn't call on_send again
@@ -266,28 +273,6 @@ impl<'a, D> Response<'a, D> {
         // Set fallback headers last after everything runs, if we did this before as an
         // on_send then it would possibly set redundant things.
         self.set_fallback_headers();
-
-        // Todo: migration cleanup
-        //
-        // hyper::Response no longer has a start method, so just return self
-        Ok(self)
-
-        // let Response { origin, templates, data, map, on_send } = self;
-        // match origin.start() {
-        //     Ok(origin) => {
-        //         Ok(Response {
-        //             origin: origin,
-        //             templates: templates,
-        //             data: data,
-        //             map: map,
-        //             on_send: on_send
-        //         })
-        //     },
-        //     Err(e) =>
-        //         unsafe {
-        //             Err(NickelError::without_response(format!("Failed to start response: {}", e)))
-        //         }
-        // }
     }
 
     pub fn server_data(&self) -> &'a D {
@@ -308,25 +293,25 @@ impl<'a, D> Response<'a, D> {
     }
 }
 
-impl<'a, 'b, D> Write for Response<'a, D> {
-    #[inline(always)]
-    // Todo: migration cleanup
-    //
-    // Should be easy, just change to a simple future::Stream
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        // self.origin.write(buf)
-        Ok(0)
-    }
+// impl<'a, 'b, D> Write for Response<'a, D> {
+//     #[inline(always)]
+//     // Todo: migration cleanup
+//     //
+//     // Should be easy, just change to a simple future::Stream
+//     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+//         // self.origin.write(buf)
+//         Ok(0)
+//     }
 
-    #[inline(always)]
-    // Todo: migration cleanup
-    //
-    // Should be easy, may not even be needed
-    fn flush(&mut self) -> io::Result<()> {
-        // self.origin.flush()
-        Ok(())
-    }
-}
+//     #[inline(always)]
+//     // Todo: migration cleanup
+//     //
+//     // Should be easy, may not even be needed
+//     fn flush(&mut self) -> io::Result<()> {
+//         // self.origin.flush()
+//         Ok(())
+//     }
+// }
 
 impl<'a, 'b, D> Response<'a, D> {
     /// In the case of an unrecoverable error while a stream is already in
