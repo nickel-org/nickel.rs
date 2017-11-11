@@ -48,6 +48,27 @@ impl<T, E, D> Responder<D> for Result<T, E>
     }
 }
 
+impl <'a, D> Responder<D> for &'a [u8] {
+    #[allow(unused_mut)]
+    #[inline]
+    fn respond<'c>(self, mut res: Response<'c, D>) -> MiddlewareResult<'c, D> {
+        self.to_vec().respond(res)
+    }
+}
+
+impl <'a, D> Responder<D> for Vec<u8> {
+    #[allow(unused_mut)]
+    #[inline]
+    fn respond<'c>(self, mut res: Response<'c, D>) -> MiddlewareResult<'c, D> {
+        maybe_set_type(&mut res, MediaType::Bin);
+
+        res.start();
+        let body: ResponseStream = Box::new(Body::from(self));
+        res.origin.set_body(body);
+        Ok(Halt(res))
+    }
+}
+
 macro_rules! dual_impl {
     ($view:ty, $alloc:ty, |$s:ident, $res:ident| $b:block) => (
         impl<'a, D> Responder<D> for $view {
@@ -63,17 +84,6 @@ macro_rules! dual_impl {
         }
     )
 }
-
-dual_impl!(&'a [u8],
-           Vec<u8>,
-            |self, res| {
-                maybe_set_type(&mut res, MediaType::Bin);
-
-                res.start();
-                let body: ResponseStream = Box::new(Body::from(self));
-                res.origin.set_body(body);
-                Ok(Halt(res))
-            });
 
 dual_impl!(&'a str,
            String,
@@ -105,15 +115,7 @@ impl<'a, D> Responder<D> for StatusCode {
 dual_impl!(&'a [&'a str],
            &'a [String],
             |self, res| {
-                maybe_set_type(&mut res, MediaType::Html);
-
-                res.start();
-                for ref s in self.iter() {
-                    if let Err(e) = stream.write_all(s.as_bytes()) {
-                        return stream.bail(format!("Failed to write to stream: {}", e))
-                    }
-                }
-                Ok(Halt(stream))
+                self.iter().fold("".to_string(), |a, s| {a + s}).respond(res)
             });
 
 dual_impl!((u16, &'static str),

@@ -1,5 +1,8 @@
+use hyper::Body;
 use hyper::StatusCode::{NotFound, BadRequest};
 use request::Request;
+use responder::Responder;
+use response::ResponseStream;
 use middleware::{ErrorHandler, Action, Halt};
 use nickel_error::NickelError;
 use std::io::Write;
@@ -17,11 +20,11 @@ impl<D> ErrorHandler<D> for DefaultErrorHandler {
                 _ => b"Internal Server Error"
             };
 
-            let _ = res.write_all(msg);
+            let body: ResponseStream = Box::new(Body::from(msg));
+            res.origin.set_body(body);
         } else {
-            println!("Default Error w/o response: {}", err.message);
+            error!("Default Error w/o response: {}", err.message);
         }
-
         Halt(())
     }
 }

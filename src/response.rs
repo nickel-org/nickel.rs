@@ -267,7 +267,7 @@ impl<'a, D> Response<'a, D> {
         let on_send = mem::replace(&mut self.on_send, vec![]);
         for mut f in on_send.into_iter().rev() {
             // TODO: Ensure `f` doesn't call on_send again
-            f(&mut self)
+            f(self)
         }
 
         // Set fallback headers last after everything runs, if we did this before as an
