@@ -29,6 +29,9 @@ lazy_static = "0.2"
 modifier = "0.1"
 futures = "0.1"
 
+[dev-dependencies]
+unicase = "2.0"
+
 [dependencies.hyper]
 version = "0.11"
 default-features = false
@@ -52,10 +55,10 @@ path = "examples/routing.rs"
 name = "enable_cors"
 path = "examples/enable_cors.rs"
 
-[[example]]
-
-name = "template"
-path = "examples/template.rs"
+# [[example]]
+# Todo: disabled pending fix for https://github.com/nickel-org/nickel.rs/issues/399
+# name = "template"
+# path = "examples/template.rs"
 
 [[example]]
 
@@ -92,10 +95,10 @@ path = "examples/moved_ownership.rs"
 name = "route_data"
 path = "examples/route_data.rs"
 
-[[example]]
-
-name = "integration_testing"
-path = "examples/integration_testing.rs"
+# [[example]]
+# Todo: disabled pending fix for https://github.com/nickel-org/nickel.rs/issues/399
+# name = "integration_testing"
+# path = "examples/integration_testing.rs"
 
 [[example]]
 
@@ -122,10 +125,10 @@ path = "examples/mount.rs"
 name = "chaining"
 path = "examples/chaining.rs"
 
-[[example]]
-
-name = "form_data"
-path = "examples/form_data/form_data.rs"
+# [[example]]
+# Todo: disabled pending fix for https://github.com/nickel-org/nickel.rs/issues/399
+# name = "form_data"
+# path = "examples/form_data/form_data.rs"
 
 [[example]]
 

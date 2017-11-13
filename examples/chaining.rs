@@ -1,7 +1,7 @@
 #[macro_use] extern crate nickel;
 extern crate hyper;
 
-use hyper::method::Method;
+use hyper::Method;
 use nickel::{Nickel, HttpRouter};
 
 fn main() {

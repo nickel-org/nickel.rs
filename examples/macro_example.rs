@@ -3,13 +3,13 @@ extern crate regex;
 extern crate rustc_serialize;
 extern crate hyper;
 
-use std::io::Write;
 use nickel::status::StatusCode::{self, NotFound};
 use nickel::{
-    Nickel, NickelError, Continue, Halt, Request, Response, MediaType,
-    QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, HttpRouter, Action
+    Nickel, NickelError, Continue, Halt, Request, Response, ResponseStream, MediaType,
+    QueryString, JsonBody, StaticFilesHandler, MiddlewareResult, Action
 };
 use regex::Regex;
+use hyper::Body;
 use hyper::header::Location;
 
 #[derive(RustcDecodable, RustcEncodable)]
@@ -20,7 +20,7 @@ struct Person {
 
 //this is an example middleware function that just logs each request
 fn logger<'a, D>(request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
-    println!("logging request: {:?}", request.origin.uri);
+    println!("logging request: {:?}", request.origin.uri());
     response.next_middleware()
 }
 
@@ -28,7 +28,8 @@ fn logger<'a, D>(request: &mut Request<D>, response: Response<'a, D>) -> Middlew
 fn custom_404<'a, D>(err: &mut NickelError<D>, _req: &mut Request<D>) -> Action {
     if let Some(ref mut res) = err.stream {
         if res.status() == NotFound {
-            let _ = res.write_all(b"<h1>Call the police!</h1>");
+            let body: ResponseStream = Box::new(Body::from("<h1>Call the police!</h1>"));
+            res.origin.set_body(body);
             return Halt(())
         }
     }
@@ -80,7 +81,7 @@ fn main() {
 
         // go to http://localhost:6767/redirect to see this route in action
         get "/redirect" => |_, mut response| {
-            response.set(Location("http://nickel.rs".into()));
+            response.set(Location::new("http://nickel.rs".to_string()));
 
             StatusCode::PermanentRedirect
         }

@@ -1,7 +1,8 @@
 #[macro_use] extern crate nickel;
+extern crate hyper;
 
-use std::io::Write;
-use nickel::{Nickel, NickelError, Request, HttpRouter, Action};
+use hyper::Body;
+use nickel::{Nickel, NickelError, Request, ResponseStream, HttpRouter, Action};
 use nickel::status::StatusCode;
 
 fn main() {
@@ -20,18 +21,20 @@ fn main() {
     fn custom_handler<D>(err: &mut NickelError<D>, req: &mut Request<D>) -> Action {
         // Print the internal error message and path to the console
         println!("[{}] ERROR: {}",
-                 req.path_without_query().unwrap(),
+                 req.path_without_query(),
                  err.message);
 
         if let Some(ref mut res) = err.stream {
             match res.status() {
                 StatusCode::ImATeapot => {
                     // Pass the internal message to the client
-                    let _ = res.write_all(err.message.as_bytes());
+                    let body: ResponseStream = Box::new(Body::from(err.message.clone()));
+                    res.origin.set_body(body);
                     return Action::Halt(())
                 }
                 StatusCode::NotFound => {
-                    let _ = res.write_all(b"<h1>404 - Not Found</h1>");
+                    let body: ResponseStream = Box::new(Body::from("<h1>404 - Not Found</h1>"));
+                    res.origin.set_body(body);
                     return Action::Halt(())
                 }
                 _ => {}

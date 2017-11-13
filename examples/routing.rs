@@ -2,7 +2,7 @@
 extern crate hyper;
 
 use nickel::{Nickel, HttpRouter};
-use hyper::method::Method;
+use hyper::Method;
 
 fn main() {
     let mut server = Nickel::new();
