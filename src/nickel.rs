@@ -322,20 +322,4 @@ mod tests {
     fn invalid_listen_addr() {
         Nickel::new().listen("127.0.0.1.6667").unwrap();
     }
-
-    #[test]
-    fn can_get_server_address() {
-        let server = Nickel::new().listen("127.0.0.1:12345").unwrap();
-
-        assert_eq!(server.socket(), SocketAddr::from_str("127.0.0.1:12345").unwrap());
-        server.detach();
-    }
-
-    #[test]
-    fn can_get_server_address_with_random_port() {
-        let server = Nickel::new().listen("127.0.0.1:0").unwrap();
-
-        assert_eq!(server.socket().ip().to_string(), "127.0.0.1");
-        server.detach();
-    }
 }
