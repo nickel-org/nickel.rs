@@ -16,7 +16,7 @@ mod examples {
     mod mount;
     mod route_data;
     mod routing;
-    mod template;
+    // mod template; disabled due to issue #399
     mod moved_ownership;
     mod chaining;
     mod json;
@@ -25,8 +25,8 @@ mod examples {
     mod custom_error_handler;
     mod static_files;
     mod enable_cors;
-    mod form_data;
-    mod integration_testing;
+    // mod form_data; disabled due to issue #399
+    // mod integration_testing; disabled due to issue #399
 
     #[cfg(feature = "ssl")]
     mod https;

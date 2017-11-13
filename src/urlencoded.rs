@@ -77,12 +77,12 @@ fn splits_and_parses_an_url() {
     };
 
     let raw = "http://www.foo.bar/query/test?foo=bar&message=hello&message=world";
-    t(AbsoluteUri(Url::parse(raw).unwrap()));
+    t(raw.parse::<Uri>().unwrap());
 
-    t(AbsolutePath("/query/test?foo=bar&message=hello&message=world".to_string()));
+    t("/query/test?foo=bar&message=hello&message=world".parse::<Uri>().unwrap());
 
-    assert_eq!(parse_uri(&Star), Params(HashMap::new()));
+    assert_eq!(parse_uri(&"*".parse::<Uri>().unwrap()), Params(HashMap::new()));
 
-    let store = parse_uri(&Authority("host.com".to_string()));
+    let store = parse_uri(&"host.com".parse::<Uri>().unwrap());
     assert_eq!(store, Params(HashMap::new()));
 }
