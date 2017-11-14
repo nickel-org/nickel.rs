@@ -10,6 +10,7 @@ use std::io::{self, ErrorKind};
 use typemap::Key;
 use urlencoded::{self, Params};
 
+#[deprecated(since = "0.11.0", note="Synchronizes async code with performance impact, will be removed in 0.12")]
 struct BodyReader;
 
 impl Key for BodyReader {
