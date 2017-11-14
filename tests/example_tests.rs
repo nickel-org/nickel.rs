@@ -16,18 +16,18 @@ mod util;
 
 mod examples {
     mod hello_world;
-    // mod mount;
-    // mod route_data;
-    // mod routing;
+    // mod mount; Todo: migration cleanup - fix mounting
+    mod route_data;
+    mod routing;
     // mod template; disabled due to issue #399
-    // mod moved_ownership;
-    // mod chaining;
-    // mod json;
-    // mod query_string;
-    // mod regex_route;
-    // mod custom_error_handler;
-    // mod static_files;
-    // mod enable_cors;
+    mod moved_ownership;
+    mod chaining;
+    // mod json; Todo: migration cleanup - freezes during test run
+    mod query_string;
+    mod regex_route;
+    mod custom_error_handler;
+    // mod static_files; Todo: migration cleanup - fix mounting
+    mod enable_cors;
     // mod form_data; disabled due to issue #399
     // mod integration_testing; disabled due to issue #399
 
