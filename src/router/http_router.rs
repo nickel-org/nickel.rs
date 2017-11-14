@@ -14,7 +14,7 @@ pub trait HttpRouter<D> {
     /// extern crate regex;
     ///
     /// use nickel::{Nickel, HttpRouter};
-    /// use hyper::method::Method::{Get, Post, Put, Delete};
+    /// use hyper::Method::{Get, Post, Put, Delete};
     /// use regex::Regex;
     ///
     /// fn main() {
@@ -22,13 +22,13 @@ pub trait HttpRouter<D> {
     ///
     ///     server.add_route(Get, "/foo", middleware! { "Get request! "});
     ///     server.add_route(Post, "/foo", middleware! { |request|
-    ///         format!("Method is: {}", request.origin.method)
+    ///         format!("Method is: {}", request.origin.method())
     ///     });
     ///     server.add_route(Put, "/foo", middleware! { |request|
-    ///         format!("Method is: {}", request.origin.method)
+    ///         format!("Method is: {}", request.origin.method())
     ///     });
     ///     server.add_route(Delete, "/foo", middleware! { |request|
-    ///         format!("Method is: {}", request.origin.method)
+    ///         format!("Method is: {}", request.origin.method())
     ///     });
     ///
     ///     // Regex path

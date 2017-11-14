@@ -4,7 +4,6 @@ use std::env;
 use std::error::Error as StdError;
 use router::{Router, HttpRouter, Matcher};
 use middleware::{MiddlewareStack, Middleware, ErrorHandler};
-// use server::{Server, ListeningServer};
 use server::Server;
 use hyper::Method;
 // use hyper::net::SslServer; not supported in hyper 0.11
@@ -124,7 +123,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     /// use nickel::Nickel;
     /// let mut server = Nickel::new();
     /// server.utilize(middleware! { |req|
-    ///     println!("logging request: {:?}", req.origin.uri);
+    ///     println!("logging request: {:?}", req.origin.uri());
     /// });
     /// # }
     /// ```
@@ -141,17 +140,19 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     /// # Examples
     ///
     /// ```{rust}
+    /// # extern crate hyper;
     /// # extern crate nickel;
     /// # fn main() {
-    /// use std::io::Write;
-    /// use nickel::{Nickel, Request, Continue, Halt};
+    /// use hyper::Body;
+    /// use nickel::{Nickel, Request, ResponseStream, Continue, Halt};
     /// use nickel::{NickelError, Action};
     /// use nickel::status::StatusCode::NotFound;
     ///
     /// fn error_handler<D>(err: &mut NickelError<D>, _req: &mut Request<D>) -> Action {
     ///    if let Some(ref mut res) = err.stream {
     ///        if res.status() == NotFound {
-    ///            let _ = res.write_all(b"<h1>Call the police!</h1>");
+    ///            let body: ResponseStream = Box::new(Body::from("<h1>Call the police!</h1>".to_string()));
+    ///            res.origin.set_body(body);
     ///            return Halt(())
     ///        }
     ///    }
@@ -193,17 +194,16 @@ impl<D: Sync + Send + 'static> Nickel<D> {
         Router::new()
     }
 
-    /// Bind and listen for connections on the given host and port.
+    // Note, we don't test the example here because it won't stop.
+    /// Bind and listen for connections on the given host and
+    /// port. This method only returns on an error.
     ///
     /// # Examples
-    /// ```rust
+    /// ```rust,ignore
     /// use nickel::Nickel;
     ///
     /// let server = Nickel::new();
-    /// let listening = server.listen("127.0.0.1:6767").expect("Failed to launch server");
-    /// println!("Listening on: {:?}", listening.socket());
-    /// # // unblock the server so the test doesn't block forever
-    /// # listening.detach();
+    /// server.listen("127.0.0.1:6767").expect("Failed to launch server");
     /// ```
     pub fn listen<T: ToSocketAddrs>(mut self, addr: T) -> Result<(), Box<StdError>> {
         self.middleware_stack.add_middleware(middleware! {

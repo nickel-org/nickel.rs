@@ -21,15 +21,17 @@ pub trait QueryString {
     /// Extracts URL encoded data from the URL query string.
     /// # Examples
     /// ```{rust}
-    /// #[macro_use] extern crate nickel;
-    /// use nickel::{Nickel, HttpRouter, QueryString};
+    /// extern crate nickel;
+    /// use nickel::{Nickel, HttpRouter, Request, Response, MiddlewareResult, QueryString};
+    ///
+    /// fn get_query<'mw>(req: &mut Request<'mw>, res: Response<'mw>) -> MiddlewareResult<'mw> {
+    ///     let query = req.query();
+    ///     return res.send(format!("Query: {:?}", query))
+    /// }
     ///
     /// fn main() {
     ///     let mut server = Nickel::new();
-    ///     server.get("/a", middleware! { |req, res|
-    ///         let query = req.query();
-    ///         return res.send(format!("Query: {:?}", query))
-    ///     });
+    ///     server.get("/a", get_query);
     /// }
     /// ```
     fn query(&mut self) -> &Query;

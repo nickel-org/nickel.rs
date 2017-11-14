@@ -64,14 +64,18 @@ pub trait FormBody {
     /// # Examples
     /// ```{rust}
     /// #[macro_use] extern crate nickel;
-    /// use nickel::{Nickel, HttpRouter, FormBody};
+    /// #[allow(deprecated)]
+    /// use nickel::{Nickel, HttpRouter, FormBody, Request, Response, MiddlewareResult};
+    ///
+    /// #[allow(deprecated)]
+    /// fn get_form_body<'mw>(req: &mut Request<'mw>, res: Response<'mw>) -> MiddlewareResult<'mw> {
+    ///     let form_body = try_with!(res, req.form_body());
+    ///     return res.send(format!("Post: {:?}", form_body))
+    /// }
     ///
     /// fn main() {
     ///     let mut server = Nickel::new();
-    ///     server.post("/a", middleware! { |req, res|
-    ///         let form_body = try_with!(res, req.form_body());
-    ///         return res.send(format!("Post: {:?}", form_body))
-    ///     });
+    ///     server.post("/a", get_form_body);
     /// }
     /// ```
     fn form_body(&mut self) -> Result<&Params, (StatusCode, BodyError)>;

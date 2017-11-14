@@ -10,17 +10,19 @@ impl<'mw, D> Referer for Request<'mw, D> {
     ///
     /// # Examples
     /// ```{rust}
-    /// #[macro_use] extern crate nickel;
+    /// extern crate nickel;
     ///
-    /// use nickel::{Nickel, HttpRouter};
+    /// use nickel::{Nickel, HttpRouter, Request, Response, MiddlewareResult};
     /// use nickel::extensions::{Referer, Redirect};
+    ///
+    /// fn referer<'mw>(req: &mut Request<'mw>, res: Response<'mw>) -> MiddlewareResult<'mw> {
+    ///     let back = req.referer().unwrap_or("http://nickel.rs");
+    ///     return res.redirect(back)
+    /// }
     ///
     /// fn main() {
     ///     let mut server = Nickel::new();
-    ///     server.get("/a", middleware! { |req, res|
-    ///         let back = req.referer().unwrap_or("http://nickel.rs");
-    ///         return res.redirect(back)
-    ///     });
+    ///     server.get("/a", referer);
     /// }
     /// ```
     fn referer(&self) -> Option<&str> {
