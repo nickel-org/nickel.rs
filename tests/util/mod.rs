@@ -17,6 +17,7 @@ struct Bomb(Child);
 // Don't leak child processes!
 impl Drop for Bomb {
     fn drop(&mut self) {
+        println!("Dropping {:?}", self.0);
         match self.0.kill() {
             Ok(()) => {},
             Err(e) => panic!("Leaking child process: {:?}", e)
@@ -34,19 +35,18 @@ impl Drop for Bomb {
 
 pub fn response_for_post(url: &str, body: &str) -> Response {
     let core = tokio_core::reactor::Core::new().unwrap();
-    let client = Client::configure()
-        .build(&core.handle());
+    let client = Client::configure().build(&core.handle());
     let mut req = Request::new(Method::Post, url.parse().unwrap());
     req.set_body(body.to_string());
     client.request(req).wait().unwrap()
 }
 
 pub fn response_for_method(method: Method, url: &str) -> Response {
-    let core = tokio_core::reactor::Core::new().unwrap();
-    let client = Client::configure()
-        .build(&core.handle());
+    let mut core = tokio_core::reactor::Core::new().unwrap();
+    let client = Client::new(&core.handle());
     let req = Request::new(method, url.parse().unwrap());
-    client.request(req).wait().unwrap()
+    let work = client.request(req);
+    core.run(work).unwrap()
 }
 
 pub fn response_for(url: &str) -> Response {
@@ -69,12 +69,13 @@ where F: FnOnce(u16) {
     cargo_build(name);
 
     let command = format!("target/debug/examples/{}", name);
+    println!("run_example: command = {:?}", command);
     let child = Command::new(&command)
                         .env("NICKEL_TEST_HARNESS", "1")
                         .stdout(Stdio::piped())
                         .spawn()
                         .unwrap();
-
+    println!("run_example: child = {:?}", child);
     let mut bomb = Bomb(child);
     let port = parse_port(&mut bomb);
 

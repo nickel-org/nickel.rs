@@ -222,12 +222,11 @@ impl<D: Sync + Send + 'static> Nickel<D> {
             addr.to_socket_addrs().expect("Invalid socket").next().expect("Missing socket")
         };
 
-        server.serve(&socket, self.keep_alive_timeout, self.options.thread_count)?;
-
-        if self.options.output_on_listen {
-            println!("Listening on http://{}", socket);
-            println!("Ctrl-C to shutdown server");
-        }
+        server.serve(&socket,
+                     self.keep_alive_timeout,
+                     self.options.thread_count,
+                     self.options.output_on_listen
+        )?;
 
         Ok(())
     }

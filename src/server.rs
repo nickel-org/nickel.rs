@@ -56,13 +56,23 @@ impl<D: Sync + Send + 'static> Server<D> {
     pub fn serve(self,
                  addr: &SocketAddr,
                  keep_alive_timeout: Option<Duration>,
-                 thread_count: Option<usize>)
+                 thread_count: Option<usize>,
+                 verbose: bool)
                  -> HttpResult<()> {
         let arc = ArcServer(Arc::new(self));
         let mut http = Http::new();
 
         http.keep_alive(keep_alive_timeout.is_some());
         let server = http.bind(addr, move || Ok(arc.clone()))?;
+
+        if verbose {
+            match server.local_addr() {
+                Ok(a) => { println!("Listening on http://{}", server.local_addr().unwrap()); },
+                Err(e) => { println!("Error getting socket: {:?}", e); }
+            };
+            println!("Ctrl-C to shutdown server");
+        }
+
         server.run()
     }
 

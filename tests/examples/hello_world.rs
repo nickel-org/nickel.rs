@@ -6,8 +6,9 @@ fn t(file: &str) {
 
         for path in &paths {
             let url = format!("http://localhost:{}/{}", port, path);
+            println!("hello_world: reading {:?}", url);
             let s = read_url(&url);
-
+            println!("got {:?}", s);
             assert_eq!(s, "Hello World");
         }
     })
