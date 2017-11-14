@@ -1,17 +1,17 @@
 use util::*;
 
 use hyper::client::Response;
-use hyper::method::Method;
+use hyper::Method;
 
 fn with_paths_and_method<F, S>(paths: &[S], method: Method, f: F)
-where F: Fn(&mut Response),
+where F: Fn(Response),
       S: AsRef<str> {
     for path in paths {
         let method = method.clone();
 
         run_example("chaining", |port| {
             let url = format!("http://localhost:{}{}", port, path.as_ref());
-            let ref mut res = response_for_method(method, &url);
+            let res = response_for_method(method, &url);
             f(res)
         })
     }
@@ -20,7 +20,7 @@ where F: Fn(&mut Response),
 mod expect_200 {
     use super::with_paths_and_method;
     use util::*;
-    use hyper::method::Method::*;
+    use hyper::Method::*;
 
     #[test]
     fn root() {
@@ -54,9 +54,9 @@ mod expect_200 {
 
 mod expect_404 {
     use super::with_paths_and_method;
-    use hyper::method::Method;
-    use hyper::method::Method::*;
-    use hyper::status::StatusCode;
+    use hyper::Method;
+    use hyper::Method::*;
+    use hyper::StatusCode;
 
     static TEST_METHODS: &'static [Method] = &[Get, Post, Put, Patch, Delete];
 
@@ -67,7 +67,7 @@ mod expect_404 {
 
         for method in methods {
             with_paths_and_method(&["/"], method.clone(), |res| {
-                assert_eq!(res.status, StatusCode::NotFound);
+                assert_eq!(res.status(), StatusCode::NotFound);
             })
         }
     }
@@ -87,7 +87,7 @@ mod expect_404 {
                                             .collect::<Vec<_>>();
 
                     with_paths_and_method(&paths, method, |res| {
-                        assert_eq!(res.status, StatusCode::NotFound);
+                        assert_eq!(res.status(), StatusCode::NotFound);
                     })
                 }
             )+

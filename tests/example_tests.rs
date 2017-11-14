@@ -1,5 +1,8 @@
 extern crate rustc_serialize;
 extern crate hyper;
+extern crate unicase;
+extern crate tokio_core;
+extern crate futures;
 // HACK: integration_testing example refers to `nickel::foo`
 // and this import helps that resolve rather than requiring `self::nickel::foo`
 // which is an oddity due to the include method, which is used as tests in examples
