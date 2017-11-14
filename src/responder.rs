@@ -14,7 +14,6 @@ use hyper::{Body, StatusCode};
 use hyper::header;
 use serialize::json;
 use mimes::MediaType;
-use std::io::Write;
 
 /// This trait provides convenience for translating a number
 /// of common return types into a `MiddlewareResult` while

@@ -1,11 +1,9 @@
 use hyper::Body;
 use hyper::StatusCode::{NotFound, BadRequest};
 use request::Request;
-use responder::Responder;
 use response::ResponseStream;
 use middleware::{ErrorHandler, Action, Halt};
 use nickel_error::NickelError;
-use std::io::Write;
 
 #[derive(Clone, Copy)]
 pub struct DefaultErrorHandler;

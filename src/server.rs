@@ -7,7 +7,6 @@ use futures;
 use futures::future::Future;
 use hyper::Result as HttpResult;
 use hyper::{Error, Request, Response};
-use hyper::header::ContentLength;
 use hyper::server::{Http, Service};
 // use hyper::net::SslServer; not supported in hyper 0.11
 
@@ -24,26 +23,11 @@ pub struct Server<D> {
 // FIXME: Any better coherence solutions?
 struct ArcServer<D>(Arc<Server<D>>);
 
-// impl<D: Sync + Send + 'static> Handler for ArcServer<D> {
-//     fn handle<'a, 'k>(&'a self, req: Request<'a, 'k>, res: Response<'a>) {
-//         let nickel_req = request::Request::from_internal(req,
-//                                                          &self.0.shared_data);
-
-//         let nickel_res = response::Response::from_internal(res,
-//                                                            &self.0.templates,
-//                                                            &self.0.shared_data);
-
-//         self.0.middleware_stack.invoke(nickel_req, nickel_res);
-//     }
-// }
-
 impl<D> Clone for ArcServer<D> {
     fn clone(&self) -> ArcServer<D> {
         ArcServer(self.0.clone())
     }
 }
-
-const PHRASE: &'static str = "Hello, World!";
 
 impl<D: Sync + Send + 'static> Service for ArcServer<D> {
     type Request = Request;
@@ -75,19 +59,11 @@ impl<D: Sync + Send + 'static> Server<D> {
                  thread_count: Option<usize>)
                  -> HttpResult<()> {
         let arc = ArcServer(Arc::new(self));
-        // let mut server = try!(HyperServer::http(addr));
         let mut http = Http::new();
 
         http.keep_alive(keep_alive_timeout.is_some());
         let server = http.bind(addr, move || Ok(arc.clone()))?;
         server.run()
-        // let listening = match thread_count {
-        //     Some(threads) => server.handle_threads(arc, threads),
-        //     None => server.handle(arc),
-        // };
-
-        // listening.map(ListeningServer)
-        // Ok(())
     }
 
     /* Ssl support changed in hyper 0.11
