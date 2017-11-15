@@ -16,7 +16,7 @@ mod util;
 
 mod examples {
     mod hello_world;
-    // mod mount; Todo: migration cleanup - fix mounting
+    mod mount;
     mod route_data;
     mod routing;
     // mod template; disabled due to issue #399

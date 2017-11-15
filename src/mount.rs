@@ -77,23 +77,10 @@ impl<M> Mount<M> {
 impl<D, M: Middleware<D>> Middleware<D> for Mount<M> {
     fn invoke<'mw>(&'mw self, req: &mut Request<'mw, D>, res: Response<'mw, D>)
                           -> MiddlewareResult<'mw, D> {
-        // Todo: migration cleanup
-        //
-        // This is somewhat tricky. The new hyper::Uri does not
-        // provide an easy way to rewrite the uri. It appears we'll
-        // need to take apart the uri and put together a string with a
-        // new path, then create a new Uri from that. Ugh. It may be
-        // better to add a target field to nickel::Request that is
-        // derived from req.origin.uri.
-        // let subpath = match req.origin.uri {
-        //     AbsolutePath(ref path) if path.starts_with(&*self.mount_point) => {
-        //         AbsolutePath(format!("/{}", &path[self.mount_point.len()..]))
-        //     },
-        //     _ => return Ok(Continue(res))
-        // };
 
         let subpath = if req.origin.uri().path().starts_with(&*self.mount_point) {
-            let new_uri = req.origin.uri().as_ref().replacen(&*self.mount_point, "", 1);
+            let new_uri = req.origin.uri().as_ref().replacen(&*self.mount_point, "/", 1);
+            debug!("New uri: {}", new_uri);
             match new_uri.parse::<Uri>() {
                 Ok(uri) => uri,
                 Err(e) => {
@@ -112,15 +99,10 @@ impl<D, M: Middleware<D>> Middleware<D> for Mount<M> {
             return Ok(Continue(res));
         };
 
-        // Todo: migration cleanup
-        //
-        // uri is now private, so this approach will neeed to be redesigned
-        //
-        // let original = mem::replace(&mut req.origin.uri, subpath);
-        // let result = self.middleware.invoke(req, res);
-        // req.origin.uri = original;
-        panic!("mount not supported yet!");
+        let original = req.origin.swap_uri(subpath);
+        let result = self.middleware.invoke(req, res);
+        req.origin.swap_uri(original);
 
-        // result
+        result
     }
 }

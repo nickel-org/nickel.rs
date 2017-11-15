@@ -47,6 +47,10 @@ impl HyperRequest {
         let body = mem::replace(&mut self.body, None);
         body
     }
+
+    pub(crate) fn swap_uri(&mut self, new_uri: Uri) -> Uri {
+        mem::replace(&mut self.uri, new_uri)
+    }
 }
 
 /// A container for all the request data.
