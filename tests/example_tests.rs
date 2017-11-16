@@ -26,7 +26,7 @@ mod examples {
     mod query_string;
     mod regex_route;
     mod custom_error_handler;
-    // mod static_files; Todo: migration cleanup - fix mounting
+    mod static_files;
     mod enable_cors;
     // mod form_data; disabled due to issue #399
     // mod integration_testing; disabled due to issue #399

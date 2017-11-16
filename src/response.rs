@@ -7,6 +7,7 @@ use std::path::Path;
 use std::time::SystemTime;
 use serialize::Encodable;
 use futures::stream::Stream;
+use futures_fs::FsPool;
 use hyper::{Chunk, StatusCode};
 use hyper::error::Error as HyperError;
 use hyper::server::Response as HyperResponse;
@@ -30,6 +31,7 @@ pub type ResponseStream = Box<Stream<Item=Chunk, Error=HyperError>>;
 pub struct Response<'a, D: 'a = ()> {
     ///the original `hyper::server::Response`
     pub origin: HyperResponse<ResponseStream>,
+    fspool: FsPool,
     templates: &'a TemplateCache,
     data: &'a D,
     map: TypeMap,
@@ -38,9 +40,10 @@ pub struct Response<'a, D: 'a = ()> {
 }
 
 impl<'a, D> Response<'a, D> {
-    pub fn new<'c, 'd>(templates: &'c TemplateCache, data: &'c D) -> Response<'c, D> {
+    pub fn new<'c, 'd>(fspool: FsPool, templates: &'c TemplateCache, data: &'c D) -> Response<'c, D> {
         Response {
             origin: HyperResponse::new(),
+            fspool: fspool,
             templates: templates,
             data: data,
             map: TypeMap::new(),
@@ -130,24 +133,20 @@ impl<'a, D> Response<'a, D> {
     /// }
     /// ```
     pub fn send_file<P:AsRef<Path>>(mut self, path: P) -> MiddlewareResult<'a, D> {
-        let path = path.as_ref();
+        let path_ref = path.as_ref();
         // Chunk the response
         self.origin.headers_mut().remove::<ContentLength>();
         // Determine content type by file extension or default to binary
-        let mime = mime_from_filename(path).unwrap_or(MediaType::Bin);
+        let mime = mime_from_filename(path_ref).unwrap_or(MediaType::Bin);
         self.set_header_fallback(|| ContentType(mime.into()));
 
-        let mut file = try_with!(self, {
-            File::open(path).map_err(|e| format!("Failed to send file '{:?}': {}",
-                                                 path, e))
-        });
-
-        panic!("Migration not implemented!");
-        // let mut stream = try!(self.start());
-        // match copy(&mut file, &mut stream) {
-        //     Ok(_) => Ok(Halt(stream)),
-        //     Err(e) => stream.bail(format!("Failed to send file: {}", e))
-        // }
+        self.start();
+        let stream = self.fspool.read(path_ref.to_owned()).
+            map(|b| Chunk::from(b)).
+            map_err(|e| HyperError::from(e));
+        let body: ResponseStream = Box::new(stream);
+        self.origin.set_body(body);
+        Ok(Halt(self))
     }
 
     // TODO: This needs to be more sophisticated to return the correct headers
