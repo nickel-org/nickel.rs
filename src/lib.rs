@@ -11,6 +11,7 @@ extern crate mustache;
 extern crate groupable;
 extern crate modifier;
 extern crate futures;
+extern crate futures_cpupool;
 extern crate futures_fs;
 
 #[macro_use] extern crate log;

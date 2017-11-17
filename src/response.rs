@@ -6,7 +6,9 @@ use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::path::Path;
 use std::time::SystemTime;
 use serialize::Encodable;
+use futures::future::{self, Future};
 use futures::stream::Stream;
+use futures_cpupool::CpuPool;
 use futures_fs::FsPool;
 use hyper::{Chunk, StatusCode};
 use hyper::error::Error as HyperError;
@@ -31,6 +33,7 @@ pub type ResponseStream = Box<Stream<Item=Chunk, Error=HyperError>>;
 pub struct Response<'a, D: 'a = ()> {
     ///the original `hyper::server::Response`
     pub origin: HyperResponse<ResponseStream>,
+    cpupool: CpuPool,
     fspool: FsPool,
     templates: &'a TemplateCache,
     data: &'a D,
@@ -40,9 +43,10 @@ pub struct Response<'a, D: 'a = ()> {
 }
 
 impl<'a, D> Response<'a, D> {
-    pub fn new<'c, 'd>(fspool: FsPool, templates: &'c TemplateCache, data: &'c D) -> Response<'c, D> {
+    pub fn new<'c, 'd>(cpupool: CpuPool, fspool: FsPool, templates: &'c TemplateCache, data: &'c D) -> Response<'c, D> {
         Response {
             origin: HyperResponse::new(),
+            cpupool: cpupool,
             fspool: fspool,
             templates: templates,
             data: data,
@@ -133,17 +137,38 @@ impl<'a, D> Response<'a, D> {
     /// }
     /// ```
     pub fn send_file<P:AsRef<Path>>(mut self, path: P) -> MiddlewareResult<'a, D> {
-        let path_ref = path.as_ref();
+        let path_buf = path.as_ref().to_owned();
         // Chunk the response
         self.origin.headers_mut().remove::<ContentLength>();
         // Determine content type by file extension or default to binary
-        let mime = mime_from_filename(path_ref).unwrap_or(MediaType::Bin);
+        let mime = mime_from_filename(&path_buf).unwrap_or(MediaType::Bin);
         self.set_header_fallback(|| ContentType(mime.into()));
 
         self.start();
-        let stream = self.fspool.read(path_ref.to_owned()).
+
+        // using futures-fs
+        // let stream = self.fspool.read(path_ref.to_owned()).
+        //     map(|b| Chunk::from(b)).
+        //     map_err(|e| HyperError::from(e));
+
+        // using futures-cpupool
+        let stream = self.cpupool.spawn_fn(|| {
+            let mut file = match File::open(path_buf) {
+                Ok(f) => f,
+                Err(e) => { return future::err(e) },
+            };
+            let mut buf = Vec::new();
+            match copy(&mut file, &mut buf) {
+                Ok(_) => {
+                    eprintln!("Got buf: {:?}", &buf[0..16]);
+                    future::ok(buf)
+                },
+                Err(e) => future::err(e),
+            }
+        }).into_stream().
             map(|b| Chunk::from(b)).
             map_err(|e| HyperError::from(e));
+
         let body: ResponseStream = Box::new(stream);
         self.origin.set_body(body);
         Ok(Halt(self))
