@@ -9,16 +9,18 @@ pub trait Redirect: Sized {
     ///
     /// # Examples
     /// ```{rust}
-    /// #[macro_use] extern crate nickel;
+    /// extern crate nickel;
     ///
-    /// use nickel::{Nickel, HttpRouter};
+    /// use nickel::{Nickel, HttpRouter, Request, Response, MiddlewareResult};
     /// use nickel::extensions::Redirect;
+    ///
+    /// fn redirect<'mw, 'conn>(_: &mut Request<'mw, 'conn>, res: Response<'mw>) -> MiddlewareResult<'mw> {
+    ///     return res.redirect("http://nickel.rs")
+    /// }
     ///
     /// fn main() {
     ///     let mut server = Nickel::new();
-    ///     server.get("/a", middleware! { |_, res|
-    ///         return res.redirect("http://nickel.rs")
-    ///     });
+    ///     server.get("/a", redirect);
     /// }
     /// ```
     fn redirect<T>(self, target: T) -> Self::Result
@@ -35,6 +37,8 @@ pub trait Redirect: Sized {
     where T: Into<String>;
 }
 
+// Todo: rework this to return a Responder so it will work with the
+// middleware macro
 impl<'a, D> Redirect for Response<'a, D> {
     type Result = MiddlewareResult<'a, D>;
 
