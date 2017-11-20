@@ -1,4 +1,4 @@
-#[macro_use] extern crate nickel;
+extern crate nickel;
 
 use nickel::{Nickel, StaticFilesHandler};
 

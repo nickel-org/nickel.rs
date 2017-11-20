@@ -61,7 +61,7 @@ pub trait FormBody {
     ///     let mut server = Nickel::new();
     ///     server.post("/a", middleware! { |req, res|
     ///         let form_body = try_with!(res, req.form_body());
-    ///         return res.send(format!("Post: {:?}", form_body))
+    ///         format!("Post: {:?}", form_body)
     ///     });
     /// }
     /// ```

@@ -28,7 +28,7 @@ pub trait QueryString {
     ///     let mut server = Nickel::new();
     ///     server.get("/a", middleware! { |req, res|
     ///         let query = req.query();
-    ///         return res.send(format!("Query: {:?}", query))
+    ///         format!("Query: {:?}", query)
     ///     });
     /// }
     /// ```
