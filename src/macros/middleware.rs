@@ -4,6 +4,19 @@
 /// In future, the macro should hopefully be able to be removed while
 /// having minimal changes to the closure's code.
 ///
+/// # Limitations
+///
+/// The body of the `middleware!` macro needs to return something
+/// implementing `Responder`. Some older examples had bodies that
+/// would return a `MiddlewareResult`, but this was exploiting an
+/// unsoundness in the Rust compiler that has since been
+/// tightened. See discussion at
+/// https://github.com/nickel-org/nickel.rs/issues/399.
+///
+/// Due to the way the macro is expanded, exiting the body early with
+/// a return statement will most likely fail with a cryptic error
+/// message. See https://github.com/nickel-org/nickel.rs/issues/389.
+///
 /// # Examples
 /// ```rust,no_run
 /// # #[macro_use] extern crate nickel;

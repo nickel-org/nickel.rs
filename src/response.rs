@@ -19,7 +19,7 @@ use hyper::header::{
 use mimes::MediaType;
 use mustache;
 use mustache::Template;
-use std::io::{self, Read, Write, copy};
+use std::io::{self, Write, copy};
 use std::fs::File;
 use {NickelError, Halt, MiddlewareResult, Responder, Action};
 use modifier::Modifier;

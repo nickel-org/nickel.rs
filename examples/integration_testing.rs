@@ -5,7 +5,7 @@ extern crate nickel;
 extern crate hyper;
 extern crate rustc_serialize;
 
-use nickel::{Nickel, ListeningServer, HttpRouter, JsonBody};
+use nickel::{Nickel, ListeningServer, HttpRouter, JsonBody, Request, Response, MiddlewareResult};
 use nickel::status::StatusCode;
 
 use rustc_serialize::json::Json;
@@ -60,6 +60,11 @@ fn main() {
     start_server(address, database).unwrap();
 }
 
+fn log_hit<'mw, 'conn>(_req: &mut Request<'mw, 'conn, ServerData>, res: Response<'mw, ServerData>) -> MiddlewareResult<'mw, ServerData> {
+    res.data().log_hit();
+    return res.next_middleware()
+}
+
 fn start_server<D>(address: &str, database: D) -> Result<ListeningServer, Box<StdError>>
 where D: Database {
     let server_data = ServerData {
@@ -70,10 +75,7 @@ where D: Database {
     let mut server = Nickel::with_data(server_data);
 
     // Track all hits to the server
-    server.utilize(middleware! { |_req, res| <ServerData>
-        res.data().log_hit();
-        return res.next_middleware()
-    });
+    server.utilize(log_hit);
 
     // Core server
     server.get("/", middleware!( "Hello World" ));

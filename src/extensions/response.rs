@@ -37,6 +37,8 @@ pub trait Redirect: Sized {
     where T: Into<String>;
 }
 
+// Todo: rework this to return a Responder so it will work with the
+// middleware macro
 impl<'a, D> Redirect for Response<'a, D> {
     type Result = MiddlewareResult<'a, D>;
 

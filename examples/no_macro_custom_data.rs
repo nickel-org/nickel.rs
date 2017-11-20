@@ -16,5 +16,5 @@ fn main() {
 
     let mut server = Nickel::with_data(my_config);
     server.get("**", greeter);
-    server.listen("127.0.0.1:6767");
+    server.listen("127.0.0.1:6767").unwrap();
 }
