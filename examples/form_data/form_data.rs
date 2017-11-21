@@ -2,14 +2,14 @@
 use nickel::{Nickel, HttpRouter, FormBody, Request, Response, MiddlewareResult};
 use std::collections::HashMap;
 
-fn root<'mw, 'conn>(_req: &mut Request<'mw, 'conn>, res: Response<'mw>) -> MiddlewareResult<'mw> {
+fn root<'mw>(_req: &mut Request<'mw>, res: Response<'mw>) -> MiddlewareResult<'mw> {
     let mut data = HashMap::new();
     data.insert("title","Contact");
 
     return res.render("examples/form_data/views/contact.html", &data)
 }
 
-fn confirmation<'mw, 'conn>(req: &mut Request<'mw, 'conn>, res: Response<'mw>) -> MiddlewareResult<'mw> {
+fn confirmation<'mw>(req: &mut Request<'mw>, res: Response<'mw>) -> MiddlewareResult<'mw> {
     let form_data = try_with!(res, req.form_body());
 
     println!("{:?}", form_data);

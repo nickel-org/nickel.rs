@@ -58,10 +58,10 @@ path = "examples/routing.rs"
 name = "enable_cors"
 path = "examples/enable_cors.rs"
 
-# [[example]]
+[[example]]
 # Todo: disabled pending fix for https://github.com/nickel-org/nickel.rs/issues/399
-# name = "template"
-# path = "examples/template.rs"
+name = "template"
+path = "examples/template.rs"
 
 [[example]]
 
@@ -98,10 +98,10 @@ path = "examples/moved_ownership.rs"
 name = "route_data"
 path = "examples/route_data.rs"
 
-# [[example]]
+[[example]]
 # Todo: disabled pending fix for https://github.com/nickel-org/nickel.rs/issues/399
-# name = "integration_testing"
-# path = "examples/integration_testing.rs"
+name = "integration_testing"
+path = "examples/integration_testing.rs"
 
 [[example]]
 
@@ -128,10 +128,10 @@ path = "examples/mount.rs"
 name = "chaining"
 path = "examples/chaining.rs"
 
-# [[example]]
+[[example]]
 # Todo: disabled pending fix for https://github.com/nickel-org/nickel.rs/issues/399
-# name = "form_data"
-# path = "examples/form_data/form_data.rs"
+name = "form_data"
+path = "examples/form_data/form_data.rs"
 
 [[example]]
 

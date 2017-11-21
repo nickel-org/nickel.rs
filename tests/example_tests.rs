@@ -28,8 +28,8 @@ mod examples {
     mod custom_error_handler;
     mod static_files;
     mod enable_cors;
-    // mod form_data; disabled due to issue #399
-    // mod integration_testing; disabled due to issue #399
+    // mod form_data; // Todo: fixme
+    // mod integration_testing; // Todo: fixme
 
     #[cfg(feature = "ssl")]
     mod https;
