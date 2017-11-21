@@ -1,8 +1,5 @@
 use std::mem;
 use std::borrow::Cow;
-use std::sync::RwLock;
-use std::collections::HashMap;
-use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::path::Path;
 use serialize::Encodable;
 use hyper::status::StatusCode;
@@ -13,17 +10,14 @@ use hyper::header::{
 use hyper::net::{Fresh, Streaming};
 use time;
 use mimes::MediaType;
-use mustache;
-use mustache::Template;
 use std::io::{self, Write, copy};
 use std::fs::File;
 use std::any::Any;
 use {NickelError, Halt, MiddlewareResult, Responder, Action};
+use template_cache::TemplateCache;
 use modifier::Modifier;
 use plugin::{Extensible, Pluggable};
 use typemap::TypeMap;
-
-pub type TemplateCache = RwLock<HashMap<String, Template>>;
 
 ///A container for the response
 pub struct Response<'a, D: 'a = (), T: 'static + Any = Fresh> {
@@ -212,41 +206,13 @@ impl<'a, D> Response<'a, D, Fresh> {
     /// }
     /// ```
     pub fn render<T, P>(self, path: P, data: &T) -> MiddlewareResult<'a, D>
-            where T: Encodable, P: AsRef<str> + Into<String> {
-        fn render<'a, D, T>(res: Response<'a, D>, template: &Template, data: &T)
-                -> MiddlewareResult<'a, D> where T: Encodable {
-            let mut stream = try!(res.start());
-            match template.render(&mut stream, data) {
-                Ok(()) => Ok(Halt(stream)),
-                Err(e) => stream.bail(format!("Problem rendering template: {:?}", e))
-            }
+        where T: Encodable, P: AsRef<Path> + Into<String> {
+
+        let mut self_started = self.start()?;
+        match self_started.templates.render(path, &mut self_started, data) {
+            Ok(()) => Ok(Halt(self_started)),
+            Err(e) => self_started.bail(format!("Problem rendering template: {:?}", e))
         }
-
-        // Fast path doesn't need writer lock
-        if let Some(t) = self.templates.read().unwrap().get(path.as_ref()) {
-            return render(self, t, data);
-        }
-
-        // We didn't find the template, get writers lock
-        let mut templates = self.templates.write().unwrap();
-
-        // Additional clone required for now as the entry api doesn't give us a key ref
-        let path = path.into();
-
-        // Search again incase there was a race to compile the template
-        let template = match templates.entry(path.clone()) {
-            Vacant(entry) => {
-                let template = try_with!(self, {
-                    mustache::compile_path(&path)
-                             .map_err(|e| format!("Failed to compile template '{}': {:?}",
-                                            path, e))
-                });
-                entry.insert(template)
-            },
-            Occupied(entry) => entry.into_mut()
-        };
-
-        render(self, template, data)
     }
 
     pub fn start(mut self) -> Result<Response<'a, D, Streaming>, NickelError<'a, D>> {
