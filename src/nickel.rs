@@ -212,7 +212,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
 
         let server = Server::new(self.middleware_stack, self.data);
 
-        let is_test_harness = env::vars().any(|(ref k, _)| k == "NICKEL_TEST_HARNESS");
+        let is_test_harness = env::var_os("NICKEL_TEST_HARNESS").is_some();
 
         let socket = if is_test_harness {
             // If we're under a test harness, we'll pass zero to get assigned a random
@@ -284,7 +284,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
 
         let server = Server::new(self.middleware_stack, self.data);
 
-        let is_test_harness = env::vars().any(|(ref k, _)| k == "NICKEL_TEST_HARNESS");
+        let is_test_harness = env::var_os("NICKEL_TEST_HARNESS").is_some();
 
         let listener = if is_test_harness {
             // If we're under a test harness, we'll pass zero to get assigned a random
