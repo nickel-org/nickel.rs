@@ -1,5 +1,6 @@
 use util::*;
 
+use futures::{Future, Stream};
 use hyper::StatusCode;
 use hyper::client::Response;
 
@@ -34,7 +35,10 @@ fn ignores_unmatched_prefixes() {
 #[test]
 fn works_with_another_middleware() {
     with_path("/static/files/thoughtram_logo_brain.png", |res| {
-        assert_eq!(res.status(), StatusCode::Ok);
+        let status = res.status();
+        let head = res.body().concat2().wait().unwrap();
+        assert_eq!(status, StatusCode::Ok);
+        assert!(!&head.is_empty(), "no data for thoughtram_logo_brain.png");
     });
 
     with_path("/static/files/nested/foo.js", |res| {
