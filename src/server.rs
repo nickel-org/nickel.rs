@@ -1,6 +1,5 @@
 use std::net::{SocketAddr, ToSocketAddrs};
-use std::sync::{Arc, RwLock};
-use std::collections::HashMap;
+use std::sync::Arc;
 use std::time::Duration;
 use hyper::Result as HttpResult;
 use hyper::server::{Request, Response, Handler, Listening};
@@ -10,10 +9,11 @@ use hyper::net::SslServer;
 use middleware::MiddlewareStack;
 use request;
 use response;
+use template_cache::{ReloadPolicy, TemplateCache};
 
 pub struct Server<D> {
     middleware_stack: MiddlewareStack<D>,
-    templates: response::TemplateCache,
+    templates: TemplateCache,
     shared_data: D,
 }
 
@@ -34,10 +34,10 @@ impl<D: Sync + Send + 'static> Handler for ArcServer<D> {
 }
 
 impl<D: Sync + Send + 'static> Server<D> {
-    pub fn new(middleware_stack: MiddlewareStack<D>, data: D) -> Server<D> {
+    pub fn new(middleware_stack: MiddlewareStack<D>, reload_policy: ReloadPolicy, data: D) -> Server<D> {
         Server {
             middleware_stack: middleware_stack,
-            templates: RwLock::new(HashMap::new()),
+            templates: TemplateCache::with_policy(reload_policy),
             shared_data: data
         }
     }

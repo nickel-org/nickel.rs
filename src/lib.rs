@@ -30,6 +30,7 @@ pub use nickel_error::NickelError;
 pub use mimes::MediaType;
 pub use responder::Responder;
 pub use server::ListeningServer;
+pub use template_cache::{ReloadPolicy, TemplateCache};
 
 #[macro_use] pub mod macros;
 
@@ -50,6 +51,7 @@ mod urlencoded;
 mod nickel_error;
 mod default_error_handler;
 pub mod extensions;
+pub mod template_cache;
 
 pub mod status {
     pub use hyper::status::StatusCode;
