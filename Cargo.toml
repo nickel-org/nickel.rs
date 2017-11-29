@@ -59,7 +59,6 @@ name = "enable_cors"
 path = "examples/enable_cors.rs"
 
 [[example]]
-# Todo: disabled pending fix for https://github.com/nickel-org/nickel.rs/issues/399
 name = "template"
 path = "examples/template.rs"
 
@@ -99,7 +98,6 @@ name = "route_data"
 path = "examples/route_data.rs"
 
 [[example]]
-# Todo: disabled pending fix for https://github.com/nickel-org/nickel.rs/issues/399
 name = "integration_testing"
 path = "examples/integration_testing.rs"
 
@@ -129,7 +127,6 @@ name = "chaining"
 path = "examples/chaining.rs"
 
 [[example]]
-# Todo: disabled pending fix for https://github.com/nickel-org/nickel.rs/issues/399
 name = "form_data"
 path = "examples/form_data/form_data.rs"
 
