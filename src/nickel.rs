@@ -8,6 +8,7 @@ use server::Server;
 use hyper::Method;
 // use hyper::net::SslServer; not supported in hyper 0.11
 use hyper::StatusCode;
+use template_cache::ReloadPolicy;
 
 //pre defined middleware
 use default_error_handler::DefaultErrorHandler;
@@ -30,6 +31,7 @@ use default_error_handler::DefaultErrorHandler;
 pub struct Options {
     output_on_listen: bool,
     thread_count: Option<usize>,
+    reload_policy: ReloadPolicy,
 }
 
 impl Options {
@@ -49,6 +51,12 @@ impl Options {
         self.thread_count = thread_count;
         self
     }
+
+    /// The TemplateCache reload policy. Defaults to ReloadPolicy::Never.
+    pub fn reload_policy(mut self, reload_policy: ReloadPolicy) -> Self {
+        self.reload_policy = reload_policy;
+        self
+    }
 }
 
 impl Default for Options {
@@ -56,6 +64,7 @@ impl Default for Options {
         Options {
             output_on_listen: true,
             thread_count: None,
+            reload_policy: ReloadPolicy::Never,
         }
     }
 }
@@ -85,11 +94,17 @@ impl Nickel<()> {
     pub fn new() -> Nickel<()> {
         Nickel::with_data(())
     }
+
+    /// Creates and instance of Nickel with custom Options.
+    pub fn with_options(options: Options) -> Nickel<()> {
+        Nickel::with_data_and_options((), options)
+    }
 }
 
 impl<D: Sync + Send + 'static> Nickel<D> {
-    /// Creates an instance of Nickel with default error handling and custom data.
-    pub fn with_data(data: D) -> Nickel<D> {
+    /// Creates an instance of Nickel with default error handling,
+    /// default Ooptions, and custom data.
+    pub fn with_data_and_options(data: D, options: Options) -> Nickel<D> {
         let mut middleware_stack = MiddlewareStack::new();
 
         // Hook up the default error handler by default. Users are
@@ -99,11 +114,17 @@ impl<D: Sync + Send + 'static> Nickel<D> {
 
         Nickel {
             middleware_stack: middleware_stack,
-            options: Options::default(),
+            options: options,
             data: data,
             // Default value from nginx
             keep_alive_timeout: Some(Duration::from_secs(75))
         }
+    }
+
+    /// Creates an instance of Nickel with default error handling,
+    /// default Ooptions, and custom data.
+    pub fn with_data(data: D) -> Nickel<D> {
+        Nickel::with_data_and_options(data, Options::default())
     }
 
     /// Registers a middleware handler which will be invoked among other middleware
@@ -210,7 +231,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
             (StatusCode::NotFound, "File Not Found")
         });
 
-        let server = Server::new(self.middleware_stack, self.data);
+        let server = Server::new(self.middleware_stack, self.options.reload_policy, self.data);
 
         let is_test_harness = env::var_os("NICKEL_TEST_HARNESS").is_some();
 
@@ -282,7 +303,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
             (StatusCode::NotFound, "File Not Found")
         });
 
-        let server = Server::new(self.middleware_stack, self.data);
+        let server = Server::new(self.middleware_stack, self.options.reload_policy, self.data);
 
         let is_test_harness = env::var_os("NICKEL_TEST_HARNESS").is_some();
 

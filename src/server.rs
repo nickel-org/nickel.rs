@@ -1,7 +1,5 @@
-use std::clone::Clone;
 use std::net::SocketAddr;
-use std::sync::{Arc, RwLock};
-use std::collections::HashMap;
+use std::sync::Arc;
 use std::time::Duration;
 use futures;
 use futures::future::Future;
@@ -15,12 +13,13 @@ use hyper::server::{Http, Service};
 use middleware::MiddlewareStack;
 use request;
 use response;
+use template_cache::{ReloadPolicy, TemplateCache};
 
 pub struct Server<D> {
     middleware_stack: MiddlewareStack<D>,
     cpupool: CpuPool,
     fspool: FsPool,
-    templates: response::TemplateCache,
+    templates: TemplateCache,
     shared_data: D,
 }
 
@@ -49,12 +48,12 @@ impl<D: Sync + Send + 'static> Service for ArcServer<D> {
 }
 
 impl<D: Sync + Send + 'static> Server<D> {
-    pub fn new(middleware_stack: MiddlewareStack<D>, data: D) -> Server<D> {
+    pub fn new(middleware_stack: MiddlewareStack<D>, reload_policy: ReloadPolicy, data: D) -> Server<D> {
         Server {
             middleware_stack: middleware_stack,
             cpupool: CpuPool::new(10),
             fspool: FsPool::new(10),
-            templates: RwLock::new(HashMap::new()),
+            templates: TemplateCache::with_policy(reload_policy),
             shared_data: data
         }
     }
