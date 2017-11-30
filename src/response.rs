@@ -234,10 +234,26 @@ impl<'a, D> Response<'a, D> {
     ///     res.render("examples/assets/template.tpl", &data)
     /// }
     /// ```
-    pub fn render<T, P>(self, path: P, data: &T) -> MiddlewareResult<'a, D>
-        where T: Encodable, P: AsRef<Path> + Into<String> {
+    pub fn render<T, P>(self, path: P, data: T) -> MiddlewareResult<'a, D>
+        where T: Encodable + Sync, P: AsRef<Path> + Into<String> {
 
-        panic!("Migration not implemented!");
+        let path_buf = path.as_ref().to_owned();
+        let templates = self.templates;
+        let stream = self.cpupool.spawn_fn(|| {
+            let buf: Vec<u8> = Vec::new();
+            match templates.render(path_buf, &mut buf, &data) {
+                Ok(()) => future::ok(buf),
+                Err(e) => future::err(io::Error::new(io::ErrorKind::Other, e)),
+            }
+        }).into_stream().
+            map(|b| Chunk::from(b)).
+            map_err(|e| HyperError::from(e));
+
+        let body: ResponseStream = Box::new(stream);
+        self.origin.set_body(body);
+        Ok(Halt(self))
+
+        // panic!("Migration not implemented!");
         // let mut self_started = self.start()?;
         // match self_started.templates.render(path, &mut self_started, data) {
         //     Ok(()) => Ok(Halt(self_started)),
