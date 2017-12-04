@@ -1,10 +1,11 @@
 [package]
 
 name = "nickel"
-version = "0.10.0"
+version = "0.10.1"
 authors = [ "Christoph Burgdorf <christoph@thoughtram.io>",
             "Kevin Butler <haqkrs@gmail.com>",
-            "Simon Persson <simon@flaskpost.org>" ]
+            "Simon Persson <simon@flaskpost.org>",
+            "Jeff Olhoeft <jolhoeft@gmail.com" ]
 description = "An express.js inspired web framework"
 license = "MIT"
 
