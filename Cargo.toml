@@ -26,7 +26,7 @@ rustc-serialize = "0.3"
 log = "0.3"
 groupable = "0.2"
 mustache = "0.8"
-lazy_static = "0.2"
+lazy_static = "1.0"
 modifier = "0.1"
 
 [dependencies.hyper]
@@ -34,7 +34,7 @@ version = "0.10"
 default-features = false
 
 [dependencies.compiletest_rs]
-version = "0.2"
+version = "0.3"
 optional = true
 
 [[example]]
