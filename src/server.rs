@@ -8,6 +8,7 @@ use futures_fs::FsPool;
 use hyper::Result as HttpResult;
 use hyper::{Error, Request, Response};
 use hyper::server::{Http, Service};
+use scoped_pool::Pool;
 // use hyper::net::SslServer; not supported in hyper 0.11
 
 use middleware::MiddlewareStack;
@@ -17,6 +18,7 @@ use template_cache::{ReloadPolicy, TemplateCache};
 
 pub struct Server<D> {
     middleware_stack: MiddlewareStack<D>,
+    pool: Pool,
     cpupool: CpuPool,
     fspool: FsPool,
     templates: TemplateCache,
@@ -40,7 +42,7 @@ impl<D: Sync + Send + 'static> Service for ArcServer<D> {
 
     fn call(&self, req: Request) -> Self::Future {
         let nickel_req = request::Request::from_internal(req, &self.0.shared_data);
-        let nickel_res = response::Response::new(self.0.cpupool.clone(), self.0.fspool.clone(), &self.0.templates, &self.0.shared_data);
+        let nickel_res = response::Response::new(self.0.pool.clone(), self.0.cpupool.clone(), self.0.fspool.clone(), &self.0.templates, &self.0.shared_data);
 
         let final_res = self.0.middleware_stack.invoke(nickel_req, nickel_res);
         Box::new(futures::future::ok(final_res.origin))
@@ -51,6 +53,7 @@ impl<D: Sync + Send + 'static> Server<D> {
     pub fn new(middleware_stack: MiddlewareStack<D>, reload_policy: ReloadPolicy, data: D) -> Server<D> {
         Server {
             middleware_stack: middleware_stack,
+            pool: Pool::new(10),
             cpupool: CpuPool::new(10),
             fspool: FsPool::new(10),
             templates: TemplateCache::with_policy(reload_policy),
@@ -69,6 +72,8 @@ impl<D: Sync + Send + 'static> Server<D> {
 
         if let Some(threads) = thread_count {
             // override the default set in Server::new
+            self.pool = Pool::new(threads);
+            self.cpupool = CpuPool::new(threads);
             self.fspool = FsPool::new(threads);
         }
         http.keep_alive(keep_alive_timeout.is_some());

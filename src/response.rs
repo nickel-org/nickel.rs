@@ -5,6 +5,7 @@ use std::time::SystemTime;
 use serialize::Encodable;
 use futures::future::{self, Future};
 use futures::stream::Stream;
+use futures::sync::oneshot;
 use futures_cpupool::CpuPool;
 use futures_fs::FsPool;
 use hyper::{Chunk, StatusCode};
@@ -14,6 +15,7 @@ use hyper::header::{
     Headers, Date, Server, ContentType, ContentLength, Header
 };
 use mimes::MediaType;
+use scoped_pool::Pool;
 use std::io::{self, Write, copy};
 use std::fs::File;
 use {NickelError, Halt, MiddlewareResult, Responder, Action};
@@ -28,6 +30,7 @@ pub type ResponseStream = Box<Stream<Item=Chunk, Error=HyperError>>;
 pub struct Response<'a, D: 'a = ()> {
     ///the original `hyper::server::Response`
     pub origin: HyperResponse<ResponseStream>,
+    pool: Pool,
     cpupool: CpuPool,
     fspool: FsPool,
     templates: &'a TemplateCache,
@@ -38,9 +41,10 @@ pub struct Response<'a, D: 'a = ()> {
 }
 
 impl<'a, D> Response<'a, D> {
-    pub fn new<'c, 'd>(cpupool: CpuPool, fspool: FsPool, templates: &'c TemplateCache, data: &'c D) -> Response<'c, D> {
+    pub fn new<'c, 'd>(pool: Pool, cpupool: CpuPool, fspool: FsPool, templates: &'c TemplateCache, data: &'c D) -> Response<'c, D> {
         Response {
             origin: HyperResponse::new(),
+            pool: pool,
             cpupool: cpupool,
             fspool: fspool,
             templates: templates,
@@ -234,31 +238,32 @@ impl<'a, D> Response<'a, D> {
     ///     res.render("examples/assets/template.tpl", &data)
     /// }
     /// ```
-    pub fn render<T, P>(self, path: P, data: T) -> MiddlewareResult<'a, D>
+    pub fn render<T, P>(mut self, path: P, data: &T) -> MiddlewareResult<'a, D>
         where T: Encodable + Sync, P: AsRef<Path> + Into<String> {
 
+        let (tx, rx) = oneshot::channel();
         let path_buf = path.as_ref().to_owned();
         let templates = self.templates;
-        let stream = self.cpupool.spawn_fn(|| {
-            let buf: Vec<u8> = Vec::new();
-            match templates.render(path_buf, &mut buf, &data) {
-                Ok(()) => future::ok(buf),
-                Err(e) => future::err(io::Error::new(io::ErrorKind::Other, e)),
-            }
-        }).into_stream().
-            map(|b| Chunk::from(b)).
-            map_err(|e| HyperError::from(e));
-
-        let body: ResponseStream = Box::new(stream);
+        self.start();
+        self.pool.scoped(|scope| {
+            scope.execute(move || {
+                let mut buf: Vec<u8> = Vec::new();
+                match templates.render(path_buf, &mut buf, data) {
+                    Ok(()) => { tx.send(Ok(buf)); },
+                    Err(e) => { tx.send(Err(io::Error::new(io::ErrorKind::Other, e))); },
+                };
+            })
+        });
+        let body: ResponseStream = Box::new(rx.
+                                            into_stream().
+                                            map_err(|e| HyperError::from(io::Error::new(io::ErrorKind::Other, e))).
+                                            and_then(|r| match r {
+                                                Ok(r) => Ok(Chunk::from(r)),
+                                                Err(e) => Err(HyperError::from(e)),
+                                            })
+        );
         self.origin.set_body(body);
         Ok(Halt(self))
-
-        // panic!("Migration not implemented!");
-        // let mut self_started = self.start()?;
-        // match self_started.templates.render(path, &mut self_started, data) {
-        //     Ok(()) => Ok(Halt(self_started)),
-        //     Err(e) => self_started.bail(format!("Problem rendering template: {:?}", e))
-        // }
     }
 
     // Todo: migration cleanup

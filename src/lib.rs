@@ -13,6 +13,7 @@ extern crate modifier;
 extern crate futures;
 extern crate futures_cpupool;
 extern crate futures_fs;
+extern crate scoped_pool;
 
 #[macro_use] extern crate log;
 #[macro_use] extern crate lazy_static;

@@ -19,7 +19,7 @@ mod examples {
     mod mount;
     mod route_data;
     mod routing;
-    // mod template; disabled due to issue #399
+    mod template;
     mod moved_ownership;
     mod chaining;
     // mod json; Todo: migration cleanup - freezes during test run
