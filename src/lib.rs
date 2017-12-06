@@ -2,7 +2,7 @@
 
 extern crate time;
 extern crate rustc_serialize as serialize;
-extern crate hyper;
+pub extern crate hyper;
 extern crate regex;
 extern crate typemap;
 extern crate plugin;
