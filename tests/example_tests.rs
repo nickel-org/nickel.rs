@@ -22,7 +22,7 @@ mod examples {
     mod template;
     mod moved_ownership;
     mod chaining;
-    // mod json; Todo: migration cleanup - freezes during test run
+    mod json; // Todo: migration cleanup - freezes during test run
     mod query_string;
     mod regex_route;
     mod custom_error_handler;

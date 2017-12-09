@@ -199,6 +199,11 @@ impl<'a, D> Response<'a, D> {
         Ok(Halt(self))
     }
 
+    pub fn set_body(mut self, body: ResponseStream) -> MiddlewareResult<'a, D> {
+        self.origin.set_body(body);
+        Ok(Halt(self))
+    }
+
     // TODO: This needs to be more sophisticated to return the correct headers
     // not just "some headers" :)
     //

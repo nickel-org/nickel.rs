@@ -47,6 +47,18 @@ impl<T, E, D> Responder<D> for Result<T, E>
     }
 }
 
+impl <'a, D> Responder<D> for ResponseStream {
+    #[allow(unused_mut)]
+    #[inline]
+    fn respond<'c>(self, mut res: Response<'c, D>) -> MiddlewareResult<'c, D> {
+        maybe_set_type(&mut res, MediaType::Bin);
+
+        res.start();
+        res.origin.set_body(self);
+        Ok(Halt(res))
+    }
+}
+
 impl <'a, D> Responder<D> for &'a [u8] {
     #[allow(unused_mut)]
     #[inline]
