@@ -43,7 +43,7 @@ You can then compile this using *Cargo build* and run it using *Cargo run*. Afte
 
 ## More examples
 
-More examples can be found [in the examples directory](/examples/) and the full documentation can be [found here](http://docs.nickel.rs).
+More examples can be found [in the examples directory](/examples/) and the full documentation can be [found here](https://docs.rs/nickel/).
 
 ## Contributing
 
