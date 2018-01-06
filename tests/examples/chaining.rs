@@ -3,30 +3,29 @@ use util::*;
 use hyper::client::Response;
 use hyper::Method;
 
-fn with_paths_and_method<F, S>(paths: &[S], method: Method, f: F)
+fn with_path_and_method<F, S>(path: S, method: Method, f: F)
 where F: Fn(Response),
       S: AsRef<str> {
-    for path in paths {
-        let method = method.clone();
-
-        run_example("chaining", |port| {
-            let url = format!("http://localhost:{}{}", port, path.as_ref());
-            let res = response_for_method(method, &url);
-            f(res)
-        })
-    }
+    let method = method.clone();
+    
+    run_example("chaining", |port| {
+        let url = format!("http://localhost:{}{}", port, path.as_ref());
+        response_for_method(method, &url, f)
+    })
 }
 
 mod expect_200 {
-    use super::with_paths_and_method;
+    use super::with_path_and_method;
     use util::*;
+    use hyper::Method;
     use hyper::Method::*;
 
     #[test]
     fn root() {
-        with_paths_and_method(&["/"], Get, |res| {
-            let s = read_body_to_string(res);
-            assert_eq!(s, "Hello World");
+        with_path_and_method("/", Get, |res| {
+            for_body_as_string(res, |s| {
+                assert_eq!(s, "Hello World");
+            });
         });
     }
 
@@ -35,15 +34,18 @@ mod expect_200 {
             $(
                 #[test]
                 fn $method() {
-                    let path = concat!("/", stringify!($method));
+                    let paths = concat!("/", stringify!($method));
                     let method_str = stringify!($method);
-                    let method = method_str.to_uppercase().parse().unwrap();
+                    let method: Method = method_str.to_uppercase().parse().unwrap();
 
                     println!("Method {:?}", method);
-                    with_paths_and_method(&[path], method, |res| {
-                        let s = read_body_to_string(res);
-                        assert_eq!(s, method_str);
-                    });
+                    for path in &[paths] {
+                        with_path_and_method(&path, method.clone(), |res| {
+                            for_body_as_string(res, |s| {
+                                assert_eq!(s, method_str);
+                            });
+                        });
+                    }
                 }
             )+
         )
@@ -53,7 +55,7 @@ mod expect_200 {
 }
 
 mod expect_404 {
-    use super::with_paths_and_method;
+    use super::with_path_and_method;
     use hyper::Method;
     use hyper::Method::*;
     use hyper::StatusCode;
@@ -66,7 +68,7 @@ mod expect_404 {
                                   .filter(|m| *m != &Method::Get);
 
         for method in methods {
-            with_paths_and_method(&["/"], method.clone(), |res| {
+            with_path_and_method("/", method.clone(), |res| {
                 assert_eq!(res.status(), StatusCode::NotFound);
             })
         }
@@ -86,9 +88,11 @@ mod expect_404 {
                                             .map(|m| format!("/{}", m.to_string().to_lowercase()))
                                             .collect::<Vec<_>>();
 
-                    with_paths_and_method(&paths, method, |res| {
-                        assert_eq!(res.status(), StatusCode::NotFound);
-                    })
+                    for path in paths {
+                        with_path_and_method(&path, method.clone(), |res| {
+                            assert_eq!(res.status(), StatusCode::NotFound);
+                        })
+                    }
                 }
             )+
         )

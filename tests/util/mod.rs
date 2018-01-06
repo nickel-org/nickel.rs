@@ -1,7 +1,6 @@
-use futures::future::Future;
+use futures::future::{ok, Future};
 use futures::stream::Stream;
-use hyper::{Client, Request, Response};
-use hyper::Method;
+use hyper::{Chunk, Client, Method, Request, Response};
 use tokio_core;
 
 use std::collections::HashSet;
@@ -33,35 +32,54 @@ impl Drop for Bomb {
     }
 }
 
-pub fn response_for_post(url: &str, body: &str) -> Response {
-    let core = tokio_core::reactor::Core::new().unwrap();
+pub fn response_for_post<F>(url: &str, body: &str, handler: F) where F: FnOnce(Response) {
+    let mut core = tokio_core::reactor::Core::new().unwrap();
     let client = Client::configure().build(&core.handle());
     let mut req = Request::new(Method::Post, url.parse().unwrap());
     req.set_body(body.to_string());
-    client.request(req).wait().unwrap()
-}
-
-pub fn response_for_method(method: Method, url: &str) -> Response {
-    let mut core = tokio_core::reactor::Core::new().unwrap();
-    let client = Client::new(&core.handle());
-    let req = Request::new(method, url.parse().unwrap());
-    let work = client.request(req);
+    let work = client.request(req).and_then(|res| {
+        handler(res);
+        ok(())
+    });
     core.run(work).unwrap()
 }
 
-pub fn response_for(url: &str) -> Response {
-    response_for_method(Method::Get, url)
+pub fn response_for_method<F>(method: Method, url: &str, handler: F) where F: FnOnce(Response) {
+    let mut core = tokio_core::reactor::Core::new().unwrap();
+    let client = Client::new(&core.handle());
+    let req = Request::new(method, url.parse().unwrap());
+    let work = client.request(req).and_then(|res| {
+        handler(res);
+        ok(())
+    });
+    core.run(work).unwrap()
 }
 
-pub fn read_body_to_string(res: Response) -> String {
-    res.body().concat2().map(|b| {
-        from_utf8(&b).map(|s| s.to_string()).unwrap()
-    }).wait().unwrap()
+pub fn response_for<F>(url: &str, handler: F) where F: FnOnce(Response) {
+    response_for_method(Method::Get, url, handler)
+}
+
+pub fn for_body<F>(res: Response, f: F) where F: FnOnce(Chunk) {
+    res.body().concat2().map(|b| f(b));
+}
+
+pub fn for_body_as_string<F>(res: Response, f: F) where F: FnOnce(String) {
+    for_body(res, |b| {
+        let s = from_utf8(&b).map(|s| s.to_string()).unwrap();
+        f(s)
+    });
 }
 
 pub fn read_url(url: &str) -> String {
-    let res = response_for(url);
-    read_body_to_string(res)
+    let mut core = tokio_core::reactor::Core::new().unwrap();
+    let client = Client::new(&core.handle());
+    let req = Request::new(Method::Get, url.parse().unwrap());
+    let work = client.request(req).and_then(|response| {
+        response.body().concat2().map(|b| {
+            from_utf8(&b).map(|s| s.to_string()).unwrap()
+        })
+    });
+    core.run(work).unwrap()
 }
 
 pub fn run_example<F>(name: &str, f: F)

@@ -10,20 +10,18 @@ fn with_query<F>(query: &str, f: F) where F: FnOnce(Response) {
 fn assert_accepted<'a, T>(query: &str, expected_values: T)
 where T: AsRef<[&'a str]> {
     with_query(query, |res| {
-        assert_eq!(
-            read_body_to_string(res),
-            format!("Your foo values in the query string are: {:?}",
-                    expected_values.as_ref())
-        );
+        for_body_as_string(res, |s| {
+            assert_eq!(s, format!("Your foo values in the query string are: {:?}",
+                                  expected_values.as_ref()))
+        });
     })
 }
 
 fn assert_rejected(query: &str) {
     with_query(query, |res| {
-        assert_eq!(
-            read_body_to_string(res),
-            "You didn't provide any foo values!"
-        );
+        for_body_as_string(res, |s| {
+            assert_eq!(s, "You didn't provide any foo values!");
+        });
     })
 }
 

@@ -6,24 +6,25 @@ use hyper::client::Response;
 fn with_path<F>(path: &str, f: F) where F: FnOnce(Response) {
     run_example("regex_route", |port| {
         let url = format!("http://localhost:{}{}", port, path);
-        let res = response_for(&url);
-        f(res)
+        response_for(&url, f);
     })
 }
 
 #[test]
 fn with_param() {
     with_path("/hello/world", |res| {
-        let s = read_body_to_string(res);
-        assert_eq!(s, "Hello world");
+        for_body_as_string(res, |s| {
+            assert_eq!(s, "Hello world");
+        });
     })
 }
 
 #[test]
 fn ignores_query() {
     with_path("/hello/world?foo=bar", |res| {
-        let s = read_body_to_string(res);
-        assert_eq!(s, "Hello world");
+        for_body_as_string(res, |s| {
+            assert_eq!(s, "Hello world");
+        });
     })
 }
 
@@ -35,8 +36,9 @@ fn ignores_query() {
 // This seems like it might be a bit of a footgun.
 fn fallthrough_too_many_params() {
     with_path("/hello/beautiful/world", |res| {
-        let s = read_body_to_string(res);
-        assert_eq!(s, "Hello beautiful");
+        for_body_as_string(res, |s| {
+            assert_eq!(s, "Hello beautiful");
+        });
     })
 }
 

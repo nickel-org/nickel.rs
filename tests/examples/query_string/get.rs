@@ -11,10 +11,10 @@ fn with_query<F>(query: &str, f: F) where F: FnOnce(Response) {
 fn assert_accepted(query: &str) {
     with_query(query, |res| {
         let status = res.status();
-        let s = read_body_to_string(res);
-
-        assert_eq!(status, StatusCode::Ok);
-        assert_eq!(s, "Congratulations on conforming!");
+        for_body_as_string(res, |s| {
+            assert_eq!(status, StatusCode::Ok);
+            assert_eq!(s, "Congratulations on conforming!");
+        });
     })
 }
 

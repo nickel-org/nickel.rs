@@ -2,7 +2,7 @@ use hyper::Method;
 use hyper::header::{AccessControlAllowOrigin, AccessControlAllowHeaders};
 use unicase::Ascii;
 
-use util::{run_example, response_for_method, read_body_to_string};
+use util::{run_example, response_for_method, for_body_as_string};
 
 #[test]
 fn sets_headers() {
@@ -11,26 +11,25 @@ fn sets_headers() {
 
         for path in &paths {
             let url = format!("http://localhost:{}/{}", port, path);
-            let res = response_for_method(Method::Get, &url);
+            response_for_method(Method::Get, &url, |res| {
 
-            assert_eq!(
-                res.headers().get(),
-                Some(&AccessControlAllowOrigin::Any)
-            );
-
-            assert_eq!(
-                res.headers().get(),
-                Some(&AccessControlAllowHeaders(vec![
-                    Ascii::new("Origin".to_owned()),
-                    Ascii::new("X-Requested-With".to_owned()),
-                    Ascii::new("Content-Type".to_owned()),
-                    Ascii::new("Accept".to_owned()),
-                ]))
-            );
-
-
-            let body = read_body_to_string(res);
-            assert_eq!(body, "Hello CORS Enabled World");
+                assert_eq!(
+                    res.headers().get(),
+                    Some(&AccessControlAllowOrigin::Any)
+                );
+                
+                assert_eq!(
+                    res.headers().get(),
+                    Some(&AccessControlAllowHeaders(vec![
+                        Ascii::new("Origin".to_owned()),
+                        Ascii::new("X-Requested-With".to_owned()),
+                        Ascii::new("Content-Type".to_owned()),
+                        Ascii::new("Accept".to_owned()),
+                    ]))
+                );
+                
+                for_body_as_string(res, |body| {assert_eq!(body, "Hello CORS Enabled World")});
+            });
         }
     })
 }

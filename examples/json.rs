@@ -3,6 +3,7 @@ extern crate futures;
 extern crate rustc_serialize;
 
 use futures::{Future, Stream};
+use nickel::hyper::Error;
 use nickel::hyper::Chunk;
 use std::collections::BTreeMap;
 use nickel::status::StatusCode;
@@ -36,22 +37,22 @@ fn main() {
         format!("Hello {} {}", person.first_name, person.last_name)
     });
 
-    server.post("/stream/", middleware! {
-        |request, response|
-        let person = try_with!(response, {
-            request.json_future::<Person>().map_err(|e| (StatusCode::BadRequest, e))
-        });
-        let body: ResponseStream = Box::new(person.
-                                            into_stream().
-                                            and_then(
-                                                |p_res|
-                                                match p_res {
-                                                    Ok(p) => Ok(Chunk::from(format!("Hello {} {}", p.first_name, p.last_name))),
-                                                    Err(e) => Err(e),
-                                                })
-        );
-        body
-    });
+    // server.post("/stream/", middleware! {
+    //     |request, response|
+    //     let person = try_with!(response, {
+    //         request.json_future::<Person>().map_err(|e| (StatusCode::BadRequest, e))
+    //     });
+    //     let body: ResponseStream = Box::new(person.
+    //                                         into_stream().
+    //                                         and_then(
+    //                                             |p_res|
+    //                                             match p_res {
+    //                                                 Ok(p) => Ok(Chunk::from(format!("Hello {} {}", p.first_name, p.last_name))),
+    //                                                 Err(e) => Err(Error::Incomplete),
+    //                                             })
+    //     );
+    //     body
+    // });
 
     // go to http://localhost:6767/your/name to see this route in action
     server.get("/:first/:last", middleware! { |req|

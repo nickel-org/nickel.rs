@@ -151,52 +151,51 @@ impl<'a, D> Response<'a, D> {
         //     map_err(|e| HyperError::from(e));
 
         // using futures-cpupool
-        // let stream = self.cpupool.spawn_fn(|| {
-        //     let mut file = match File::open(path_buf) {
-        //         Ok(f) => f,
-        //         Err(e) => { return future::err(e) },
-        //     };
-        //     let mut buf = Vec::new();
-        //     match copy(&mut file, &mut buf) {
-        //         Ok(_) => {
-        //             eprintln!("Got buf: {:?}", &buf[0..16]);
-        //             future::ok(buf)
-        //         },
-        //         Err(e) => future::err(e),
-        //     }
-        // }).into_stream().
-        //     map(|b| Chunk::from(b)).
-        //     map_err(|e| HyperError::from(e));
-
-        // let body: ResponseStream = Box::new(stream);
-        // self.origin.set_body(body);
-        // Ok(Halt(self))
-
-        // manually using scoped thread pool
-        let (tx, rx) = oneshot::channel();
-        self.pool.scoped(|scope| {
-            scope.execute(move || {
-                let mut file = match File::open(path_buf) {
-                    Ok(f) => f,
-                    Err(e) => { tx.send(Err(e)); return; },
-                };
-                let mut buf: Vec<u8> = Vec::new();
-                match copy(&mut file, &mut buf) {
-                    Ok(_) => { tx.send(Ok(buf)); },
-                    Err(e) => { tx.send(Err(e)); },
-                };
-            })
-        });
-        let body: ResponseStream = Box::new(rx.
-                                            into_stream().
-                                            map_err(|e| HyperError::from(io::Error::new(io::ErrorKind::Other, e))).
-                                            and_then(|r| match r {
-                                                Ok(r) => Ok(Chunk::from(r)),
-                                                Err(e) => Err(HyperError::from(e)),
-                                            })
-        );
+        let stream = self.cpupool.spawn_fn(|| {
+            let mut file = match File::open(path_buf) {
+                Ok(f) => f,
+                Err(e) => { return future::err(e) },
+            };
+            let mut buf = Vec::new();
+            match copy(&mut file, &mut buf) {
+                Ok(_) => {
+                    eprintln!("Got buf: {:?}", &buf[0..16]);
+                    future::ok(buf)
+                },
+                Err(e) => future::err(e),
+            }
+        }).into_stream().
+            map(|b| Chunk::from(b)).
+            map_err(|e| HyperError::from(e));
+        let body: ResponseStream = Box::new(stream);
         self.origin.set_body(body);
         Ok(Halt(self))
+
+        // manually using scoped thread pool
+        // let (tx, rx) = oneshot::channel();
+        // self.pool.scoped(|scope| {
+        //     scope.execute(move || {
+        //         let mut file = match File::open(path_buf) {
+        //             Ok(f) => f,
+        //             Err(e) => { tx.send(Err(e)); return; },
+        //         };
+        //         let mut buf: Vec<u8> = Vec::new();
+        //         match copy(&mut file, &mut buf) {
+        //             Ok(_) => { tx.send(Ok(buf)); },
+        //             Err(e) => { tx.send(Err(e)); },
+        //         };
+        //     })
+        // });
+        // let body: ResponseStream = Box::new(rx.
+        //                                     into_stream().
+        //                                     map_err(|e| HyperError::from(io::Error::new(io::ErrorKind::Other, e))).
+        //                                     and_then(|r| match r {
+        //                                         Ok(r) => Ok(Chunk::from(r)),
+        //                                         Err(e) => Err(HyperError::from(e)),
+        //                                     })
+        // );
+        // self.origin.set_body(body);
+        // Ok(Halt(self))
     }
 
     pub fn set_body(mut self, body: ResponseStream) -> MiddlewareResult<'a, D> {

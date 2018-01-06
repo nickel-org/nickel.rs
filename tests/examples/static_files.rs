@@ -1,6 +1,5 @@
 use util::*;
 
-use futures::{Future, Stream};
 use hyper::StatusCode;
 use hyper::client::Response;
 
@@ -10,8 +9,7 @@ use std::net::TcpStream;
 fn with_path<F>(path: &str, f: F) where F: FnOnce(Response) {
     run_example("static_files", |port| {
         let url = format!("http://localhost:{}{}", port, path);
-        let res = response_for(&url);
-        f(res)
+        response_for(&url, f)
     })
 }
 
@@ -19,17 +17,19 @@ fn with_path<F>(path: &str, f: F) where F: FnOnce(Response) {
 fn returns_expected_files() {
     with_path("/thoughtram_logo_brain.png", |res| {
         let status = res.status();
-        let head = res.body().concat2().wait().unwrap();
         assert_eq!(status, StatusCode::Ok);
-        assert!(!&head.is_empty(), "no data for thoughtram_logo_brain.png");
+        for_body(res, |head| {
+            assert!(!&head.is_empty(), "no data for thoughtram_logo_brain.png")
+        });
     });
 }
 
 #[test]
 fn nested_files() {
     with_path("/nested/foo.js", |res| {
-        let s = read_body_to_string(res);
-        assert!(s.starts_with("function foo"), "unexpected response: {:?}", s);
+        for_body_as_string(res, |s| {
+            assert!(s.starts_with("function foo"), "unexpected response: {:?}", s);
+        });
     });
 }
 
@@ -56,7 +56,8 @@ fn rejects_parent_folder_access() {
 fn fallthroughs_with_same_prefix() {
     // depends on `works_with_another_middleware` passing
     with_path("/static/files/a", |res| {
-        let s = read_body_to_string(res);
-        assert_eq!(s, "Not Found");
+        for_body_as_string(res, |s| {
+            assert_eq!(s, "Not Found");
+        });
     });
 }

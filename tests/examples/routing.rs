@@ -6,32 +6,34 @@ use hyper::client::Response;
 fn with_path<F>(path: &str, f: F) where F: FnOnce(Response) {
     run_example("routing", |port| {
         let url = format!("http://localhost:{}{}", port, path);
-        let res = response_for(&url);
-        f(res)
+        response_for(&url, f)
     })
 }
 
 #[test]
 fn concrete_path() {
     with_path("/bar", |res| {
-        let s = read_body_to_string(res);
-        assert_eq!(s, "This is the /bar handler");
+        for_body_as_string(res, |s| {
+            assert_eq!(s, "This is the /bar handler");
+        });
     })
 }
 
 #[test]
 fn parameterised_path() {
     with_path("/not_bar", |res| {
-        let s = read_body_to_string(res);
-        assert_eq!(s, "Foo is 'not_bar'. The requested format is ''");
+        for_body_as_string(res, |s| {
+            assert_eq!(s, "Foo is 'not_bar'. The requested format is ''");
+        });
     })
 }
 
 #[test]
 fn single_wildcard_accept_single_directory() {
     with_path("/some/crazy/route", |res| {
-        let s = read_body_to_string(res);
-        assert_eq!(s, "This matches /some/crazy/route but not /some/super/crazy/route");
+        for_body_as_string(res, |s| {
+            assert_eq!(s, "This matches /some/crazy/route but not /some/super/crazy/route");
+        });
     })
 }
 
@@ -48,8 +50,9 @@ fn double_wildcard() {
 
     for path in both {
         with_path(path, |res| {
-            let s = read_body_to_string(res);
-            assert_eq!(s, "This matches /a/crazy/route and also /a/super/crazy/route");
+            for_body_as_string(res, |s| {
+                assert_eq!(s, "This matches /a/crazy/route and also /a/super/crazy/route");
+            });
         })
     }
 }
@@ -57,8 +60,9 @@ fn double_wildcard() {
 #[test]
 fn parameterised_path_with_format() {
     with_path("/not_bar.xml", |res| {
-        let s = read_body_to_string(res);
-        assert_eq!(s, "Foo is 'not_bar'. The requested format is 'xml'");
+        for_body_as_string(res, |s| {
+            assert_eq!(s, "Foo is 'not_bar'. The requested format is 'xml'");
+        });
     })
 }
 
