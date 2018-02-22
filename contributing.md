@@ -8,25 +8,25 @@ Make sure to follow this [commit message convention](https://github.com/conventi
 
 The easiest way to get started is to get nickel running and play around with it. Let's do that real quick!
 
-##Clone the repository
+## Clone the repository
 
 ```shell
 git clone https://github.com/nickel-org/nickel.git
 ```
 
-##Build nickel
+## Build nickel
 
 ```shell
 cargo build --release
 ```
 
-##Run the tests
+## Run the tests
 
 ```shell
 cargo test
 ```
 
-##Run the example
+## Run the example
 
 ```shell
 cargo run --example example
