@@ -1,6 +1,4 @@
 #[macro_use] extern crate nickel;
-extern crate hyper;
-
 use nickel::{Nickel, HttpRouter, Request, Response, MiddlewareResult};
 
 fn enable_cors<'mw>(_req: &mut Request, mut res: Response<'mw>) -> MiddlewareResult<'mw> {
