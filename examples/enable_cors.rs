@@ -24,6 +24,7 @@ fn enable_cors<'mw>(_req: &mut Request, mut res: Response<'mw>) -> MiddlewareRes
 fn main() {
     let mut server = Nickel::new();
     server.utilize(enable_cors);
+    server.options("**", middleware!(""));
     server.get("**", middleware!("Hello CORS Enabled World"));
     server.listen("127.0.0.1:6767").unwrap();
 }
