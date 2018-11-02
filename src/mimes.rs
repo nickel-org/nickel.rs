@@ -638,6 +638,7 @@ mimes!(
         Yang, "yang", "yang",
         Yin, "yin", "yin+xml",
         Zip, "zip", "zip",
+        Wasm, "wasm", "wasm",
 
     }
 
