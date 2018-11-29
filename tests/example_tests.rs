@@ -1,4 +1,6 @@
-extern crate rustc_serialize;
+extern crate serde;
+extern crate serde_json;
+#[macro_use] extern crate serde_derive;
 extern crate hyper;
 // HACK: integration_testing example refers to `nickel::foo`
 // and this import helps that resolve rather than requiring `self::nickel::foo`

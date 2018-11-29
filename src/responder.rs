@@ -12,7 +12,7 @@
 use {Response, NickelError, MiddlewareResult, Halt};
 use hyper::status::{StatusCode, StatusClass};
 use hyper::header;
-use serialize::json;
+use serde_json;
 use mimes::MediaType;
 use std::io::Write;
 
@@ -31,10 +31,10 @@ impl<D> Responder<D> for () {
     }
 }
 
-impl<D> Responder<D> for json::Json {
+impl<D> Responder<D> for serde_json::Value {
     fn respond<'a>(self, mut res: Response<'a, D>) -> MiddlewareResult<'a, D> {
         maybe_set_type(&mut res, MediaType::Json);
-        res.send(json::encode(&self)
+        res.send(serde_json::to_string(&self)
                       .map_err(|e| format!("Failed to parse JSON: {}", e)))
     }
 }

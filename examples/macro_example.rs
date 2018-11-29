@@ -1,6 +1,7 @@
 #[macro_use] extern crate nickel;
 extern crate regex;
-extern crate rustc_serialize;
+extern crate serde;
+#[macro_use] extern crate serde_derive;
 extern crate hyper;
 
 use std::io::Write;
@@ -12,7 +13,7 @@ use nickel::{
 use regex::Regex;
 use hyper::header::Location;
 
-#[derive(RustcDecodable, RustcEncodable)]
+#[derive(Serialize, Deserialize)]
 struct Person {
     firstname: String,
     lastname:  String,

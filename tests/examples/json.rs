@@ -48,7 +48,7 @@ mod outgoing {
         use super::super::with_path;
         use util::*;
 
-        use rustc_serialize::json;
+        use serde_json;
 
         use std::collections::HashMap;
         use hyper::{mime, header};
@@ -57,7 +57,7 @@ mod outgoing {
         fn serializes_valid_json() {
             with_path("/Pea/Nut", |res| {
                 let s = read_body_to_string(res);
-                let map: HashMap<String, String> = json::decode(&s).unwrap();
+                let map: HashMap<String, String> = serde_json::from_str(&s).unwrap();
                 assert_eq!(map["first_name"], "Pea");
                 assert_eq!(map["last_name"], "Nut");
             })
@@ -77,7 +77,7 @@ mod outgoing {
         use super::super::with_path;
         use util::*;
 
-        use rustc_serialize::json;
+        use serde_json;
 
         use std::collections::HashMap;
         use hyper::{mime, header};
@@ -86,7 +86,7 @@ mod outgoing {
         fn serializes_valid_json() {
             with_path("/raw", |res| {
                 let s = read_body_to_string(res);
-                let map: HashMap<String, String> = json::decode(&s).unwrap();
+                let map: HashMap<String, String> = serde_json::from_str(&s).unwrap();
                 assert_eq!(map["foo"], "bar");
             })
         }

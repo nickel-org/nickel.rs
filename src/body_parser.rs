@@ -1,6 +1,7 @@
 use hyper::header::ContentType;
 use hyper::mime::{Mime, SubLevel, TopLevel};
-use serialize::{Decodable, json};
+use serde::Deserialize;
+use serde_json;
 use request::Request;
 use plugin::{Plugin, Pluggable};
 use status::StatusCode;
@@ -75,16 +76,16 @@ impl<'mw, 'conn, D> FormBody for Request<'mw, 'conn, D> {
 }
 
 pub trait JsonBody {
-    fn json_as<T: Decodable>(&mut self) -> Result<T, io::Error>;
+    fn json_as<'a, T: Deserialize<'a>>(&'a mut self) -> Result<T, io::Error>;
 }
 
 impl<'mw, 'conn, D> JsonBody for Request<'mw, 'conn, D> {
     // FIXME: Update the error type.
     // Would be good to capture parsing error rather than a generic io::Error.
     // FIXME: Do the content-type check
-    fn json_as<T: Decodable>(&mut self) -> Result<T, io::Error> {
+    fn json_as<'a, T: Deserialize<'a>>(&'a mut self) -> Result<T, io::Error> {
         self.get_ref::<BodyReader>().and_then(|body|
-            json::decode::<T>(&*body).map_err(|err|
+            serde_json::from_str::<T>(&*body).map_err(|err|
                 io::Error::new(ErrorKind::Other, format!("Parse error: {}", err))
             )
         )
