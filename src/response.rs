@@ -1,7 +1,7 @@
 use std::mem;
 use std::borrow::Cow;
 use std::path::Path;
-use serialize::Encodable;
+use serialize::{Encodable, json};
 use hyper::status::StatusCode;
 use hyper::server::Response as HyperResponse;
 use hyper::header::{
@@ -138,6 +138,24 @@ impl<'a, D> Response<'a, D, Fresh> {
             Ok(_) => Ok(Halt(stream)),
             Err(e) => stream.bail(format!("Failed to send file: {}", e))
         }
+    }
+
+    /// Writes a JSON to the output
+    ///
+    /// # Examples
+    /// ```{rust}
+    /// use nickel::{Request, Response, MiddlewareResult};
+    ///
+    /// # #[allow(dead_code)]
+    /// fn handler<'a, D>(_: &mut Request<D>, res: Response<'a, D>) -> MiddlewareResult<'a, D> {
+    ///     let json_data = String::from("Hello!");
+    ///     res.send_json(&json_data)
+    /// }
+    /// ```
+    pub fn send_json<T: Encodable>(mut self, data: &T) -> MiddlewareResult<'a, D> {
+        let encoded = try_with!(self, json::encode(data).map_err(|e| (StatusCode::InternalServerError, e)));
+        self.set(MediaType::Json);
+        self.send(encoded)
     }
 
     // TODO: This needs to be more sophisticated to return the correct headers
