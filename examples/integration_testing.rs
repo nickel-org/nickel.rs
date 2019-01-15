@@ -3,13 +3,13 @@
 #[cfg_attr(not(test), macro_use)]
 extern crate nickel;
 extern crate hyper;
-extern crate rustc_serialize;
+extern crate serde;
+extern crate serde_json;
+extern crate serde_derive;
 
 use nickel::{Nickel, ListeningServer, HttpRouter, JsonBody, Request, Response, MiddlewareResult};
 use nickel::status::StatusCode;
-
-use rustc_serialize::json::Json;
-
+use serde_derive::{Serialize, Deserialize};
 use std::error::Error as StdError;
 use std::{env, str};
 use std::sync::atomic::{self, AtomicUsize};
@@ -83,26 +83,26 @@ where D: Database {
     server.get("/users", middleware! { |_, res| <ServerData>
         let users = res.data().get_users();
 
-        Json::from_str(&format!(r#"{{ "users": {:?} }}"#, users)).unwrap()
+        serde_json::from_str::<serde_json::Value>(&format!(r#"{{ "users": {:?} }}"#, users)).unwrap()
     });
 
     // Json example
     server.post("/", middleware! { |req, res|
-        #[derive(RustcEncodable, RustcDecodable)]
+        #[derive(Serialize, Deserialize)]
         struct Data { name: String, age: Option<u32> }
 
         let client = try_with!(res, req.json_as::<Data>().map_err(|e| (StatusCode::BadRequest, e)));
 
         match client.age {
             Some(age) => {
-                Json::from_str(&format!(
+                serde_json::from_str::<serde_json::Value>(&format!(
                     r#"{{ "message": "Hello {}, your age is {}" }}"#,
                     client.name,
                     age
                 )).unwrap()
             }
             None => {
-                Json::from_str(&format!(
+                serde_json::from_str::<serde_json::Value>(&format!(
                     r#"{{ "message": "Hello {}, I don't know your age" }}"#,
                     client.name
                 )).unwrap()
@@ -124,7 +124,7 @@ mod tests {
 
     use hyper::header;
     use nickel::status::StatusCode;
-    use rustc_serialize::json::Json;
+    use serde_json::Value;
 
     use std::{thread, time};
 
@@ -154,9 +154,9 @@ mod tests {
     fn root_responds_with_modified_json() {
         let mut response = post("/", r#"{ "name": "Rust", "age": 1 }"#);
 
-        let json = Json::from_str(&response.body()).unwrap();
+        let json: Value = serde_json::from_str(&response.body()).unwrap();
 
-        assert_eq!(json["message"].as_string(), Some("Hello Rust, your age is 1"));
+        assert_eq!(json["message"].as_str(), Some("Hello Rust, your age is 1"));
         assert_eq!(response.status, StatusCode::Ok);
         assert_eq!(
             response.headers.get::<header::ContentType>(),
@@ -168,9 +168,9 @@ mod tests {
     fn accepts_json_with_missing_fields() {
         let mut response = post("/", r#"{ "name": "Rust" }"#);
 
-        let json = Json::from_str(&response.body()).unwrap();
+        let json: Value = serde_json::from_str(&response.body()).unwrap();
 
-        assert_eq!(json["message"].as_string(), Some("Hello Rust, I don't know your age"));
+        assert_eq!(json["message"].as_str(), Some("Hello Rust, I don't know your age"));
         assert_eq!(response.status, StatusCode::Ok);
         assert_eq!(
             response.headers.get::<header::ContentType>(),
@@ -199,7 +199,7 @@ mod tests {
     fn has_no_users_by_default() {
         let mut response = get("/users");
 
-        let json = Json::from_str(&response.body()).unwrap();
+        let json: Value = serde_json::from_str(&response.body()).unwrap();
 
         assert_eq!(json["users"].as_array().unwrap().len(), 0);
         assert_eq!(response.status, StatusCode::Ok);
@@ -219,7 +219,7 @@ mod tests {
 
         let mut response = server.get("/users");
 
-        let json = Json::from_str(&response.body()).unwrap();
+        let json: Value = serde_json::from_str(&response.body()).unwrap();
 
         assert_eq!(json["users"].as_array().unwrap().len(), 3);
         assert_eq!(response.status, StatusCode::Ok);

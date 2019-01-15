@@ -1,7 +1,7 @@
 use std::mem;
 use std::borrow::Cow;
 use std::path::Path;
-use serialize::Encodable;
+use serde::Serialize;
 use hyper::status::StatusCode;
 use hyper::server::Response as HyperResponse;
 use hyper::header::{
@@ -206,7 +206,7 @@ impl<'a, D> Response<'a, D, Fresh> {
     /// }
     /// ```
     pub fn render<T, P>(self, path: P, data: &T) -> MiddlewareResult<'a, D>
-        where T: Encodable, P: AsRef<Path> + Into<String> {
+        where T: Serialize, P: AsRef<Path> + Into<String> {
 
         let mut self_started = self.start()?;
         match self_started.templates.render(path, &mut self_started, data) {

@@ -1,5 +1,5 @@
 use mustache::{Error, Template, compile_path};
-use serialize::Encodable;
+use serde::Serialize;
 use std::collections::HashMap;
 use std::fs::metadata;
 use std::io::Write;
@@ -25,7 +25,7 @@ impl TemplateEntry {
 
     // render the tempate with the given data
     fn render<W, D>(&self, writer: &mut W, data: &D) -> Result<(), Error>
-        where W: Write, D: Encodable {
+        where W: Write, D: Serialize {
         self.template.render(writer, data)
     }
 }
@@ -85,7 +85,7 @@ impl TemplateCache {
     //
     //   * Err(e) - mustache error
     fn try_render_template<P, W, D>(&self, path: P, writer: &mut W, data: &D) -> Result<bool, Error>
-        where P: AsRef<Path>, W: Write, D: Encodable {
+        where P: AsRef<Path>, W: Write, D: Serialize {
 
         let c = self.cache.read().expect("TemplateCache::try_render_template - cache poisoned");
         if let Some(template) = c.get(&path.as_ref().to_path_buf()) {
@@ -118,7 +118,7 @@ impl TemplateCache {
     // Load the template from disk, compile it, store the compiled
     // template in cache, and render. This needs a write lock.
     fn load_render_template<P, W, D>(&self, path: P, writer: &mut W, data: &D) -> Result<(), Error>
-        where P: AsRef<Path>, W: Write, D: Encodable {
+        where P: AsRef<Path>, W: Write, D: Serialize {
 
         let mut c = self.cache.write().expect("TemplateCache::load_render_template - cache poisoned");
         let template = TemplateEntry::from_template_file(&path)?;
@@ -131,7 +131,7 @@ impl TemplateCache {
     /// `data`. Templates will be reloaded if necessary according to
     /// the reload policy.
     pub fn render<P, W, D>(&self, path: P, writer: &mut W, data: &D) -> Result<(), Error>
-        where P: AsRef<Path>, W: Write, D: Encodable {
+        where P: AsRef<Path>, W: Write, D: Serialize {
         let rendered = match self.try_render_template(&path, writer, data) {
             Ok(r) => r,
             Err(e) => {

@@ -1,7 +1,8 @@
 #![doc(test(attr(deny(warnings))))]
 
 extern crate time;
-extern crate rustc_serialize as serialize;
+extern crate serde;
+extern crate serde_json;
 pub extern crate hyper;
 extern crate regex;
 extern crate typemap;
