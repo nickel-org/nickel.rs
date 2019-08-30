@@ -27,6 +27,11 @@ impl Params {
     pub fn all(&self, key: &str) -> Option<&[String]> {
         self.0.get(key).map(|v| &**v)
     }
+
+    /// Retrieve the entire query map.
+    pub fn map(&self) -> &HashMap<String, Vec<String>> {
+        &self.0
+    }
 }
 
 pub fn parse(encoded_string : &str) -> Params {
@@ -58,12 +63,24 @@ fn parses_encoded_string_with_duplicate_keys() {
         store.all("message"),
         Some(&["hello".to_string(), "world".to_string()][..])
     );
+
+    let map = store.map();
+    assert_eq!(map.len(), 2);
+    assert_eq!(map.get("foo"), Some(&vec!["bar".to_string()]));
+    assert_eq!(
+        map.get("message"),
+        Some(&vec!["hello".to_string(), "world".to_string()])
+    );
 }
 
 #[test]
 fn parses_urlencoded_characters() {
     let store = parse("message=hello%20world");
     assert_eq!(store.get("message"), Some("hello world"));
+
+    let map = store.map();
+    assert_eq!(map.len(), 1);
+    assert_eq!(map.get("message"), Some(&vec!["hello world".to_string()]));
 }
 
 #[test]
