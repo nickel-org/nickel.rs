@@ -125,6 +125,13 @@ pub trait HttpRouter<D> {
         self.add_route(Method::Get, matcher, handler)
     }
 
+    /// Registers a handler to be used for a specific HEAD request.
+    ///
+    /// Take a look at `get(...)` for a more detailed description.
+    fn head<M: Into<Matcher>, H: Middleware<D>>(&mut self, matcher: M, handler: H) -> &mut Self {
+        self.add_route(Method::Head, matcher, handler)
+    }
+
     /// Registers a handler to be used for a specific POST request.
     ///
     /// Take a look at `get(...)` for a more detailed description.
@@ -146,11 +153,25 @@ pub trait HttpRouter<D> {
         self.add_route(Method::Delete, matcher, handler)
     }
 
+    /// Registers a handler to be used for a specific CONNECT request.
+    ///
+    /// Take a look at `get(...)` for a more detailed description.
+    fn connect<M: Into<Matcher>, H: Middleware<D>>(&mut self, matcher: M, handler: H) -> &mut Self {
+        self.add_route(Method::Connect, matcher, handler)
+    }
+
     /// Registers a handler to be used for a specific OPTIONS request.
     ///
     /// Take a look at `get(...)` for a more detailed description.
     fn options<M: Into<Matcher>, H: Middleware<D>>(&mut self, matcher: M, handler: H) -> &mut Self {
         self.add_route(Method::Options, matcher, handler)
+    }
+
+    /// Registers a handler to be used for a specific TRACE request.
+    ///
+    /// Take a look at `get(...)` for a more detailed description.
+    fn trace<M: Into<Matcher>, H: Middleware<D>>(&mut self, matcher: M, handler: H) -> &mut Self {
+        self.add_route(Method::Trace, matcher, handler)
     }
 
     /// Registers a handler to be used for a specific PATCH request.
