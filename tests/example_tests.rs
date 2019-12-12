@@ -29,6 +29,7 @@ mod examples {
     mod enable_cors;
     mod form_data;
     mod integration_testing;
+    mod error_handling;
 
     #[cfg(feature = "ssl")]
     mod https;
