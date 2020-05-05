@@ -73,7 +73,7 @@ impl<'a, T, D> From<(Response<'a, D>, (StatusCode, T))> for NickelError<'a, D>
         where T: Into<Box<dyn Error + 'static>> {
     fn from((res, (errorcode, err)): (Response<'a, D>, (StatusCode, T))) -> NickelError<'a, D> {
         let err = err.into();
-        NickelError::new(res, err.description().to_string(), errorcode)
+        NickelError::new(res, err.to_string(), errorcode)
     }
 }
 

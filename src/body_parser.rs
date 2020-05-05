@@ -105,24 +105,20 @@ impl From<io::Error> for BodyError {
 }
 
 impl StdError for BodyError {
-    fn description(&self) -> &str {
-        match *self {
-            BodyError::Io(ref err) => err.description(),
-            BodyError::WrongContentType => "Wrong content type"
-        }
-    }
-
-    fn cause(&self) -> Option<&dyn StdError> {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
         match *self {
             BodyError::Io(ref err) => Some(err),
-            _ => None
+            BodyError::WrongContentType => None
         }
     }
 }
 
 impl fmt::Display for BodyError {
     fn fmt(&self, out: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(out, "{}", self.description())
+        match *self {
+            BodyError::Io(ref err) => { write!(out, "{}", err.to_string()) },
+            BodyError::WrongContentType => { write!(out, "Wrong content type") },
+        }
     }
 }
 

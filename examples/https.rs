@@ -1,5 +1,3 @@
-#[macro_use] extern crate nickel;
-
 #[cfg(feature = "ssl")]
 fn main() {
     use hyper::net::Openssl;
