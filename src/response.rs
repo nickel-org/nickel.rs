@@ -9,12 +9,12 @@ use hyper::header::{
 };
 use hyper::net::{Fresh, Streaming};
 use time;
-use mimes::MediaType;
+use crate::mimes::MediaType;
 use std::io::{self, Write, copy};
 use std::fs::File;
 use std::any::Any;
-use {NickelError, Halt, MiddlewareResult, Responder, Action};
-use template_cache::TemplateCache;
+use crate::{NickelError, Halt, MiddlewareResult, Responder, Action};
+use crate::template_cache::TemplateCache;
 use modifier::Modifier;
 use plugin::{Extensible, Pluggable};
 use typemap::TypeMap;
@@ -27,7 +27,7 @@ pub struct Response<'a, D: 'a = (), T: 'static + Any = Fresh> {
     data: &'a D,
     map: TypeMap,
     // This should be FnBox, but that's currently unstable
-    on_send: Vec<Box<FnMut(&mut Response<'a, D, Fresh>)>>
+    on_send: Vec<Box<dyn FnMut(&mut Response<'a, D, Fresh>)>>
 }
 
 impl<'a, D> Response<'a, D, Fresh> {
@@ -133,7 +133,7 @@ impl<'a, D> Response<'a, D, Fresh> {
                                                  path, e))
         });
 
-        let mut stream = try!(self.start());
+        let mut stream = self.start()?;
         match copy(&mut file, &mut stream) {
             Ok(_) => Ok(Halt(stream)),
             Err(e) => stream.bail(format!("Failed to send file: {}", e))
@@ -338,7 +338,7 @@ mod modifier_impls {
     use hyper::header::*;
     use hyper::status::StatusCode;
     use modifier::Modifier;
-    use {Response, MediaType};
+    use crate::{Response, MediaType};
 
     impl<'a, D> Modifier<Response<'a, D>> for StatusCode {
         fn modify(self, res: &mut Response<'a, D>) {

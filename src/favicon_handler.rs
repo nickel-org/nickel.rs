@@ -7,10 +7,10 @@ use hyper::method::Method::{Get, Head, Options};
 use hyper::status::StatusCode;
 use hyper::header;
 
-use request::Request;
-use response::Response;
-use middleware::{Middleware, MiddlewareResult};
-use mimes::MediaType;
+use crate::request::Request;
+use crate::response::Response;
+use crate::middleware::{Middleware, MiddlewareResult};
+use crate::mimes::MediaType;
 
 pub struct FaviconHandler {
     icon: Vec<u8>,

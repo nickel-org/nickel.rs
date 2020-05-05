@@ -1,7 +1,7 @@
-use nickel::Nickel;
-use request::Request;
-use response::Response;
-use middleware::{Continue, Middleware, MiddlewareResult};
+use crate::nickel::Nickel;
+use crate::request::Request;
+use crate::response::Response;
+use crate::middleware::{Continue, Middleware, MiddlewareResult};
 
 use hyper::uri::RequestUri::AbsolutePath;
 

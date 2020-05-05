@@ -1,4 +1,4 @@
-use util::{run_example, read_url};
+use crate::util::{run_example, read_url};
 
 #[test]
 fn prints_borrowed_data() {

@@ -1,7 +1,7 @@
 use hyper::client::Client;
 use hyper::header::ContentType;
 use hyper::status::StatusCode;
-use util::{read_body_to_string, read_url, run_example};
+use crate::util::{read_body_to_string, read_url, run_example};
 
 #[test]
 fn display_form() {

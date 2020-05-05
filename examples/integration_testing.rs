@@ -35,7 +35,7 @@ struct ServerData {
     //
     // To counter this limitation, we've boxed the trait so that specifying the
     // typeparam is unnecessary.
-    database: Box<Database>
+    database: Box<dyn Database>
 }
 
 impl ServerData {
@@ -65,7 +65,7 @@ fn log_hit<'mw, 'conn>(_req: &mut Request<'mw, 'conn, ServerData>, res: Response
     return res.next_middleware()
 }
 
-fn start_server<D>(address: &str, database: D) -> Result<ListeningServer, Box<StdError>>
+fn start_server<D>(address: &str, database: D) -> Result<ListeningServer, Box<dyn StdError>>
 where D: Database {
     let server_data = ServerData {
         hits: AtomicUsize::new(0),

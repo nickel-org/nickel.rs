@@ -2,16 +2,16 @@ use std::net::ToSocketAddrs;
 use std::time::Duration;
 use std::env;
 use std::error::Error as StdError;
-use router::{Router, HttpRouter, Matcher};
-use middleware::{MiddlewareStack, Middleware, ErrorHandler};
-use server::{Server, ListeningServer};
-use template_cache::ReloadPolicy;
+use crate::router::{Router, HttpRouter, Matcher};
+use crate::middleware::{MiddlewareStack, Middleware, ErrorHandler};
+use crate::server::{Server, ListeningServer};
+use crate::template_cache::ReloadPolicy;
 use hyper::method::Method;
 use hyper::net::SslServer;
 use hyper::status::StatusCode;
 
 //pre defined middleware
-use default_error_handler::DefaultErrorHandler;
+use crate::default_error_handler::DefaultErrorHandler;
 
 /// Configuration options for the server.
 ///
@@ -225,7 +225,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     /// # // unblock the server so the test doesn't block forever
     /// # listening.detach();
     /// ```
-    pub fn listen<T: ToSocketAddrs>(mut self, addr: T) -> Result<ListeningServer, Box<StdError>> {
+    pub fn listen<T: ToSocketAddrs>(mut self, addr: T) -> Result<ListeningServer, Box<dyn StdError>> {
         self.middleware_stack.add_middleware(middleware! {
             (StatusCode::NotFound, "File Not Found")
         });
@@ -237,13 +237,13 @@ impl<D: Sync + Send + 'static> Nickel<D> {
         let listener = if is_test_harness {
             // If we're under a test harness, we'll pass zero to get assigned a random
             // port. See http://doc.rust-lang.org/std/net/struct.TcpListener.html#method.bind
-            try!(server.serve("localhost:0",
-                              self.keep_alive_timeout,
-                              self.options.thread_count))
+            server.serve("localhost:0",
+                         self.keep_alive_timeout,
+                         self.options.thread_count)?
         } else {
-            try!(server.serve(addr,
-                              self.keep_alive_timeout,
-                              self.options.thread_count))
+            server.serve(addr,
+                         self.keep_alive_timeout,
+                         self.options.thread_count)?
         };
 
         if self.options.output_on_listen {
@@ -297,7 +297,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     /// # #[cfg(not(feature = "ssl"))]
     /// # fn main() {}
     /// ```
-    pub fn listen_https<T,S>(mut self, addr: T, ssl: S) -> Result<ListeningServer, Box<StdError>>
+    pub fn listen_https<T,S>(mut self, addr: T, ssl: S) -> Result<ListeningServer, Box<dyn StdError>>
     where T: ToSocketAddrs,
           S: SslServer + Send + Clone + 'static {
         self.middleware_stack.add_middleware(middleware! {
@@ -311,15 +311,15 @@ impl<D: Sync + Send + 'static> Nickel<D> {
         let listener = if is_test_harness {
             // If we're under a test harness, we'll pass zero to get assigned a random
             // port. See http://doc.rust-lang.org/std/net/struct.TcpListener.html#method.bind
-            try!(server.serve_https("localhost:0",
-                                   self.keep_alive_timeout,
-                                   self.options.thread_count,
-                                   ssl))
+            server.serve_https("localhost:0",
+                               self.keep_alive_timeout,
+                               self.options.thread_count,
+                               ssl)?
         } else {
-            try!(server.serve_https(addr,
-                                   self.keep_alive_timeout,
-                                   self.options.thread_count,
-                                   ssl))
+            server.serve_https(addr,
+                               self.keep_alive_timeout,
+                               self.options.thread_count,
+                               ssl)?
         };
 
         if self.options.output_on_listen {
@@ -333,7 +333,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
 
 #[cfg(test)]
 mod tests {
-    use Nickel;
+    use crate::Nickel;
     use std::str::FromStr;
     use std::net::SocketAddr;
 

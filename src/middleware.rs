@@ -1,6 +1,6 @@
-use request::Request;
-use response::Response;
-use nickel_error::NickelError;
+use crate::request::Request;
+use crate::response::Response;
+use crate::nickel_error::NickelError;
 use hyper::net;
 
 pub use self::Action::{Continue, Halt};
@@ -29,7 +29,7 @@ impl<T, D> Middleware<D> for T where T: for<'r, 'mw, 'conn> Fn(&'r mut Request<'
 }
 
 pub trait ErrorHandler<D>: Send + 'static + Sync {
-    fn handle_error(&self, &mut NickelError<D>, &mut Request<D>) -> Action;
+    fn handle_error(&self, _: &mut NickelError<D>, _: &mut Request<D>) -> Action;
 }
 
 impl<D: 'static> ErrorHandler<D> for fn(&mut NickelError<D>, &mut Request<D>) -> Action {
@@ -39,8 +39,8 @@ impl<D: 'static> ErrorHandler<D> for fn(&mut NickelError<D>, &mut Request<D>) ->
 }
 
 pub struct MiddlewareStack<D=()> {
-    handlers: Vec<Box<Middleware<D> + Send + Sync>>,
-    error_handlers: Vec<Box<ErrorHandler<D> + Send + Sync>>
+    handlers: Vec<Box<dyn Middleware<D> + Send + Sync>>,
+    error_handlers: Vec<Box<dyn ErrorHandler<D> + Send + Sync>>
 }
 
 impl<D: 'static> MiddlewareStack<D> {

@@ -1,6 +1,6 @@
 use hyper::method::Method;
-use middleware::Middleware;
-use router::Matcher;
+use crate::middleware::Middleware;
+use crate::router::Matcher;
 
 pub trait HttpRouter<D> {
     /// Registers a handler to be used for a specified method.
@@ -36,7 +36,7 @@ pub trait HttpRouter<D> {
     ///     server.add_route(Get, regex, middleware! { "Regex Get request! "});
     /// }
     /// ```
-    fn add_route<M: Into<Matcher>, H: Middleware<D>>(&mut self, Method, M, H) -> &mut Self;
+    fn add_route<M: Into<Matcher>, H: Middleware<D>>(&mut self, _: Method, _: M, _: H) -> &mut Self;
 
     /// Registers a handler to be used for a specific GET request.
     /// Handlers are assigned to paths and paths are allowed to contain

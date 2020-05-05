@@ -1,7 +1,7 @@
 use hyper::status::StatusCode::{NotFound, BadRequest};
-use request::Request;
-use middleware::{ErrorHandler, Action, Halt};
-use nickel_error::NickelError;
+use crate::request::Request;
+use crate::middleware::{ErrorHandler, Action, Halt};
+use crate::nickel_error::NickelError;
 use std::io::Write;
 
 #[derive(Clone, Copy)]

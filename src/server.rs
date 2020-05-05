@@ -6,10 +6,10 @@ use hyper::server::{Request, Response, Handler, Listening};
 use hyper::server::Server as HyperServer;
 use hyper::net::SslServer;
 
-use middleware::MiddlewareStack;
-use request;
-use response;
-use template_cache::{ReloadPolicy, TemplateCache};
+use crate::middleware::MiddlewareStack;
+use crate::request;
+use crate::response;
+use crate::template_cache::{ReloadPolicy, TemplateCache};
 
 pub struct Server<D> {
     middleware_stack: MiddlewareStack<D>,
@@ -48,7 +48,7 @@ impl<D: Sync + Send + 'static> Server<D> {
                                    thread_count: Option<usize>)
                                     -> HttpResult<ListeningServer> {
         let arc = ArcServer(Arc::new(self));
-        let mut server = try!(HyperServer::http(addr));
+        let mut server = HyperServer::http(addr)?;
 
         server.keep_alive(keep_alive_timeout);
 
@@ -69,7 +69,7 @@ impl<D: Sync + Send + 'static> Server<D> {
         where A: ToSocketAddrs,
               S: SslServer + Clone + Send + 'static {
         let arc = ArcServer(Arc::new(self));
-        let mut server = try!(HyperServer::https(addr, ssl));
+        let mut server = HyperServer::https(addr, ssl)?;
 
         server.keep_alive(keep_alive_timeout);
 

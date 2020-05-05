@@ -1,6 +1,6 @@
-use {Response, MiddlewareResult};
+use crate::{Response, MiddlewareResult};
 use hyper::header;
-use status::StatusCode;
+use crate::status::StatusCode;
 
 pub trait Redirect: Sized {
     type Result;

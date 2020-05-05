@@ -2,14 +2,14 @@ use hyper::header::ContentType;
 use hyper::mime::{Mime, SubLevel, TopLevel};
 use serde::Deserialize;
 use serde_json;
-use request::Request;
+use crate::request::Request;
 use plugin::{Plugin, Pluggable};
-use status::StatusCode;
+use crate::status::StatusCode;
 use std::error::Error as StdError;
 use std::fmt;
 use std::io::{self, ErrorKind, Read};
 use typemap::Key;
-use urlencoded::{self, Params};
+use crate::urlencoded::{self, Params};
 
 struct BodyReader;
 
@@ -22,7 +22,7 @@ impl<'mw, 'conn, D> Plugin<Request<'mw, 'conn, D>> for BodyReader {
 
     fn eval(req: &mut Request<D>) -> Result<String, io::Error> {
         let mut buf = String::new();
-        try!(req.origin.read_to_string(&mut buf));
+        req.origin.read_to_string(&mut buf)?;
         Ok(buf)
     }
 }
@@ -43,7 +43,7 @@ impl<'mw, 'conn, D> Plugin<Request<'mw, 'conn, D>> for FormBodyParser {
                 SubLevel::WwwFormUrlEncoded,
                 _
             ))) => {
-                let body = try!(req.get_ref::<BodyReader>());
+                let body = req.get_ref::<BodyReader>()?;
                 Ok(urlencoded::parse(&*body))
             },
             _ => Err(BodyError::WrongContentType)
@@ -112,7 +112,7 @@ impl StdError for BodyError {
         }
     }
 
-    fn cause(&self) -> Option<&StdError> {
+    fn cause(&self) -> Option<&dyn StdError> {
         match *self {
             BodyError::Io(ref err) => Some(err),
             _ => None

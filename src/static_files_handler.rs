@@ -4,10 +4,10 @@ use std::fs;
 
 use hyper::method::Method::{Get, Head};
 
-use status::StatusCode;
-use request::Request;
-use response::Response;
-use middleware::{Middleware, MiddlewareResult};
+use crate::status::StatusCode;
+use crate::request::Request;
+use crate::response::Response;
+use crate::middleware::{Middleware, MiddlewareResult};
 
 // this should be much simpler after unboxed closures land in Rust.
 

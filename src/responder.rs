@@ -9,11 +9,11 @@
 //! in any request.
 //!
 //! Please see the examples for usage.
-use {Response, NickelError, MiddlewareResult, Halt};
+use crate::{Response, NickelError, MiddlewareResult, Halt};
 use hyper::status::{StatusCode, StatusClass};
 use hyper::header;
 use serde_json;
-use mimes::MediaType;
+use crate::mimes::MediaType;
 use std::io::Write;
 
 /// This trait provides convenience for translating a number
@@ -22,7 +22,7 @@ use std::io::Write;
 ///
 /// Please see the examples for some uses.
 pub trait Responder<D> {
-    fn respond<'a>(self, Response<'a, D>) -> MiddlewareResult<'a, D>;
+    fn respond<'a>(self, _: Response<'a, D>) -> MiddlewareResult<'a, D>;
 }
 
 impl<D> Responder<D> for () {
@@ -69,7 +69,7 @@ dual_impl!(&'a [u8],
             |self, res| {
                 maybe_set_type(&mut res, MediaType::Bin);
 
-                let mut stream = try!(res.start());
+                let mut stream = res.start()?;
                 match stream.write_all(&self[..]) {
                     Ok(()) => Ok(Halt(stream)),
                     Err(e) => stream.bail(format!("Failed to send: {}", e))
@@ -111,7 +111,7 @@ dual_impl!(&'a [&'a str],
             |self, res| {
                 maybe_set_type(&mut res, MediaType::Html);
 
-                let mut stream = try!(res.start());
+                let mut stream = res.start()?;
                 for ref s in self.iter() {
                     if let Err(e) = stream.write_all(s.as_bytes()) {
                         return stream.bail(format!("Failed to write to stream: {}", e))

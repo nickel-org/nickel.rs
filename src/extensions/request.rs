@@ -1,4 +1,4 @@
-use Request;
+use crate::Request;
 use hyper::header;
 
 pub trait Referer {

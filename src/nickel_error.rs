@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use hyper::status::StatusCode;
 use std::io;
 use std::error::Error;
-use response::Response;
+use crate::response::Response;
 use hyper::net::{Fresh, Streaming};
 
 /// NickelError is the basic error type for HTTP errors as well as user defined errors.
@@ -70,7 +70,7 @@ impl<'a, D> NickelError<'a, D> {
 }
 
 impl<'a, T, D> From<(Response<'a, D>, (StatusCode, T))> for NickelError<'a, D>
-        where T: Into<Box<Error + 'static>> {
+        where T: Into<Box<dyn Error + 'static>> {
     fn from((res, (errorcode, err)): (Response<'a, D>, (StatusCode, T))) -> NickelError<'a, D> {
         let err = err.into();
         NickelError::new(res, err.description().to_string(), errorcode)

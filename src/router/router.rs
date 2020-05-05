@@ -1,18 +1,18 @@
-use middleware::{Middleware, MiddlewareResult};
+use crate::middleware::{Middleware, MiddlewareResult};
 
-use request::Request;
-use response::Response;
-use router::HttpRouter;
+use crate::request::Request;
+use crate::response::Response;
+use crate::router::HttpRouter;
 use hyper::method::Method;
 use hyper::status::StatusCode;
-use router::{Matcher, FORMAT_PARAM};
+use crate::router::{Matcher, FORMAT_PARAM};
 
 /// A Route is the basic data structure that stores both the path
 /// and the handler that gets executed for the route.
 /// The path can contain variable pattern such as `user/:userid/invoices`
 pub struct Route<D=()> {
     pub method: Method,
-    pub handler: Box<Middleware<D> + Send + Sync + 'static>,
+    pub handler: Box<dyn Middleware<D> + Send + Sync + 'static>,
     matcher: Matcher
 }
 

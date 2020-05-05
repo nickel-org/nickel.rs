@@ -1,4 +1,4 @@
-use util::*;
+use crate::util::*;
 
 use hyper::client::Response;
 use hyper::method::Method;
@@ -19,7 +19,7 @@ where F: Fn(&mut Response),
 
 mod expect_200 {
     use super::with_paths_and_method;
-    use util::*;
+    use crate::util::*;
     use hyper::method::Method::*;
 
     #[test]

@@ -1,7 +1,7 @@
 use plugin::{Plugin, Pluggable};
-use request::Request;
+use crate::request::Request;
 use typemap::Key;
-use urlencoded::{Query, parse_uri};
+use crate::urlencoded::{Query, parse_uri};
 
 struct QueryStringParser;
 
