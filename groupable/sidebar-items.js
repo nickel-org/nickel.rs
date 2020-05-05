@@ -1,0 +1,1 @@
+initSidebarItems({"trait":[["FromKeyedIterator","Conversion from an `Iterator` of key-value pairs."],["Groupable","Conversion from an `Iterator` of pairs."]]});

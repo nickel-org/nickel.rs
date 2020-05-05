@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["StatusCode","An HTTP status code (`status-code` in RFC 7230 et al.)."]]});

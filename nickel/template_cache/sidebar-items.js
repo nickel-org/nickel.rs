@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["ReloadPolicy","ReloadPolicy controls how often the modification time of template file is checked. Checks take place only when rendering the template."]],"struct":[["TemplateCache","Cache of compiled mustache templates"]]});
