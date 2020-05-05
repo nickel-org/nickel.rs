@@ -1,7 +1,3 @@
-extern crate nickel;
-extern crate plugin;
-extern crate typemap;
-
 use nickel::{Nickel, HttpRouter, Request, Response, MiddlewareResult};
 use plugin::Extensible;
 use typemap::Key;
@@ -30,7 +26,7 @@ impl Key for MyData {
  * First middleware: Load the structure in the response
  * Side note: req can also have a map field you can use to store custom information
  */
-fn init_data<'mw>(_req: &mut Request, mut res: Response<'mw>) -> MiddlewareResult<'mw> {
+fn init_data<'mw>(_req: &mut Request<'_, '_>, mut res: Response<'mw>) -> MiddlewareResult<'mw> {
     let data = MyData {
         name: "".to_string()
     };
@@ -42,7 +38,7 @@ fn init_data<'mw>(_req: &mut Request, mut res: Response<'mw>) -> MiddlewareResul
 /**
  * Second: The handler will get the structure and set some stuff in it
  */
-fn handler<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareResult<'mw> {
+fn handler<'mw>(req: &mut Request<'_, '_>, mut res: Response<'mw>) -> MiddlewareResult<'mw> {
     // Get a mutable reference to the data so it can be updated
     let data = res.extensions_mut().get_mut::<MyData>().unwrap();
 
@@ -54,13 +50,13 @@ fn handler<'mw>(req: &mut Request, mut res: Response<'mw>) -> MiddlewareResult<'
  * Last middleware block: Load the structure and send the response
  * note: You have to use an intermediate get_data function so you can borrow the Response more easily
  */
-fn get_data(res: &Response) -> String {
+fn get_data(res: &Response<'_>) -> String {
     let data = res.extensions().get::<MyData>().unwrap();
 
     data.name.clone()
 }
 
-fn end_data<'mw>(_req: &mut Request, res: Response<'mw>) -> MiddlewareResult<'mw> {
+fn end_data<'mw>(_req: &mut Request<'_, '_>, res: Response<'mw>) -> MiddlewareResult<'mw> {
     let name = get_data(&res);
     // let data = res.extensions().get::<MyData>().unwrap(); // Would crash build since this borrow res and prevent its reuse
 

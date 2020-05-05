@@ -29,11 +29,11 @@ impl<T, D> Middleware<D> for T where T: for<'r, 'mw, 'conn> Fn(&'r mut Request<'
 }
 
 pub trait ErrorHandler<D>: Send + 'static + Sync {
-    fn handle_error(&self, _: &mut NickelError<D>, _: &mut Request<D>) -> Action;
+    fn handle_error(&self, _: &mut NickelError<'_, D>, _: &mut Request<'_, '_, D>) -> Action;
 }
 
-impl<D: 'static> ErrorHandler<D> for fn(&mut NickelError<D>, &mut Request<D>) -> Action {
-    fn handle_error(&self, err: &mut NickelError<D>, req: &mut Request<D>) -> Action {
+impl<D: 'static> ErrorHandler<D> for fn(&mut NickelError<'_, D>, &mut Request<'_, '_, D>) -> Action {
+    fn handle_error(&self, err: &mut NickelError<'_, D>, req: &mut Request<'_, '_, D>) -> Action {
         (*self)(err, req)
     }
 }

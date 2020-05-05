@@ -20,7 +20,7 @@ pub struct Route<D=()> {
 /// It contains the matched `route` and also a `params` property holding
 /// a HashMap with the keys being the variable names and the value being the
 /// evaluated string
-pub struct RouteResult<'mw, D: 'mw = ()> {
+pub struct RouteResult<'mw, D = ()> {
     pub route: &'mw Route<D>,
     params: Vec<(String, String)>
 }

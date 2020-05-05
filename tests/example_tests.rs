@@ -1,7 +1,6 @@
-extern crate serde;
-extern crate serde_json;
+use serde_json;
 #[macro_use] extern crate serde_derive;
-extern crate hyper;
+
 // HACK: integration_testing example refers to `nickel::foo`
 // and this import helps that resolve rather than requiring `self::nickel::foo`
 // which is an oddity due to the include method, which is used as tests in examples

@@ -20,7 +20,7 @@ use plugin::{Extensible, Pluggable};
 use typemap::TypeMap;
 
 ///A container for the response
-pub struct Response<'a, D: 'a = (), T: 'static + Any = Fresh> {
+pub struct Response<'a, D = (), T: 'static + Any = Fresh> {
     ///the original `hyper::server::Response`
     origin: HyperResponse<'a, T>,
     templates: &'a TemplateCache,

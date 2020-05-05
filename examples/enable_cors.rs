@@ -1,10 +1,9 @@
 #[macro_use] extern crate nickel;
-extern crate hyper;
 
 use nickel::{Nickel, HttpRouter, Request, Response, MiddlewareResult};
 use hyper::header::{AccessControlAllowOrigin, AccessControlAllowHeaders};
 
-fn enable_cors<'mw>(_req: &mut Request, mut res: Response<'mw>) -> MiddlewareResult<'mw> {
+fn enable_cors<'mw>(_req: &mut Request<'_, '_>, mut res: Response<'mw>) -> MiddlewareResult<'mw> {
     // Set appropriate headers
     res.set(AccessControlAllowOrigin::Any);
     res.set(AccessControlAllowHeaders(vec![

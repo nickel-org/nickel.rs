@@ -7,7 +7,7 @@ use hyper::net::{Fresh, Streaming};
 
 /// NickelError is the basic error type for HTTP errors as well as user defined errors.
 /// One can pattern match against the `kind` property to handle the different cases.
-pub struct NickelError<'a, D: 'a = ()> {
+pub struct NickelError<'a, D = ()> {
     pub stream: Option<Response<'a, D, Streaming>>,
     pub message: Cow<'static, str>
 }

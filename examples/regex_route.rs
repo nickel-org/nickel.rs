@@ -1,5 +1,4 @@
 #[macro_use] extern crate nickel;
-extern crate regex;
 
 use nickel::{Nickel, HttpRouter};
 use regex::Regex;

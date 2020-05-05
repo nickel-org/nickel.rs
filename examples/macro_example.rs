@@ -1,8 +1,6 @@
 #[macro_use] extern crate nickel;
-extern crate regex;
-extern crate serde;
+
 #[macro_use] extern crate serde_derive;
-extern crate hyper;
 
 use std::io::Write;
 use nickel::status::StatusCode::{self, NotFound};
@@ -20,13 +18,13 @@ struct Person {
 }
 
 //this is an example middleware function that just logs each request
-fn logger<'a, D>(request: &mut Request<D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
+fn logger<'a, D>(request: &mut Request<'_, '_, D>, response: Response<'a, D>) -> MiddlewareResult<'a, D> {
     println!("logging request: {:?}", request.origin.uri);
     response.next_middleware()
 }
 
 //this is how to overwrite the default error handler to handle 404 cases with a custom view
-fn custom_404<'a, D>(err: &mut NickelError<D>, _req: &mut Request<D>) -> Action {
+fn custom_404<'a, D>(err: &mut NickelError<'_, D>, _req: &mut Request<'_, '_, D>) -> Action {
     if let Some(ref mut res) = err.stream {
         if res.status() == NotFound {
             let _ = res.write_all(b"<h1>Call the police!</h1>");
@@ -123,7 +121,7 @@ fn main() {
     ));
 
     // issue #20178
-    let custom_handler: fn(&mut NickelError<()>, &mut Request<()>) -> Action = custom_404;
+    let custom_handler: fn(&mut NickelError<'_, ()>, &mut Request<'_, '_, ()>) -> Action = custom_404;
 
     server.handle_error(custom_handler);
 

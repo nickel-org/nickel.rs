@@ -20,7 +20,7 @@ impl Key for BodyReader {
 impl<'mw, 'conn, D> Plugin<Request<'mw, 'conn, D>> for BodyReader {
     type Error = io::Error;
 
-    fn eval(req: &mut Request<D>) -> Result<String, io::Error> {
+    fn eval(req: &mut Request<'_, '_, D>) -> Result<String, io::Error> {
         let mut buf = String::new();
         req.origin.read_to_string(&mut buf)?;
         Ok(buf)
@@ -36,7 +36,7 @@ impl Key for FormBodyParser {
 impl<'mw, 'conn, D> Plugin<Request<'mw, 'conn, D>> for FormBodyParser {
     type Error = BodyError;
 
-    fn eval(req: &mut Request<D>) -> Result<Params, BodyError> {
+    fn eval(req: &mut Request<'_, '_, D>) -> Result<Params, BodyError> {
         match req.origin.headers.get::<ContentType>() {
             Some(&ContentType(Mime(
                 TopLevel::Application,
@@ -121,7 +121,7 @@ impl StdError for BodyError {
 }
 
 impl fmt::Display for BodyError {
-    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, out: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(out, "{}", self.description())
     }
 }

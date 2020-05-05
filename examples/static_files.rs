@@ -1,5 +1,3 @@
-extern crate nickel;
-
 use nickel::{Nickel, StaticFilesHandler};
 
 fn main() {

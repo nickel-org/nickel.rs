@@ -2,7 +2,7 @@
 
 use nickel::{Nickel, Request, Response, Middleware, MiddlewareResult};
 
-fn logger_fn<'mw>(req: &mut Request, res: Response<'mw>) -> MiddlewareResult<'mw> {
+fn logger_fn<'mw>(req: &mut Request<'_, '_>, res: Response<'mw>) -> MiddlewareResult<'mw> {
     println!("logging request from logger fn: {:?}", req.origin.uri);
     res.next_middleware()
 }

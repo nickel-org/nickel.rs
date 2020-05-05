@@ -1,5 +1,4 @@
 #[macro_use] extern crate nickel;
-extern crate hyper;
 
 use nickel::{Nickel, HttpRouter};
 use hyper::method::Method;

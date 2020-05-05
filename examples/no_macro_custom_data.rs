@@ -1,12 +1,10 @@
-extern crate nickel;
-
 use nickel::{Nickel, HttpRouter, Request, Response, MiddlewareResult};
 
 struct MyConfig {
     greet: String,
 }
 
-fn greeter<'mw>(req: &mut Request<MyConfig>, res: Response<'mw, MyConfig>) -> MiddlewareResult<'mw, MyConfig> {
+fn greeter<'mw>(req: &mut Request<'_, '_, MyConfig>, res: Response<'mw, MyConfig>) -> MiddlewareResult<'mw, MyConfig> {
     let my_config = req.server_data();
     res.send(&*my_config.greet)
 }

@@ -8,7 +8,7 @@ use std::io::Write;
 pub struct DefaultErrorHandler;
 
 impl<D> ErrorHandler<D> for DefaultErrorHandler {
-    fn handle_error(&self, err: &mut NickelError<D>, _req: &mut Request<D>) -> Action {
+    fn handle_error(&self, err: &mut NickelError<'_, D>, _req: &mut Request<'_, '_, D>) -> Action {
         if let Some(ref mut res) = err.stream {
             let msg : &[u8] = match res.status() {
                 NotFound => b"Not Found",

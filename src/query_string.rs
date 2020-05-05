@@ -12,7 +12,7 @@ impl Key for QueryStringParser {
 impl<'mw, 'conn, D> Plugin<Request<'mw, 'conn, D>> for QueryStringParser {
     type Error = ();
 
-    fn eval(req: &mut Request<D>) -> Result<Query, ()> {
+    fn eval(req: &mut Request<'_, '_, D>) -> Result<Query, ()> {
         Ok(parse_uri(&req.origin.uri))
     }
 }

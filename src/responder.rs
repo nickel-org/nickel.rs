@@ -147,6 +147,6 @@ dual_impl!((u16, &'static str),
 //                 Ok(Halt)
 //             })
 
-fn maybe_set_type<D>(res: &mut Response<D>, mime: MediaType) {
+fn maybe_set_type<D>(res: &mut Response<'_, D>, mime: MediaType) {
     res.set_header_fallback(|| header::ContentType(mime.into()));
 }

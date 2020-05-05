@@ -2,10 +2,8 @@
 // test setup for testing examples. Usually, it should just require `#[macro_use]`.
 #[cfg_attr(not(test), macro_use)]
 extern crate nickel;
-extern crate hyper;
-extern crate serde;
-extern crate serde_json;
-extern crate serde_derive;
+
+use serde_json;
 
 use nickel::{Nickel, ListeningServer, HttpRouter, JsonBody, Request, Response, MiddlewareResult};
 use nickel::status::StatusCode;

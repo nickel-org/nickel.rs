@@ -1,5 +1,4 @@
 #[macro_use] extern crate nickel;
-extern crate hyper;
 
 #[cfg(feature = "ssl")]
 fn main() {

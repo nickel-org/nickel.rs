@@ -1,16 +1,6 @@
 #![doc(test(attr(deny(warnings))))]
 
-extern crate time;
-extern crate serde;
-extern crate serde_json;
-pub extern crate hyper;
-extern crate regex;
-extern crate typemap;
-extern crate plugin;
-extern crate url;
-extern crate mustache;
-extern crate groupable;
-extern crate modifier;
+pub use hyper;
 
 #[macro_use] extern crate log;
 #[macro_use] extern crate lazy_static;

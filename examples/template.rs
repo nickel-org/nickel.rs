@@ -1,5 +1,3 @@
-extern crate nickel;
-
 use nickel::{Nickel, HttpRouter, Request, Response, MiddlewareResult};
 use std::collections::HashMap;
 

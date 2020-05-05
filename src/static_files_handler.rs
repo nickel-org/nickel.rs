@@ -17,7 +17,7 @@ pub struct StaticFilesHandler {
 }
 
 impl<D> Middleware<D> for StaticFilesHandler {
-    fn invoke<'a>(&self, req: &mut Request<D>, res: Response<'a, D>)
+    fn invoke<'a>(&self, req: &mut Request<'_, '_, D>, res: Response<'a, D>)
             -> MiddlewareResult<'a, D> {
         match req.origin.method {
             Get | Head => self.with_file(self.extract_path(req), res),
@@ -45,7 +45,7 @@ impl StaticFilesHandler {
         }
     }
 
-    fn extract_path<'a, D>(&self, req: &'a mut Request<D>) -> Option<&'a str> {
+    fn extract_path<'a, D>(&self, req: &'a mut Request<'_, '_, D>) -> Option<&'a str> {
         req.path_without_query().map(|path| {
             debug!("{:?} {:?}{:?}", req.origin.method, self.root_path.display(), path);
 
