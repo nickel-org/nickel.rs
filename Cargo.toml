@@ -40,7 +40,7 @@ version = "0.10"
 default-features = false
 
 [dependencies.compiletest_rs]
-version = "0.3"
+version = "0.5"
 optional = true
 
 [[example]]
