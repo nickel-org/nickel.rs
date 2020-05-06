@@ -54,3 +54,11 @@ If you're looking for inspiration, there's list of [open issues](https://github.
 If you need a helping hand reach out to [@jolhoeft](https://github.com/jolhoeft), [@cburgdorf](https://github.com/cburgdorf), [@Ryman](https://github.com/Ryman) or [@SimonPersson](https://github.com/SimonPersson).
 
 And hey, did you know you can also contribute by just starring the project here on github :)
+
+### Development Plan
+
+| Version | Branch       | Description                                                            |
+| ------- | ------------ | -------------------------------------------------- |
+| 0.11.x  | maint-0.11.x | hyper-0.10.x (synchronous version), bug fixes only |
+| 0.12.x  | master       | hyper-0.13.x (asynchronous version)                |
+| 0.13.x  |              | new features, possibly will be 1.0 instead         |

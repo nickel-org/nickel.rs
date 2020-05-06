@@ -1,7 +1,7 @@
 [package]
 
 name = "nickel"
-version = "0.11.0"
+version = "0.12.0"
 authors = [ "Christoph Burgdorf <christoph@thoughtram.io>",
             "Kevin Butler <haqkrs@gmail.com>",
             "Simon Persson <simon@flaskpost.org>",
