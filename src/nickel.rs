@@ -296,38 +296,41 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     /// # #[cfg(not(feature = "ssl"))]
     /// # fn main() {}
     /// ```
-    pub fn listen_https<T,S>(mut self, addr: T, ssl: S) -> Result<ListeningServer, Box<dyn StdError>>
-    where T: ToSocketAddrs,
-          S: SslServer + Send + Clone + 'static {
-        self.middleware_stack.add_middleware(middleware! {
-            (StatusCode::NotFound, "File Not Found")
-        });
+    //
+    // Ssl support changed in hyper 0.11
+    //
+    // pub fn listen_https<T,S>(mut self, addr: T, ssl: S) -> Result<ListeningServer, Box<dyn StdError>>
+    // where T: ToSocketAddrs,
+    //       S: SslServer + Send + Clone + 'static {
+    //     self.middleware_stack.add_middleware(middleware! {
+    //         (StatusCode::NotFound, "File Not Found")
+    //     });
 
-        let server = Server::new(self.middleware_stack, self.options.reload_policy, self.data);
+    //     let server = Server::new(self.middleware_stack, self.options.reload_policy, self.data);
 
-        let is_test_harness = env::var_os("NICKEL_TEST_HARNESS").is_some();
+    //     let is_test_harness = env::var_os("NICKEL_TEST_HARNESS").is_some();
 
-        let listener = if is_test_harness {
-            // If we're under a test harness, we'll pass zero to get assigned a random
-            // port. See http://doc.rust-lang.org/std/net/struct.TcpListener.html#method.bind
-            server.serve_https("localhost:0",
-                               self.keep_alive_timeout,
-                               self.options.thread_count,
-                               ssl)?
-        } else {
-            server.serve_https(addr,
-                               self.keep_alive_timeout,
-                               self.options.thread_count,
-                               ssl)?
-        };
+    //     let listener = if is_test_harness {
+    //         // If we're under a test harness, we'll pass zero to get assigned a random
+    //         // port. See http://doc.rust-lang.org/std/net/struct.TcpListener.html#method.bind
+    //         server.serve_https("localhost:0",
+    //                            self.keep_alive_timeout,
+    //                            self.options.thread_count,
+    //                            ssl)?
+    //     } else {
+    //         server.serve_https(addr,
+    //                            self.keep_alive_timeout,
+    //                            self.options.thread_count,
+    //                            ssl)?
+    //     };
 
-        if self.options.output_on_listen {
-            println!("Listening on https://{}", listener.socket());
-            println!("Ctrl-C to shutdown server");
-        }
+    //     if self.options.output_on_listen {
+    //         println!("Listening on https://{}", listener.socket());
+    //         println!("Ctrl-C to shutdown server");
+    //     }
 
-        Ok(listener)
-    }
+    //     Ok(listener)
+    // }
 }
 
 #[cfg(test)]

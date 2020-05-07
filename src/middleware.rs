@@ -15,23 +15,23 @@ pub enum Action<T=()> {
 // the usage of + Send is weird here because what we really want is + Static
 // but that's not possible as of today. We have to use + Send for now.
 pub trait Middleware<B, D>: Send + 'static + Sync {
-    fn invoke<'mw, 'conn>(&'mw self, _req: &mut Request<'mw, 'conn, D>, res: Response<'mw, B, D>) -> MiddlewareResult<'mw, B, D> {
+    fn invoke<'mw, 'conn>(&'mw self, _req: &mut Request<'mw, B, D>, res: Response<'mw, D>) -> MiddlewareResult<'mw, B, D> {
         res.next_middleware()
     }
 }
 
-impl<T, D> Middleware<D> for T where T: for<'r, 'mw, 'conn> Fn(&'r mut Request<'mw, 'conn, D>, Response<'mw, D>) -> MiddlewareResult<'mw, D> + Send + Sync + 'static {
-    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, 'conn, D>, res: Response<'mw, D>) -> MiddlewareResult<'mw, D> {
+impl<T, B, D> Middleware<B, D> for T where T: for<'r, 'mw, 'conn> Fn(&'r mut Request<'mw, B, D>, Response<'mw, D>) -> MiddlewareResult<'mw, B, D> + Send + Sync + 'static {
+    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, B, D>, res: Response<'mw, D>) -> MiddlewareResult<'mw, B, D> {
         (*self)(req, res)
     }
 }
 
 pub trait ErrorHandler<D>: Send + 'static + Sync {
-    fn handle_error(&self, _: &mut NickelError<'_, D>, _: &mut Request<'_, '_, D>) -> Action;
+    fn handle_error(&self, _: &mut NickelError<'_, D>, _: &mut Request<'_, B, D>) -> Action;
 }
 
-impl<D: 'static> ErrorHandler<D> for fn(&mut NickelError<'_, D>, &mut Request<'_, '_, D>) -> Action {
-    fn handle_error(&self, err: &mut NickelError<'_, D>, req: &mut Request<'_, '_, D>) -> Action {
+impl<D: 'static> ErrorHandler<D> for fn(&mut NickelError<'_, D>, &mut Request<'_, B, D>) -> Action {
+    fn handle_error(&self, err: &mut NickelError<'_, D>, req: &mut Request<'_, B, D>) -> Action {
         (*self)(err, req)
     }
 }
@@ -50,7 +50,7 @@ impl<B, D: 'static> MiddlewareStack<B, D> {
         self.error_handlers.push(Box::new(handler));
     }
 
-    pub fn invoke<'mw, 'conn>(&'mw self, mut req: Request<'mw, 'conn, D>, mut res: Response<'mw, D>) {
+    pub fn invoke<'mw, 'conn>(&'mw self, mut req: Request<'mw, B, D>, mut res: Response<'mw, D>) {
         for handler in self.handlers.iter() {
             match handler.invoke(&mut req, res) {
                 Ok(Halt(res)) => {

@@ -4,7 +4,7 @@ use crate::response::Response;
 use crate::middleware::{Continue, Middleware, MiddlewareResult};
 
 pub trait Mountable<D> {
-    fn mount<S: Into<String>, M: Middleware<D>>(&mut self, mount_point: S, middleware: M);
+    fn mount<S: Into<String>, M: Middleware<B, D>>(&mut self, mount_point: S, middleware: M);
 }
 
 impl<D> Mountable<D> for Nickel<D>
@@ -23,7 +23,7 @@ where D: Send + Sync + 'static {
     ///
     /// # Panics
     /// Panics if mount_point does not have a leading and trailing slash.
-    fn mount<S: Into<String>, M: Middleware<D>>(&mut self, mount_point: S, middleware: M) {
+    fn mount<S: Into<String>, M: Middleware<B, D>>(&mut self, mount_point: S, middleware: M) {
         self.utilize(Mount::new(mount_point, middleware));
     }
 }
@@ -69,9 +69,9 @@ impl<M> Mount<M> {
     }
 }
 
-impl<D, M: Middleware<D>> Middleware<D> for Mount<M> {
-    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, 'conn, D>, res: Response<'mw, D>)
-                          -> MiddlewareResult<'mw, D> {
+impl<D, M: Middleware<B, D>> Middleware<B, D> for Mount<M> {
+    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, B, D>, res: Response<'mw, D>)
+                          -> MiddlewareResult<'mw, B, D> {
         // two clones in this method, there ought to be a way to avoid that
         let mut parts = req.origin.uri().clone().into_parts();
         match req.origin.uri().path_and_query() {
