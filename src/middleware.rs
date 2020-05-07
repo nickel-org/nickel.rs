@@ -36,13 +36,13 @@ impl<D: 'static> ErrorHandler<D> for fn(&mut NickelError<'_, D>, &mut Request<'_
     }
 }
 
-pub struct MiddlewareStack<D=()> {
-    handlers: Vec<Box<dyn Middleware<D> + Send + Sync>>,
+pub struct MiddlewareStack<B, D=()> {
+    handlers: Vec<Box<dyn Middleware<B, D> + Send + Sync>>,
     error_handlers: Vec<Box<dyn ErrorHandler<D> + Send + Sync>>
 }
 
-impl<D: 'static> MiddlewareStack<D> {
-    pub fn add_middleware<T: Middleware<D>> (&mut self, handler: T) {
+impl<B, D: 'static> MiddlewareStack<B, D> {
+    pub fn add_middleware<T: Middleware<B, D>> (&mut self, handler: T) {
         self.handlers.push(Box::new(handler));
     }
 

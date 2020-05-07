@@ -3,8 +3,6 @@ use crate::request::Request;
 use crate::response::Response;
 use crate::middleware::{Continue, Middleware, MiddlewareResult};
 
-use std::mem;
-
 pub trait Mountable<D> {
     fn mount<S: Into<String>, M: Middleware<D>>(&mut self, mount_point: S, middleware: M);
 }
@@ -73,17 +71,21 @@ impl<M> Mount<M> {
 
 impl<D, M: Middleware<D>> Middleware<D> for Mount<M> {
     fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, 'conn, D>, res: Response<'mw, D>)
-        -> MiddlewareResult<'mw, D> {
-        let subpath = match req.origin.uri {
-            AbsolutePath(ref path) if path.starts_with(&*self.mount_point) => {
-                AbsolutePath(format!("/{}", &path[self.mount_point.len()..]))
+                          -> MiddlewareResult<'mw, D> {
+        // two clones in this method, there ought to be a way to avoid that
+        let mut parts = req.origin.uri().clone().into_parts();
+        match req.origin.uri().path_and_query() {
+            Some(paq) if paq.starts_with(&*self.mount_point) => {
+                let new_paq_str = format!(format!("/{}", &paq[self.mount_point.len()..]));
+                parts.path_and_query = Some(new_paq_str.into());
             },
-            _ => return Ok(Continue(res))
+            _ => { return Ok(Continue(res)); }
         };
-
-        let original = mem::replace(&mut req.origin.uri, subpath);
+        
+        let original = req.origin.uri().clone();
+        *req.origin.uri_mut() = parts.into();
         let result = self.middleware.invoke(req, res);
-        req.origin.uri = original;
+        *req.origin.uri_mut() = original;
         result
     }
 }

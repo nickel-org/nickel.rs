@@ -4,6 +4,7 @@ use std::path::Path;
 use serde::Serialize;
 use hyper::StatusCode;
 use hyper::Response as HyperResponse;
+use hyper::header::{HeaderMap, HeaderName, HeaderValue};
 use time;
 use crate::mimes::MediaType;
 use std::io::{self, Write, copy};
@@ -18,7 +19,7 @@ use typemap::TypeMap;
 ///A container for the response
 pub struct Response<'a, B, D: 'a = ()> {
     ///the original `hyper::server::Response`
-    origin: HyperResponse<'a, B>,
+    origin: HyperResponse<B>,
     templates: &'a TemplateCache,
     data: &'a D,
     map: TypeMap,
@@ -27,7 +28,7 @@ pub struct Response<'a, B, D: 'a = ()> {
 }
 
 impl<'a, D, B> Response<'a, D, B> {
-    pub fn from_internal<'c, 'd>(response: HyperResponse<'c, B>,
+    pub fn from_internal<'c, 'd>(response: HyperResponse<B>,
                                  templates: &'c TemplateCache,
                                  data: &'c D)
                                 -> Response<'c, B, D> {
@@ -45,8 +46,8 @@ impl<'a, D, B> Response<'a, D, B> {
         self.origin.status_mut()
     }
 
-    /// Get a mutable reference to the Headers.
-    pub fn headers_mut(&mut self) -> &mut Headers {
+    /// Get a mutable reference to the HeaderMap.
+    pub fn headers_mut(&mut self) -> &mut HeaderMap {
         self.origin.headers_mut()
     }
 
@@ -82,10 +83,11 @@ impl<'a, D, B> Response<'a, D, B> {
     ///     // ...
     /// }
     /// ```
-    pub fn set<T: Modifier<Response<'a, D, B>>>(&mut self, attribute: T) -> &mut Response<'a, D, B> {
-        attribute.modify(self);
-        self
-    }
+    // TODO: replace with set_status, set_content_type, and set_header methods
+    //pub fn set<T: Modifier<Response<'a, D, B>>>(&mut self, attribute: T) -> &mut Response<'a, D, B> {
+    //    attribute.modify(self);
+    //    self
+    //}
 
     /// Writes a response
     ///
@@ -119,10 +121,10 @@ impl<'a, D, B> Response<'a, D, B> {
     pub fn send_file<P:AsRef<Path>>(mut self, path: P) -> MiddlewareResult<'a, D> {
         let path = path.as_ref();
         // Chunk the response
-        self.origin.headers_mut().remove::<ContentLength>();
+        self.origin.headers_mut().remove(HeaderName::CONTENT_LENGTH);
         // Determine content type by file extension or default to binary
         let mime = mime_from_filename(path).unwrap_or(MediaType::Bin);
-        self.set_header_fallback(|| ContentType(mime.into()));
+        self.set_header_fallback(HeaderName::CONTENT_TYPE, mime.into());
 
         let mut file = try_with!(self, {
             File::open(path).map_err(|e| format!("Failed to send file '{:?}': {}",
@@ -141,9 +143,9 @@ impl<'a, D, B> Response<'a, D, B> {
     //
     // Also, it should only set them if not already set.
     fn set_fallback_headers(&mut self) {
-        self.set_header_fallback(|| Date(HttpDate(time::now_utc())));
-        self.set_header_fallback(|| Server("Nickel".to_string()));
-        self.set_header_fallback(|| ContentType(MediaType::Html.into()));
+        self.set_header_fallback(HeaderName::DATE, time::now_utc().rfc822().into());
+        self.set_header_fallback(HeaderName::SERVER, "Nickel".into());
+        self.set_header_fallback(HeaderName::CONTENT_TYPE, MediaType::Html.into());
     }
 
     /// Return an error with the appropriate status code for error handlers to
@@ -181,10 +183,8 @@ impl<'a, D, B> Response<'a, D, B> {
     ///     // ...
     /// }
     /// ```
-    pub fn set_header_fallback<F, H>(&mut self, f: F)
-            where H: Header + HeaderFormat, F: FnOnce() -> H {
-        let headers = self.origin.headers_mut();
-        if !headers.has::<H>() { headers.set(f()) }
+    pub fn set_header_fallback(&mut self, name: &HeaderName, value: &HeaderValue) {
+        self.origin.headers_mut().entry(name).insert_or(value);
     }
 
     /// Renders the given template bound with the given data.
@@ -211,7 +211,7 @@ impl<'a, D, B> Response<'a, D, B> {
         }
     }
 
-    pub fn start(mut self) -> Result<Response<'a, D, Streaming>, NickelError<'a, D>> {
+    pub fn start(mut self) -> Result<Response<'a, D>, NickelError<'a, D>> {
         let on_send = mem::replace(&mut self.on_send, vec![]);
         for mut f in on_send.into_iter().rev() {
             // TODO: Ensure `f` doesn't call on_send again
@@ -245,7 +245,7 @@ impl<'a, D, B> Response<'a, D, B> {
     }
 
     pub fn on_send<F>(&mut self, f: F)
-            where F: FnMut(&mut Response<'a, D, Fresh>) + 'static {
+            where F: FnMut(&mut Response<'a, D>) + 'static {
         self.on_send.push(Box::new(f))
     }
 
@@ -258,7 +258,7 @@ impl<'a, D, B> Response<'a, D, B> {
     }
 }
 
-impl<'a, 'b, D> Write for Response<'a, D, Streaming> {
+impl<'a, 'b, D> Write for Response<'a, D> {
     #[inline(always)]
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.origin.write(buf)
@@ -270,7 +270,7 @@ impl<'a, 'b, D> Write for Response<'a, D, Streaming> {
     }
 }
 
-impl<'a, 'b, D> Response<'a, D, Streaming> {
+impl<'a, 'b, D> Response<'a, D> {
     /// In the case of an unrecoverable error while a stream is already in
     /// progress, there is no standard way to signal to the client that an
     /// error has occurred. `bail` will drop the connection and log an error
@@ -294,7 +294,7 @@ impl <'a, D, T: 'static + Any> Response<'a, D, T> {
     }
 
     /// The headers of this response.
-    pub fn headers(&self) -> &Headers {
+    pub fn headers(&self) -> &HeaderMap {
         self.origin.headers()
     }
 
@@ -330,79 +330,78 @@ fn matches_content_type () {
     assert_eq!(Some(MediaType::Bin), mime_from_filename("test.bin"));
 }
 
-mod modifier_impls {
-    use hyper::header::*;
-    use hyper::StatusCode;
-    use modifier::Modifier;
-    use crate::{Response, MediaType};
+// mod modifier_impls {
+//     use hyper::StatusCode;
+//     use modifier::Modifier;
+//     use crate::{Response, MediaType};
 
-    impl<'a, D> Modifier<Response<'a, D>> for StatusCode {
-        fn modify(self, res: &mut Response<'a, D>) {
-            *res.status_mut() = self
-        }
-    }
+//     impl<'a, D> Modifier<Response<'a, D>> for StatusCode {
+//         fn modify(self, res: &mut Response<'a, D>) {
+//             *res.status_mut() = self
+//         }
+//     }
 
-    impl<'a, D> Modifier<Response<'a, D>> for MediaType {
-        fn modify(self, res: &mut Response<'a, D>) {
-            ContentType(self.into()).modify(res)
-        }
-    }
+//     impl<'a, D> Modifier<Response<'a, D>> for MediaType {
+//         fn modify(self, res: &mut Response<'a, D>) {
+//             ContentType(self.into()).modify(res)
+//         }
+//     }
 
-    macro_rules! header_modifiers {
-        ($($t:ty),+) => (
-            $(
-                impl<'a, D> Modifier<Response<'a, D>> for $t {
-                    fn modify(self, res: &mut Response<'a, D>) {
-                        res.headers_mut().set(self)
-                    }
-                }
-            )+
-        )
-    }
+//     macro_rules! header_modifiers {
+//         ($($t:ty),+) => (
+//             $(
+//                 impl<'a, D> Modifier<Response<'a, D>> for $t {
+//                     fn modify(self, res: &mut Response<'a, D>) {
+//                         res.headers_mut().set(self)
+//                     }
+//                 }
+//             )+
+//         )
+//     }
 
-    header_modifiers! {
-        Accept,
-        AccessControlAllowHeaders,
-        AccessControlAllowMethods,
-        AccessControlAllowOrigin,
-        AccessControlMaxAge,
-        AccessControlRequestHeaders,
-        AccessControlRequestMethod,
-        AcceptCharset,
-        AcceptEncoding,
-        AcceptLanguage,
-        AcceptRanges,
-        Allow,
-        Authorization<Basic>,
-        Authorization<Bearer>,
-        Authorization<String>,
-        CacheControl,
-        Cookie,
-        Connection,
-        ContentEncoding,
-        ContentLanguage,
-        ContentLength,
-        ContentType,
-        Date,
-        ETag,
-        Expect,
-        Expires,
-        From,
-        Host,
-        IfMatch,
-        IfModifiedSince,
-        IfNoneMatch,
-        IfRange,
-        IfUnmodifiedSince,
-        LastModified,
-        Location,
-        Pragma,
-        Referer,
-        Server,
-        SetCookie,
-        TransferEncoding,
-        Upgrade,
-        UserAgent,
-        Vary
-    }
-}
+//     header_modifiers! {
+//         Accept,
+//         AccessControlAllowHeaders,
+//         AccessControlAllowMethods,
+//         AccessControlAllowOrigin,
+//         AccessControlMaxAge,
+//         AccessControlRequestHeaders,
+//         AccessControlRequestMethod,
+//         AcceptCharset,
+//         AcceptEncoding,
+//         AcceptLanguage,
+//         AcceptRanges,
+//         Allow,
+//         Authorization<Basic>,
+//         Authorization<Bearer>,
+//         Authorization<String>,
+//         CacheControl,
+//         Cookie,
+//         Connection,
+//         ContentEncoding,
+//         ContentLanguage,
+//         ContentLength,
+//         ContentType,
+//         Date,
+//         ETag,
+//         Expect,
+//         Expires,
+//         From,
+//         Host,
+//         IfMatch,
+//         IfModifiedSince,
+//         IfNoneMatch,
+//         IfRange,
+//         IfUnmodifiedSince,
+//         LastModified,
+//         Location,
+//         Pragma,
+//         Referer,
+//         Server,
+//         SetCookie,
+//         TransferEncoding,
+//         Upgrade,
+//         UserAgent,
+//         Vary
+//     }
+// }

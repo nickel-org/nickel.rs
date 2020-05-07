@@ -80,7 +80,7 @@ pub struct Nickel<D: Sync + Send + 'static = ()> {
 }
 
 impl<D: Sync + Send + 'static> HttpRouter<D> for Nickel<D> {
-    fn add_route<M: Into<Matcher>, H: Middleware<D>>(&mut self, method: Method, matcher: M, handler: H) -> &mut Self {
+    fn add_route<M: Into<Matcher>, H: Middleware<B, D>>(&mut self, method: Method, matcher: M, handler: H) -> &mut Self {
         let mut router = Router::new();
         router.add_route(method, matcher, handler);
         self.utilize(router);
@@ -147,7 +147,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     /// });
     /// # }
     /// ```
-    pub fn utilize<T: Middleware<D>>(&mut self, handler: T){
+    pub fn utilize<T: Middleware<B, D>>(&mut self, handler: T){
         self.middleware_stack.add_middleware(handler);
     }
 

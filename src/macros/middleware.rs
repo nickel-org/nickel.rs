@@ -102,8 +102,8 @@ macro_rules! _middleware_inner {
         // different mutability requirements
         #[inline(always)]
         fn restrict_closure<F, D>(f: F) -> F
-            where F: for<'r, 'mw, 'conn>
-                        Fn(&'r mut Request<'mw, 'conn, D>, Response<'mw, D>)
+            where F: for<'r, 'mw>
+                        Fn(&'r mut Request<'mw, D>, Response<'mw, D>)
                             -> MiddlewareResult<'mw, D> + Send + Sync { f }
 
         restrict_closure(move |as_pat!($req), $res_binding| {

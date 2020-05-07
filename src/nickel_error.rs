@@ -6,12 +6,12 @@ use crate::response::Response;
 
 /// NickelError is the basic error type for HTTP errors as well as user defined errors.
 /// One can pattern match against the `kind` property to handle the different cases.
-pub struct NickelError<'a, D = ()> {
-    pub stream: Option<Response<'a, D, Streaming>>,
+pub struct NickelError<'a, B, D = ()> {
+    pub stream: Option<Response<'a, B, D>>,
     pub message: Cow<'static, str>
 }
 
-impl<'a, D> NickelError<'a, D> {
+impl<'a, B, D> NickelError<'a, B, D> {
     /// Creates a new `NickelError` instance.
     ///
     /// You should probably use `Response#error` in favor of this.
@@ -30,7 +30,7 @@ impl<'a, D> NickelError<'a, D> {
     /// }
     /// # }
     /// ```
-    pub fn new<T>(mut stream: Response<'a, D, Fresh>,
+    pub fn new<T>(mut stream: Response<'a, B, D>,
                   message: T,
                   status_code: StatusCode) -> NickelError<'a, D>
             where T: Into<Cow<'static, str>> {
@@ -68,22 +68,22 @@ impl<'a, D> NickelError<'a, D> {
     }
 }
 
-impl<'a, T, D> From<(Response<'a, D>, (StatusCode, T))> for NickelError<'a, D>
+impl<'a, T, B, D> From<(Response<'a, B, D>, (StatusCode, T))> for NickelError<'a, B, D>
         where T: Into<Box<dyn Error + 'static>> {
-    fn from((res, (errorcode, err)): (Response<'a, D>, (StatusCode, T))) -> NickelError<'a, D> {
+    fn from((res, (errorcode, err)): (Response<'a, B, D>, (StatusCode, T))) -> NickelError<'a, B, D> {
         let err = err.into();
         NickelError::new(res, err.to_string(), errorcode)
     }
 }
 
-impl<'a, D> From<(Response<'a, D>, String)> for NickelError<'a, D> {
-    fn from((res, msg): (Response<'a, D>, String)) -> NickelError<'a, D> {
+impl<'a, B, D> From<(Response<'a, B, D>, String)> for NickelError<'a, B, D> {
+    fn from((res, msg): (Response<'a, B, D>, String)) -> NickelError<'a, B, D> {
         NickelError::new(res, msg, StatusCode::InternalServerError)
     }
 }
 
-impl<'a, D> From<(Response<'a, D>, StatusCode)> for NickelError<'a, D> {
-    fn from((res, code): (Response<'a, D>, StatusCode)) -> NickelError<'a, D> {
+impl<'a, B, D> From<(Response<'a, B, D>, StatusCode)> for NickelError<'a, B, D> {
+    fn from((res, code): (Response<'a, B, D>, StatusCode)) -> NickelError<'a, B, D> {
         NickelError::new(res, "", code)
     }
 }
