@@ -1,4 +1,4 @@
-use hyper::mime::Mime;
+use mime::Mime;
 use std::str::FromStr;
 
 macro_rules! mimes {

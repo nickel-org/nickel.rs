@@ -3,8 +3,6 @@ use crate::request::Request;
 use crate::response::Response;
 use crate::middleware::{Continue, Middleware, MiddlewareResult};
 
-use hyper::uri::RequestUri::AbsolutePath;
-
 use std::mem;
 
 pub trait Mountable<D> {

@@ -3,8 +3,7 @@ use crate::middleware::{Middleware, MiddlewareResult};
 use crate::request::Request;
 use crate::response::Response;
 use crate::router::HttpRouter;
-use hyper::method::Method;
-use hyper::status::StatusCode;
+use hyper::{Method, StatusCode};
 use crate::router::{Matcher, FORMAT_PARAM};
 
 /// A Route is the basic data structure that stores both the path

@@ -2,12 +2,8 @@ use std::mem;
 use std::borrow::Cow;
 use std::path::Path;
 use serde::Serialize;
-use hyper::status::StatusCode;
-use hyper::server::Response as HyperResponse;
-use hyper::header::{
-    Headers, Date, HttpDate, Server, ContentType, ContentLength, Header, HeaderFormat
-};
-use hyper::net::{Fresh, Streaming};
+use hyper::StatusCode;
+use hyper::Response as HyperResponse;
 use time;
 use crate::mimes::MediaType;
 use std::io::{self, Write, copy};
@@ -20,21 +16,21 @@ use plugin::{Extensible, Pluggable};
 use typemap::TypeMap;
 
 ///A container for the response
-pub struct Response<'a, D = (), T: 'static + Any = Fresh> {
+pub struct Response<'a, B, D: 'a = ()> {
     ///the original `hyper::server::Response`
-    origin: HyperResponse<'a, T>,
+    origin: HyperResponse<'a, B>,
     templates: &'a TemplateCache,
     data: &'a D,
     map: TypeMap,
     // This should be FnBox, but that's currently unstable
-    on_send: Vec<Box<dyn FnMut(&mut Response<'a, D, Fresh>)>>
+    on_send: Vec<Box<dyn FnMut(&mut Response<'a, B, D>)>>
 }
 
-impl<'a, D> Response<'a, D, Fresh> {
-    pub fn from_internal<'c, 'd>(response: HyperResponse<'c, Fresh>,
+impl<'a, D, B> Response<'a, D, B> {
+    pub fn from_internal<'c, 'd>(response: HyperResponse<'c, B>,
                                  templates: &'c TemplateCache,
                                  data: &'c D)
-                                -> Response<'c, D, Fresh> {
+                                -> Response<'c, B, D> {
         Response {
             origin: response,
             templates: templates,
@@ -86,7 +82,7 @@ impl<'a, D> Response<'a, D, Fresh> {
     ///     // ...
     /// }
     /// ```
-    pub fn set<T: Modifier<Response<'a, D>>>(&mut self, attribute: T) -> &mut Response<'a, D> {
+    pub fn set<T: Modifier<Response<'a, D, B>>>(&mut self, attribute: T) -> &mut Response<'a, D, B> {
         attribute.modify(self);
         self
     }
@@ -336,7 +332,7 @@ fn matches_content_type () {
 
 mod modifier_impls {
     use hyper::header::*;
-    use hyper::status::StatusCode;
+    use hyper::StatusCode;
     use modifier::Modifier;
     use crate::{Response, MediaType};
 

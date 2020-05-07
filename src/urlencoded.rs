@@ -1,6 +1,5 @@
 use groupable::Groupable;
-use hyper::uri::RequestUri;
-use hyper::uri::RequestUri::{Star, AbsoluteUri, AbsolutePath, Authority};
+use hyper::Uri;
 use std::collections::HashMap;
 use url::form_urlencoded;
 
@@ -38,16 +37,8 @@ pub fn parse(encoded_string : &str) -> Params {
     Params(form_urlencoded::parse(encoded_string.as_bytes()).into_owned().group())
 }
 
-pub fn parse_uri(origin: &RequestUri) -> Params {
-    let f = |query: Option<&str>| query.map(|q| parse(&*q));
-
-    let result = match *origin {
-        AbsoluteUri(ref url) => f(url.query()),
-        AbsolutePath(ref s) => f(s.splitn(2, '?').nth(1)),
-        Star | Authority(..) => None
-    };
-
-    result.unwrap_or_else(|| Params(HashMap::new()))
+pub fn parse_uri(origin: &Uri) -> Params {
+    origin.query().map(|q| parse(&*q)).unwrap_or_else(|| Params(HashMap::new()))
 }
 
 #[test]

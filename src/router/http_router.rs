@@ -1,4 +1,4 @@
-use hyper::method::Method;
+use hyper::Method;
 use crate::middleware::Middleware;
 use crate::router::Matcher;
 

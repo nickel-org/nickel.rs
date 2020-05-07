@@ -10,7 +10,7 @@
 //!
 //! Please see the examples for usage.
 use crate::{Response, NickelError, MiddlewareResult, Halt};
-use hyper::status::{StatusCode, StatusClass};
+use hyper::StatusCode;
 use hyper::header;
 use serde_json;
 use crate::mimes::MediaType;
@@ -87,16 +87,13 @@ dual_impl!((StatusCode, &'static str),
            (StatusCode, String),
             |self, res| {
                 let (status, message) = self;
-
-                match status.class() {
-                    StatusClass::ClientError | StatusClass::ServerError => {
-                        res.error(status, message)
-                    },
-                    _ => {
-                        res.set(status);
-                        res.send(message)
-                    }
-                }
+                let status_code = status.as_u16();
+                if status_code >= 400 && status_code <= 599 {
+                    res.error(status, message)
+                } else {
+                    res.set(status);
+                    res.send(message)
+                }                    
             });
 
 impl<'a, D> Responder<D> for StatusCode {

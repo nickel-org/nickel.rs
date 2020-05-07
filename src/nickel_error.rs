@@ -1,9 +1,8 @@
 use std::borrow::Cow;
-use hyper::status::StatusCode;
+use hyper::StatusCode;
 use std::io;
 use std::error::Error;
 use crate::response::Response;
-use hyper::net::{Fresh, Streaming};
 
 /// NickelError is the basic error type for HTTP errors as well as user defined errors.
 /// One can pattern match against the `kind` property to handle the different cases.

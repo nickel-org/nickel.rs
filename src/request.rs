@@ -1,8 +1,7 @@
 use crate::router::RouteResult;
 use plugin::{Extensible, Pluggable};
 use typemap::TypeMap;
-use hyper::server::Request as HyperRequest;
-use hyper::uri::RequestUri::AbsolutePath;
+use hyper::Request as HyperRequest;
 
 /// A container for all the request data.
 ///
@@ -38,10 +37,7 @@ impl<'mw, 'server, D> Request<'mw, 'server, D> {
     }
 
     pub fn path_without_query(&self) -> Option<&str> {
-        match self.origin.uri {
-            AbsolutePath(ref path) => Some(path.splitn(2, '?').next().unwrap()),
-            _ => None
-        }
+        self.origin.path()
     }
 
     pub fn server_data(&self) -> &'mw D {

@@ -6,9 +6,8 @@ use crate::router::{Router, HttpRouter, Matcher};
 use crate::middleware::{MiddlewareStack, Middleware, ErrorHandler};
 use crate::server::{Server, ListeningServer};
 use crate::template_cache::ReloadPolicy;
-use hyper::method::Method;
-use hyper::net::SslServer;
-use hyper::status::StatusCode;
+use hyper::{Method, StatusCode};
+//use hyper::net::SslServer;
 
 //pre defined middleware
 use crate::default_error_handler::DefaultErrorHandler;
