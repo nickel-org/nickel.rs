@@ -32,7 +32,7 @@ impl<'a, B, D> NickelError<'a, B, D> {
     /// ```
     pub fn new<T>(mut stream: Response<'a, B, D>,
                   message: T,
-                  status_code: StatusCode) -> NickelError<'a, D>
+                  status_code: StatusCode) -> NickelError<'a, B, D>
             where T: Into<Cow<'static, str>> {
         stream.set(status_code);
 
@@ -55,7 +55,7 @@ impl<'a, B, D> NickelError<'a, B, D> {
     ///
     /// This is considered `unsafe` as deadlock can occur if the `Response`
     /// does not have the underlying stream flushed when processing is finished.
-    pub unsafe fn without_response<T>(message: T) -> NickelError<'a, D>
+    pub unsafe fn without_response<T>(message: T) -> NickelError<'a, B, D>
             where T: Into<Cow<'static, str>> {
         NickelError {
             stream: None,
@@ -78,7 +78,7 @@ impl<'a, T, B, D> From<(Response<'a, B, D>, (StatusCode, T))> for NickelError<'a
 
 impl<'a, B, D> From<(Response<'a, B, D>, String)> for NickelError<'a, B, D> {
     fn from((res, msg): (Response<'a, B, D>, String)) -> NickelError<'a, B, D> {
-        NickelError::new(res, msg, StatusCode::InternalServerError)
+        NickelError::new(res, msg, StatusCode::INTERNAL_SERVER_ERROR)
     }
 }
 

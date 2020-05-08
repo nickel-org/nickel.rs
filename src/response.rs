@@ -27,7 +27,7 @@ pub struct Response<'a, B, D: 'a = ()> {
     on_send: Vec<Box<dyn FnMut(&mut Response<'a, B, D>)>>
 }
 
-impl<'a, D, B> Response<'a, D, B> {
+impl<'a, B, D> Response<'a, B, D> {
     pub fn from_internal<'c, 'd>(response: HyperResponse<B>,
                                  templates: &'c TemplateCache,
                                  data: &'c D)
@@ -84,10 +84,10 @@ impl<'a, D, B> Response<'a, D, B> {
     /// }
     /// ```
     // TODO: replace with set_status, set_content_type, and set_header methods
-    //pub fn set<T: Modifier<Response<'a, D, B>>>(&mut self, attribute: T) -> &mut Response<'a, D, B> {
-    //    attribute.modify(self);
-    //    self
-    //}
+    pub fn set<T: Modifier<Response<'a, B, D>>>(&mut self, attribute: T) -> &mut Response<'a, B, D> {
+        attribute.modify(self);
+        self
+    }
 
     /// Writes a response
     ///
@@ -101,7 +101,7 @@ impl<'a, D, B> Response<'a, D, B> {
     /// }
     /// ```
     #[inline]
-    pub fn send<T: Responder<D>>(self, data: T) -> MiddlewareResult<'a, D> {
+    pub fn send<T: Responder<D>>(self, data: T) -> MiddlewareResult<'a, B, D> {
         data.respond(self)
     }
 
@@ -118,7 +118,7 @@ impl<'a, D, B> Response<'a, D, B> {
     ///     res.send_file(favicon)
     /// }
     /// ```
-    pub fn send_file<P:AsRef<Path>>(mut self, path: P) -> MiddlewareResult<'a, D> {
+    pub fn send_file<P:AsRef<Path>>(mut self, path: P) -> MiddlewareResult<'a, B, D> {
         let path = path.as_ref();
         // Chunk the response
         self.origin.headers_mut().remove(HeaderName::CONTENT_LENGTH);
@@ -150,7 +150,7 @@ impl<'a, D, B> Response<'a, D, B> {
 
     /// Return an error with the appropriate status code for error handlers to
     /// provide output for.
-    pub fn error<T>(self, status: StatusCode, message: T) -> MiddlewareResult<'a, D>
+    pub fn error<T>(self, status: StatusCode, message: T) -> MiddlewareResult<'a, B, D>
             where T: Into<Cow<'static, str>> {
         Err(NickelError::new(self, message, status))
     }
@@ -201,7 +201,7 @@ impl<'a, D, B> Response<'a, D, B> {
     ///     res.render("examples/assets/template.tpl", &data)
     /// }
     /// ```
-    pub fn render<T, P>(self, path: P, data: &T) -> MiddlewareResult<'a, D>
+    pub fn render<T, P>(self, path: P, data: &T) -> MiddlewareResult<'a, B, D>
         where T: Serialize, P: AsRef<Path> + Into<String> {
 
         let mut self_started = self.start()?;
@@ -211,7 +211,7 @@ impl<'a, D, B> Response<'a, D, B> {
         }
     }
 
-    pub fn start(mut self) -> Result<Response<'a, D>, NickelError<'a, D>> {
+    pub fn start(mut self) -> Result<Response<'a, B, D>, NickelError<'a, B, D>> {
         let on_send = mem::replace(&mut self.on_send, vec![]);
         for mut f in on_send.into_iter().rev() {
             // TODO: Ensure `f` doesn't call on_send again
@@ -245,7 +245,7 @@ impl<'a, D, B> Response<'a, D, B> {
     }
 
     pub fn on_send<F>(&mut self, f: F)
-            where F: FnMut(&mut Response<'a, D>) + 'static {
+            where F: FnMut(&mut Response<'a, B, D>) + 'static {
         self.on_send.push(Box::new(f))
     }
 
@@ -253,12 +253,12 @@ impl<'a, D, B> Response<'a, D, B> {
     ///
     /// When returned from a Middleware, it allows computation to continue
     /// in any Middleware queued after the active one.
-    pub fn next_middleware(self) -> MiddlewareResult<'a, D> {
+    pub fn next_middleware(self) -> MiddlewareResult<'a, B, D> {
         Ok(Action::Continue(self))
     }
 }
 
-impl<'a, 'b, D> Write for Response<'a, D> {
+impl<'a, B, D> Write for Response<'a, B, D> {
     #[inline(always)]
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         self.origin.write(buf)
@@ -270,12 +270,12 @@ impl<'a, 'b, D> Write for Response<'a, D> {
     }
 }
 
-impl<'a, 'b, D> Response<'a, D> {
+impl<'a, B, D> Response<'a, B, D> {
     /// In the case of an unrecoverable error while a stream is already in
     /// progress, there is no standard way to signal to the client that an
     /// error has occurred. `bail` will drop the connection and log an error
     /// message.
-    pub fn bail<T>(self, message: T) -> MiddlewareResult<'a, D>
+    pub fn bail<T>(self, message: T) -> MiddlewareResult<'a, B, D>
             where T: Into<Cow<'static, str>> {
         let _ = self.end();
         unsafe { Err(NickelError::without_response(message)) }
@@ -330,22 +330,22 @@ fn matches_content_type () {
     assert_eq!(Some(MediaType::Bin), mime_from_filename("test.bin"));
 }
 
-// mod modifier_impls {
-//     use hyper::StatusCode;
-//     use modifier::Modifier;
-//     use crate::{Response, MediaType};
+mod modifier_impls {
+    use hyper::StatusCode;
+    use modifier::Modifier;
+    use crate::{Response, MediaType};
 
-//     impl<'a, D> Modifier<Response<'a, D>> for StatusCode {
-//         fn modify(self, res: &mut Response<'a, D>) {
-//             *res.status_mut() = self
-//         }
-//     }
+    impl<'a, B, D> Modifier<Response<'a, B, D>> for StatusCode {
+        fn modify(self, res: &mut Response<'a, B, D>) {
+            *res.status_mut() = self
+        }
+    }
 
-//     impl<'a, D> Modifier<Response<'a, D>> for MediaType {
-//         fn modify(self, res: &mut Response<'a, D>) {
-//             ContentType(self.into()).modify(res)
-//         }
-//     }
+    // impl<'a, D> Modifier<Response<'a, D>> for MediaType {
+    //     fn modify(self, res: &mut Response<'a, D>) {
+    //         ContentType(self.into()).modify(res)
+    //     }
+    // }
 
 //     macro_rules! header_modifiers {
 //         ($($t:ty),+) => (
@@ -404,4 +404,4 @@ fn matches_content_type () {
 //         UserAgent,
 //         Vary
 //     }
-// }
+}
