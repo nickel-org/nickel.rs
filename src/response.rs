@@ -121,10 +121,10 @@ impl<'a, B, D> Response<'a, B, D> {
     pub fn send_file<P:AsRef<Path>>(mut self, path: P) -> MiddlewareResult<'a, B, D> {
         let path = path.as_ref();
         // Chunk the response
-        self.origin.headers_mut().remove(HeaderName::CONTENT_LENGTH);
+        self.origin.headers_mut().remove(header::CONTENT_LENGTH);
         // Determine content type by file extension or default to binary
         let mime = mime_from_filename(path).unwrap_or(MediaType::Bin);
-        self.set_header_fallback(HeaderName::CONTENT_TYPE, mime.into());
+        self.set_header_fallback(header::CONTENT_TYPE, &mime.into());
 
         let mut file = try_with!(self, {
             File::open(path).map_err(|e| format!("Failed to send file '{:?}': {}",
@@ -143,9 +143,10 @@ impl<'a, B, D> Response<'a, B, D> {
     //
     // Also, it should only set them if not already set.
     fn set_fallback_headers(&mut self) {
-        self.set_header_fallback(HeaderName::DATE, time::now_utc().rfc822().into());
-        self.set_header_fallback(HeaderName::SERVER, "Nickel".into());
-        self.set_header_fallback(HeaderName::CONTENT_TYPE, MediaType::Html.into());
+        let now = HeaderValue::from_str(&time::now_utc().rfc822().to_string()).unwrap(); // rfc822 should always be valid
+        self.set_header_fallback(&header::DATE, &now);
+        self.set_header_fallback(&header::SERVER, &HeaderValue::from_static("Nickel"));
+        self.set_header_fallback(&header::CONTENT_TYPE, &MediaType::Html.into());
     }
 
     /// Return an error with the appropriate status code for error handlers to
@@ -287,7 +288,7 @@ impl<'a, B, D> Response<'a, B, D> {
     }
 }
 
-impl <'a, D, T: 'static + Any> Response<'a, D, T> {
+impl <'a, B, D> Response<'a, B, D> {
     /// The status of this response.
     pub fn status(&self) -> StatusCode {
         self.origin.status()
@@ -303,7 +304,7 @@ impl <'a, D, T: 'static + Any> Response<'a, D, T> {
     }
 }
 
-impl<'a, D, T: 'static + Any> Extensible for Response<'a, D, T> {
+impl<'a, B, D> Extensible for Response<'a, B, D> {
     fn extensions(&self) -> &TypeMap {
         &self.map
     }
@@ -313,7 +314,7 @@ impl<'a, D, T: 'static + Any> Extensible for Response<'a, D, T> {
     }
 }
 
-impl<'a, D, T: 'static + Any> Pluggable for Response<'a, D, T> {}
+impl<'a, B, D> Pluggable for Response<'a, B, D> {}
 
 fn mime_from_filename<P: AsRef<Path>>(path: P) -> Option<MediaType> {
     path.as_ref()

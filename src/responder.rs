@@ -148,5 +148,5 @@ dual_impl!((u16, &'static str),
 
 fn maybe_set_type<B, D>(res: &mut Response<'_, B, D>, media_type: MediaType) {
     let value: HeaderValue = media_type.into();
-    res.set_header_fallback(&header::CONTENT_TYPE, &value);
+    res.set_header_fallback(&header::CONTENT_TYPE, &media_type.into());
 }
