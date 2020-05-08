@@ -26,27 +26,27 @@ impl<T, B, D> Middleware<B, D> for T where T: for<'r, 'mw, 'conn> Fn(&'r mut Req
     }
 }
 
-pub trait ErrorHandler<D>: Send + 'static + Sync {
-    fn handle_error(&self, _: &mut NickelError<'_, D>, _: &mut Request<'_, B, D>) -> Action;
+pub trait ErrorHandler<B, D>: Send + 'static + Sync {
+    fn handle_error(&self, _: &mut NickelError<'_, B, D>, _: &mut Request<'_, B, D>) -> Action;
 }
 
-impl<D: 'static> ErrorHandler<D> for fn(&mut NickelError<'_, D>, &mut Request<'_, B, D>) -> Action {
-    fn handle_error(&self, err: &mut NickelError<'_, D>, req: &mut Request<'_, B, D>) -> Action {
+impl<B: 'static, D: 'static> ErrorHandler<B, D> for fn(&mut NickelError<'_, B, D>, &mut Request<'_, B, D>) -> Action {
+    fn handle_error(&self, err: &mut NickelError<'_, B, D>, req: &mut Request<'_, B, D>) -> Action {
         (*self)(err, req)
     }
 }
 
 pub struct MiddlewareStack<B, D=()> {
     handlers: Vec<Box<dyn Middleware<B, D> + Send + Sync>>,
-    error_handlers: Vec<Box<dyn ErrorHandler<D> + Send + Sync>>
+    error_handlers: Vec<Box<dyn ErrorHandler<B, D> + Send + Sync>>
 }
 
-impl<B, D: 'static> MiddlewareStack<B, D> {
+impl<B: 'static, D: 'static> MiddlewareStack<B, D> {
     pub fn add_middleware<T: Middleware<B, D>> (&mut self, handler: T) {
         self.handlers.push(Box::new(handler));
     }
 
-    pub fn add_error_handler<T: ErrorHandler<D>> (&mut self, handler: T) {
+    pub fn add_error_handler<T: ErrorHandler<B, D>> (&mut self, handler: T) {
         self.error_handlers.push(Box::new(handler));
     }
 
@@ -55,9 +55,9 @@ impl<B, D: 'static> MiddlewareStack<B, D> {
             match handler.invoke(&mut req, res) {
                 Ok(Halt(res)) => {
                     debug!("Halted {:?} {:?} {:?} {:?}",
-                           req.origin.method,
-                           req.origin.remote_addr,
-                           req.origin.uri,
+                           req.origin.method(),
+                           req.remote_addr(),
+                           req.origin.uri(),
                            res.status());
                     let _ = res.end();
                     return
@@ -65,9 +65,9 @@ impl<B, D: 'static> MiddlewareStack<B, D> {
                 Ok(Continue(fresh)) => res = fresh,
                 Err(mut err) => {
                     warn!("{:?} {:?} {:?} {:?} {:?}",
-                          req.origin.method,
-                          req.origin.remote_addr,
-                          req.origin.uri,
+                          req.origin.method(),
+                          req.remote_addr(),
+                          req.origin.uri(),
                           err.message,
                           err.stream.as_ref().map(|s| s.status()));
 
@@ -79,9 +79,9 @@ impl<B, D: 'static> MiddlewareStack<B, D> {
                     }
 
                     warn!("Unhandled error: {:?} {:?} {:?} {:?} {:?}",
-                          req.origin.method,
-                          req.origin.remote_addr,
-                          req.origin.uri,
+                          req.origin.method(),
+                          req.remote_addr(),
+                          req.origin.uri(),
                           err.message,
                           err.stream.map(|s| s.status()));
                     return
@@ -90,7 +90,7 @@ impl<B, D: 'static> MiddlewareStack<B, D> {
         }
     }
 
-    pub fn new () -> MiddlewareStack<D> {
+    pub fn new () -> MiddlewareStack<B, D> {
         MiddlewareStack{
             handlers: Vec::new(),
             error_handlers: Vec::new()

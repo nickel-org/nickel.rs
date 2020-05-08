@@ -2,6 +2,7 @@ use crate::router::RouteResult;
 use plugin::{Extensible, Pluggable};
 use typemap::TypeMap;
 use hyper::Request as HyperRequest;
+use std::net::SocketAddr;
 
 /// A container for all the request data.
 ///
@@ -19,16 +20,20 @@ pub struct Request<'mw, B, D: 'mw = ()> {
     map: TypeMap,
 
     data: &'mw D,
+
+    remote_addr: Option<SocketAddr>,
 }
 
 impl<'mw, B, D> Request<'mw, B, D> {
     pub fn from_internal(req: HyperRequest<B>,
+                         remote_addr: Option<SocketAddr>,
                          data: &'mw D) -> Request<'mw, B, D> {
         Request {
             origin: req,
             route_result: None,
             map: TypeMap::new(),
-            data: data
+            data: data,
+            remote_addr: remote_addr
         }
     }
 
@@ -36,12 +41,16 @@ impl<'mw, B, D> Request<'mw, B, D> {
         self.route_result.as_ref().unwrap().param(key)
     }
 
-    pub fn path_without_query(&self) -> Option<&str> {
-        self.origin.path()
+    pub fn path_without_query(&self) -> &str {
+        self.origin.uri().path()
     }
 
     pub fn server_data(&self) -> &'mw D {
         &self.data
+    }
+
+    pub fn remote_addr(&self) -> Option<&SocketAddr> {
+        self.remote_addr.as_ref()
     }
 }
 

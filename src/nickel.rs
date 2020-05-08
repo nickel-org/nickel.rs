@@ -7,6 +7,7 @@ use crate::middleware::{MiddlewareStack, Middleware, ErrorHandler};
 use crate::server::{Server, ListeningServer};
 use crate::template_cache::ReloadPolicy;
 use hyper::{Method, StatusCode};
+use std::marker::PhantomData;
 //use hyper::net::SslServer;
 
 //pre defined middleware
@@ -70,16 +71,17 @@ impl Default for Options {
 
 /// Nickel is the application object. It's the surface that
 /// holds all public APIs.
-pub struct Nickel<D: Sync + Send + 'static = ()> {
+pub struct Nickel<B, D: Sync + Send + 'static = ()> {
     middleware_stack: MiddlewareStack<D>,
     data: D,
     keep_alive_timeout: Option<Duration>,
 
     /// Configuration options for the server.
     pub options: Options,
+    phantom: PhantomData<B>,
 }
 
-impl<D: Sync + Send + 'static> HttpRouter<D> for Nickel<D> {
+impl<B, D: Sync + Send + 'static> HttpRouter<D> for Nickel<B, D> {
     fn add_route<M: Into<Matcher>, H: Middleware<B, D>>(&mut self, method: Method, matcher: M, handler: H) -> &mut Self {
         let mut router = Router::new();
         router.add_route(method, matcher, handler);
@@ -88,22 +90,22 @@ impl<D: Sync + Send + 'static> HttpRouter<D> for Nickel<D> {
     }
 }
 
-impl Nickel<()> {
+impl Nickel<B, ()> {
     /// Creates an instance of Nickel with default error handling.
-    pub fn new() -> Nickel<()> {
+    pub fn new() -> Nickel<B, ()> {
         Nickel::with_data(())
     }
 
     /// Creates and instance of Nickel with custom Options.
-    pub fn with_options(options: Options) -> Nickel<()> {
+    pub fn with_options(options: Options) -> Nickel<B, ()> {
         Nickel::with_data_and_options((), options)
     }
 }
 
-impl<D: Sync + Send + 'static> Nickel<D> {
+impl<B, D: Sync + Send + 'static> Nickel<B, D> {
     /// Creates an instance of Nickel with default error handling,
     /// default Ooptions, and custom data.
-    pub fn with_data_and_options(data: D, options: Options) -> Nickel<D> {
+    pub fn with_data_and_options(data: D, options: Options) -> Nickel<B, D> {
         let mut middleware_stack = MiddlewareStack::new();
 
         // Hook up the default error handler by default. Users are
@@ -116,13 +118,14 @@ impl<D: Sync + Send + 'static> Nickel<D> {
             options: options,
             data: data,
             // Default value from nginx
-            keep_alive_timeout: Some(Duration::from_secs(75))
+            keep_alive_timeout: Some(Duration::from_secs(75)),
+            phantom: PhantomData,
         }
     }
 
     /// Creates an instance of Nickel with default error handling,
     /// default Ooptions, and custom data.
-    pub fn with_data(data: D) -> Nickel<D> {
+    pub fn with_data(data: D) -> Nickel<B, D> {
         Nickel::with_data_and_options(data, Options::default())
     }
 
@@ -185,7 +188,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     /// server.handle_error(ehandler)
     /// # }
     /// ```
-    pub fn handle_error<T: ErrorHandler<D>>(&mut self, handler: T){
+    pub fn handle_error<T: ErrorHandler<B, D>>(&mut self, handler: T){
         self.middleware_stack.add_error_handler(handler);
     }
 
@@ -270,6 +273,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
         self.keep_alive_timeout = timeout;
     }
 
+    /*
     /// Bind and listen for connections on the given host and port.
     /// Only accepts SSL connections
     ///
@@ -296,6 +300,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     /// # #[cfg(not(feature = "ssl"))]
     /// # fn main() {}
     /// ```
+     */
     //
     // Ssl support changed in hyper 0.11
     //

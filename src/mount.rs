@@ -76,7 +76,7 @@ impl<D, M: Middleware<B, D>> Middleware<B, D> for Mount<M> {
         let mut parts = req.origin.uri().clone().into_parts();
         match req.origin.uri().path_and_query() {
             Some(paq) if paq.starts_with(&*self.mount_point) => {
-                let new_paq_str = format!(format!("/{}", &paq[self.mount_point.len()..]));
+                let new_paq_str = format!("/{}", &paq[self.mount_point.len()..]);
                 parts.path_and_query = Some(new_paq_str.into());
             },
             _ => { return Ok(Continue(res)); }

@@ -2,6 +2,7 @@ use std::net::{SocketAddr, ToSocketAddrs};
 use std::sync::Arc;
 use std::task::{Context, Poll};
 use std::time::Duration;
+use future::Ready;
 use hyper::Result as HttpResult;
 use hyper::{Body, Request, Response};
 use hyper::server::Server as HyperServer;
@@ -34,6 +35,7 @@ impl <D: Sync + Send + 'static> Service<Request<Body>> for ArcServer<D> {
     fn call(&mut self, req: Request<Body>) -> Self::Future {
         let res = Response::builder();
         let nickel_req = request::Request::from_internal(req,
+                                                         None, // TODO: get remote address
                                                          &self.0.shared_data);
         let nickel_res = response::Response::from_internal(res,
                                                            &self.0.templates,

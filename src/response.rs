@@ -4,7 +4,7 @@ use std::path::Path;
 use serde::Serialize;
 use hyper::StatusCode;
 use hyper::Response as HyperResponse;
-use hyper::header::{HeaderMap, HeaderName, HeaderValue};
+use hyper::header::{self, HeaderMap, HeaderName, HeaderValue};
 use time;
 use crate::mimes::MediaType;
 use std::io::{self, Write, copy};
@@ -185,7 +185,7 @@ impl<'a, B, D> Response<'a, B, D> {
     /// }
     /// ```
     pub fn set_header_fallback(&mut self, name: &HeaderName, value: &HeaderValue) {
-        self.origin.headers_mut().entry(name).insert_or(value);
+        self.origin.headers_mut().entry(name).or_insert(*value);
     }
 
     /// Renders the given template bound with the given data.
@@ -223,22 +223,27 @@ impl<'a, B, D> Response<'a, B, D> {
         // on_send then it would possibly set redundant things.
         self.set_fallback_headers();
 
-        let Response { origin, templates, data, map, on_send } = self;
-        match origin.start() {
-            Ok(origin) => {
-                Ok(Response {
-                    origin: origin,
-                    templates: templates,
-                    data: data,
-                    map: map,
-                    on_send: on_send
-                })
-            },
-            Err(e) =>
-                unsafe {
-                    Err(NickelError::without_response(format!("Failed to start response: {}", e)))
-                }
-        }
+        // Todo: migration cleanup
+        //
+        // Should be easy, may not even be needed
+        // let Response { origin, templates, data, map, on_send } = self;
+        // match origin.start() {
+        //     Ok(origin) => {
+        //         Ok(Response {
+        //             origin: origin,
+        //             templates: templates,
+        //             data: data,
+        //             map: map,
+        //             on_send: on_send
+        //         })
+        //     },
+        //     Err(e) =>
+        //         unsafe {
+        //             Err(NickelError::without_response(format!("Failed to start response: {}", e)))
+        //         }
+        // }
+
+        Ok(self)
     }
 
     pub fn server_data(&self) -> &'a D {
@@ -262,12 +267,16 @@ impl<'a, B, D> Response<'a, B, D> {
 impl<'a, B, D> Write for Response<'a, B, D> {
     #[inline(always)]
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.origin.write(buf)
+        // Todo: migration cleanup
+        // self.origin.write(buf)
+        unimplemented!();
     }
 
     #[inline(always)]
     fn flush(&mut self) -> io::Result<()> {
-        self.origin.flush()
+        // Todo: migration cleanup
+        // self.origin.flush()
+        unimplemented!();
     }
 }
 
@@ -283,8 +292,12 @@ impl<'a, B, D> Response<'a, B, D> {
     }
 
     /// Flushes all writing of a response to the client.
+    // Todo: migration cleanup
+    //
+    // Should be easy, may not even be needed
     pub fn end(self) -> io::Result<()> {
-        self.origin.end()
+        // self.origin.end()
+        Ok(())
     }
 }
 
