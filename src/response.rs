@@ -101,7 +101,7 @@ impl<'a, B, D> Response<'a, B, D> {
     /// }
     /// ```
     #[inline]
-    pub fn send<T: Responder<D>>(self, data: T) -> MiddlewareResult<'a, B, D> {
+    pub fn send<T: Responder<B, D>>(self, data: T) -> MiddlewareResult<'a, B, D> {
         data.respond(self)
     }
 

@@ -5,7 +5,7 @@ use crate::nickel_error::NickelError;
 pub use self::Action::{Continue, Halt};
 
 pub type MiddlewareResult<'mw, B, D= ()> = Result<Action<Response<'mw, B, D>>,
-                                                  NickelError<'mw, D>>;
+                                                  NickelError<'mw, B, D>>;
 
 pub enum Action<T=()> {
     Continue(T),

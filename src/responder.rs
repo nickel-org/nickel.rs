@@ -11,7 +11,8 @@
 //! Please see the examples for usage.
 use crate::{Response, NickelError, MiddlewareResult, Halt};
 use hyper::StatusCode;
-use hyper::header;
+use hyper::header::HeaderValue;
+use mime::Mime;
 use serde_json;
 use crate::mimes::MediaType;
 use std::io::Write;
@@ -21,28 +22,28 @@ use std::io::Write;
 /// also modifying the `Response` as required.
 ///
 /// Please see the examples for some uses.
-pub trait Responder<D> {
-    fn respond<'a>(self, _: Response<'a, D>) -> MiddlewareResult<'a, D>;
+pub trait Responder<B, D> {
+    fn respond<'a>(self, _: Response<'a, B, D>) -> MiddlewareResult<'a, B, D>;
 }
 
-impl<D> Responder<D> for () {
-    fn respond<'a>(self, res: Response<'a, D>) -> MiddlewareResult<'a, D> {
+impl<B, D> Responder<B, D> for () {
+    fn respond<'a>(self, res: Response<'a, B, D>) -> MiddlewareResult<'a, B, D> {
         res.next_middleware()
     }
 }
 
-impl<D> Responder<D> for serde_json::Value {
-    fn respond<'a>(self, mut res: Response<'a, D>) -> MiddlewareResult<'a, D> {
+impl<B, D> Responder<B, D> for serde_json::Value {
+    fn respond<'a>(self, mut res: Response<'a, B, D>) -> MiddlewareResult<'a, B, D> {
         maybe_set_type(&mut res, MediaType::Json);
         res.send(serde_json::to_string(&self)
                       .map_err(|e| format!("Failed to parse JSON: {}", e)))
     }
 }
 
-impl<T, E, D> Responder<D> for Result<T, E>
-        where T: Responder<D>,
-              for<'e> NickelError<'e, D>: From<(Response<'e, D>, E)> {
-    fn respond<'a>(self, res: Response<'a, D>) -> MiddlewareResult<'a, D> {
+impl<T, E, D> Responder<B, D> for Result<T, E>
+        where T: Responder<B, D>,
+              for<'e> NickelError<'e, B, D>: From<(Response<'e, B, D>, E)> {
+    fn respond<'a>(self, res: Response<'a, B, D>) -> MiddlewareResult<'a, B, D> {
         let data = try_with!(res, self);
         res.send(data)
     }
@@ -50,16 +51,16 @@ impl<T, E, D> Responder<D> for Result<T, E>
 
 macro_rules! dual_impl {
     ($view:ty, $alloc:ty, |$s:ident, $res:ident| $b:block) => (
-        impl<'a, D> Responder<D> for $view {
+        impl<'a, B, D> Responder<B, D> for $view {
             #[allow(unused_mut)]
             #[inline]
-            fn respond<'c>($s, mut $res: Response<'c, D>) -> MiddlewareResult<'c, D> $b
+            fn respond<'c>($s, mut $res: Response<'c, B, D>) -> MiddlewareResult<'c, B, D> $b
         }
 
-        impl<'a, D> Responder<D> for $alloc {
+        impl<'a, B, D> Responder<B, D> for $alloc {
             #[allow(unused_mut)]
             #[inline]
-            fn respond<'c>($s, mut $res: Response<'c, D>) -> MiddlewareResult<'c, D> $b
+            fn respond<'c>($s, mut $res: Response<'c, B, D>) -> MiddlewareResult<'c, B, D> $b
         }
     )
 }
@@ -96,9 +97,9 @@ dual_impl!((StatusCode, &'static str),
                 }                    
             });
 
-impl<'a, D> Responder<D> for StatusCode {
+impl<'a, B, D> Responder<B, D> for StatusCode {
     #[inline]
-    fn respond<'c>(self, res: Response<'c, D>) -> MiddlewareResult<'c, D> {
+    fn respond<'c>(self, res: Response<'c, B, D>) -> MiddlewareResult<'c, B, D> {
         res.send((self, ""))
     }
 }
@@ -120,8 +121,9 @@ dual_impl!(&'a [&'a str],
 dual_impl!((u16, &'static str),
            (u16, String),
            |self, res| {
-                let (status, message) = self;
-                res.send((StatusCode::from_u16(status), message))
+               let (status_u16, message) = self;
+               let status = StatusCode::from_u16(status_u16).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+               res.send((status, message))
             });
 
 // FIXME: Hyper uses traits for headers, so this needs to be a Vec of
@@ -144,6 +146,7 @@ dual_impl!((u16, &'static str),
 //                 Ok(Halt)
 //             })
 
-fn maybe_set_type<D>(res: &mut Response<'_, D>, mime: MediaType) {
-    res.set_header_fallback(header::CONTENT_TYPE, mime.into());
+fn maybe_set_type<B, D>(res: &mut Response<'_, B, D>, media_type: MediaType) {
+    let value: HeaderValue = media_type.into();
+    res.set_header_fallback(&header::CONTENT_TYPE, &value);
 }

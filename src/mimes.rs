@@ -1,3 +1,4 @@
+use hyper::header::HeaderValue;
 use mime::Mime;
 use std::str::FromStr;
 
@@ -25,6 +26,19 @@ macro_rules! mimes {
                         ),*
                     ),*
                 }.parse().unwrap()
+            }
+        }
+
+        impl From<MediaType> for HeaderValue {
+            fn from(mt: MediaType) -> HeaderValue {
+                let mime_str = match mt {
+                    $(
+                        $(
+                            MediaType::$name => concat!($t, "/", $subt)
+                        ),*
+                    ),*
+                };
+                HeaderValue::from_str(mime_str).unwrap()
             }
         }
 
