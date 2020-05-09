@@ -2,7 +2,7 @@ use hyper::Method;
 use crate::middleware::Middleware;
 use crate::router::Matcher;
 
-pub trait HttpRouter<D> {
+pub trait HttpRouter<B, D> {
     /// Registers a handler to be used for a specified method.
     /// A handler can be anything implementing the `RequestHandler` trait.
     ///
@@ -14,7 +14,7 @@ pub trait HttpRouter<D> {
     /// extern crate regex;
     ///
     /// use nickel::{Nickel, HttpRouter};
-    /// use hyper::method::Method::{Get, Post, Put, Delete};
+    /// use hyper::method::Method::{GET, POST, PUT, DELETE};
     /// use regex::Regex;
     ///
     /// fn main() {
@@ -122,62 +122,62 @@ pub trait HttpRouter<D> {
     /// }
     /// ```
     fn get<M: Into<Matcher>, H: Middleware<B, D>>(&mut self, matcher: M, handler: H) -> &mut Self {
-        self.add_route(Method::Get, matcher, handler)
+        self.add_route(Method::GET, matcher, handler)
     }
 
     /// Registers a handler to be used for a specific HEAD request.
     ///
     /// Take a look at `get(...)` for a more detailed description.
     fn head<M: Into<Matcher>, H: Middleware<B, D>>(&mut self, matcher: M, handler: H) -> &mut Self {
-        self.add_route(Method::Head, matcher, handler)
+        self.add_route(Method::HEAD, matcher, handler)
     }
 
     /// Registers a handler to be used for a specific POST request.
     ///
     /// Take a look at `get(...)` for a more detailed description.
     fn post<M: Into<Matcher>, H: Middleware<B, D>>(&mut self, matcher: M, handler: H) -> &mut Self {
-        self.add_route(Method::Post, matcher, handler)
+        self.add_route(Method::POST, matcher, handler)
     }
 
     /// Registers a handler to be used for a specific PUT request.
     ///
     /// Take a look at `get(...)` for a more detailed description.
     fn put<M: Into<Matcher>, H: Middleware<B, D>>(&mut self, matcher: M, handler: H) -> &mut Self {
-        self.add_route(Method::Put, matcher, handler)
+        self.add_route(Method::PUT, matcher, handler)
     }
 
     /// Registers a handler to be used for a specific DELETE request.
     ///
     /// Take a look at `get(...)` for a more detailed description.
     fn delete<M: Into<Matcher>, H: Middleware<B, D>>(&mut self, matcher: M, handler: H) -> &mut Self {
-        self.add_route(Method::Delete, matcher, handler)
+        self.add_route(Method::DELETE, matcher, handler)
     }
 
     /// Registers a handler to be used for a specific CONNECT request.
     ///
     /// Take a look at `get(...)` for a more detailed description.
     fn connect<M: Into<Matcher>, H: Middleware<B, D>>(&mut self, matcher: M, handler: H) -> &mut Self {
-        self.add_route(Method::Connect, matcher, handler)
+        self.add_route(Method::CONNECT, matcher, handler)
     }
 
     /// Registers a handler to be used for a specific OPTIONS request.
     ///
     /// Take a look at `get(...)` for a more detailed description.
     fn options<M: Into<Matcher>, H: Middleware<B, D>>(&mut self, matcher: M, handler: H) -> &mut Self {
-        self.add_route(Method::Options, matcher, handler)
+        self.add_route(Method::OPTIONS, matcher, handler)
     }
 
     /// Registers a handler to be used for a specific TRACE request.
     ///
     /// Take a look at `get(...)` for a more detailed description.
     fn trace<M: Into<Matcher>, H: Middleware<B, D>>(&mut self, matcher: M, handler: H) -> &mut Self {
-        self.add_route(Method::Trace, matcher, handler)
+        self.add_route(Method::TRACE, matcher, handler)
     }
 
     /// Registers a handler to be used for a specific PATCH request.
     ///
     /// Take a look at `get(...)` for a more detailed description.
     fn patch<M: Into<Matcher>, H: Middleware<B, D>>(&mut self, matcher: M, handler: H) -> &mut Self {
-        self.add_route(Method::Patch, matcher, handler)
+        self.add_route(Method::PATCH, matcher, handler)
     }
 }

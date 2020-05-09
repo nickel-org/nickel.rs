@@ -15,7 +15,7 @@ pub struct Request<'mw, B, D: 'mw = ()> {
     ///the original `hyper::server::Request`
     pub origin: HyperRequest<B>,
     ///a `HashMap<String, String>` holding all params with names and values
-    pub route_result: Option<RouteResult<'mw, D>>,
+    pub route_result: Option<RouteResult<'mw, B, D>>,
 
     map: TypeMap,
 

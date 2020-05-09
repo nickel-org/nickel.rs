@@ -11,7 +11,7 @@
 //! Please see the examples for usage.
 use crate::{Response, NickelError, MiddlewareResult, Halt};
 use hyper::StatusCode;
-use hyper::header::HeaderValue;
+use hyper::header::{self, HeaderValue};
 use mime::Mime;
 use serde_json;
 use crate::mimes::MediaType;
@@ -40,7 +40,7 @@ impl<B, D> Responder<B, D> for serde_json::Value {
     }
 }
 
-impl<T, E, D> Responder<B, D> for Result<T, E>
+impl<T, E, B, D> Responder<B, D> for Result<T, E>
         where T: Responder<B, D>,
               for<'e> NickelError<'e, B, D>: From<(Response<'e, B, D>, E)> {
     fn respond<'a>(self, res: Response<'a, B, D>) -> MiddlewareResult<'a, B, D> {

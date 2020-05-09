@@ -4,10 +4,9 @@ use std::env;
 use std::error::Error as StdError;
 use crate::router::{Router, HttpRouter, Matcher};
 use crate::middleware::{MiddlewareStack, Middleware, ErrorHandler};
-use crate::server::{Server, ListeningServer};
+use crate::server::Server;
 use crate::template_cache::ReloadPolicy;
-use hyper::{Method, StatusCode};
-use std::marker::PhantomData;
+use hyper::{Body, Method, StatusCode};
 //use hyper::net::SslServer;
 
 //pre defined middleware
@@ -71,18 +70,17 @@ impl Default for Options {
 
 /// Nickel is the application object. It's the surface that
 /// holds all public APIs.
-pub struct Nickel<B, D: Sync + Send + 'static = ()> {
-    middleware_stack: MiddlewareStack<D>,
+pub struct Nickel<D: Sync + Send + 'static = ()> {
+    middleware_stack: MiddlewareStack<Body, D>,
     data: D,
     keep_alive_timeout: Option<Duration>,
 
     /// Configuration options for the server.
     pub options: Options,
-    phantom: PhantomData<B>,
 }
 
-impl<B, D: Sync + Send + 'static> HttpRouter<D> for Nickel<B, D> {
-    fn add_route<M: Into<Matcher>, H: Middleware<B, D>>(&mut self, method: Method, matcher: M, handler: H) -> &mut Self {
+impl<D: Sync + Send + 'static> HttpRouter<Body, D> for Nickel<D> {
+    fn add_route<M: Into<Matcher>, H: Middleware<Body, D>>(&mut self, method: Method, matcher: M, handler: H) -> &mut Self {
         let mut router = Router::new();
         router.add_route(method, matcher, handler);
         self.utilize(router);
@@ -90,22 +88,22 @@ impl<B, D: Sync + Send + 'static> HttpRouter<D> for Nickel<B, D> {
     }
 }
 
-impl Nickel<B, ()> {
+impl Nickel<()> {
     /// Creates an instance of Nickel with default error handling.
-    pub fn new() -> Nickel<B, ()> {
+    pub fn new() -> Nickel<()> {
         Nickel::with_data(())
     }
 
     /// Creates and instance of Nickel with custom Options.
-    pub fn with_options(options: Options) -> Nickel<B, ()> {
+    pub fn with_options(options: Options) -> Nickel<()> {
         Nickel::with_data_and_options((), options)
     }
 }
 
-impl<B, D: Sync + Send + 'static> Nickel<B, D> {
+impl<D: Sync + Send + 'static> Nickel<D> {
     /// Creates an instance of Nickel with default error handling,
     /// default Ooptions, and custom data.
-    pub fn with_data_and_options(data: D, options: Options) -> Nickel<B, D> {
+    pub fn with_data_and_options(data: D, options: Options) -> Nickel<D> {
         let mut middleware_stack = MiddlewareStack::new();
 
         // Hook up the default error handler by default. Users are
@@ -119,13 +117,12 @@ impl<B, D: Sync + Send + 'static> Nickel<B, D> {
             data: data,
             // Default value from nginx
             keep_alive_timeout: Some(Duration::from_secs(75)),
-            phantom: PhantomData,
         }
     }
 
     /// Creates an instance of Nickel with default error handling,
     /// default Ooptions, and custom data.
-    pub fn with_data(data: D) -> Nickel<B, D> {
+    pub fn with_data(data: D) -> Nickel<D> {
         Nickel::with_data_and_options(data, Options::default())
     }
 
@@ -150,7 +147,7 @@ impl<B, D: Sync + Send + 'static> Nickel<B, D> {
     /// });
     /// # }
     /// ```
-    pub fn utilize<T: Middleware<B, D>>(&mut self, handler: T){
+    pub fn utilize<T: Middleware<Body, D>>(&mut self, handler: T){
         self.middleware_stack.add_middleware(handler);
     }
 
@@ -168,7 +165,7 @@ impl<B, D: Sync + Send + 'static> Nickel<B, D> {
     /// use std::io::Write;
     /// use nickel::{Nickel, Request, Continue, Halt};
     /// use nickel::{NickelError, Action};
-    /// use nickel::status::StatusCode::NotFound;
+    /// use nickel::status::StatusCode::NOT_FOUND;
     ///
     /// fn error_handler<D>(err: &mut NickelError<D>, _req: &mut Request<D>) -> Action {
     ///    if let Some(ref mut res) = err.stream {
@@ -188,7 +185,7 @@ impl<B, D: Sync + Send + 'static> Nickel<B, D> {
     /// server.handle_error(ehandler)
     /// # }
     /// ```
-    pub fn handle_error<T: ErrorHandler<B, D>>(&mut self, handler: T){
+    pub fn handle_error<T: ErrorHandler<Body, D>>(&mut self, handler: T){
         self.middleware_stack.add_error_handler(handler);
     }
 
@@ -227,33 +224,39 @@ impl<B, D: Sync + Send + 'static> Nickel<B, D> {
     /// # // unblock the server so the test doesn't block forever
     /// # listening.detach();
     /// ```
-    pub fn listen<T: ToSocketAddrs>(mut self, addr: T) -> Result<ListeningServer, Box<dyn StdError>> {
+    pub fn listen<T: ToSocketAddrs>(mut self, addr: T) -> Result<(), Box<dyn StdError>> {
         self.middleware_stack.add_middleware(middleware! {
-            (StatusCode::NotFound, "File Not Found")
+            (StatusCode::NOT_FOUND, "File Not Found")
         });
 
         let server = Server::new(self.middleware_stack, self.options.reload_policy, self.data);
 
         let is_test_harness = env::var_os("NICKEL_TEST_HARNESS").is_some();
 
-        let listener = if is_test_harness {
+        if is_test_harness {
             // If we're under a test harness, we'll pass zero to get assigned a random
             // port. See http://doc.rust-lang.org/std/net/struct.TcpListener.html#method.bind
+            if self.options.output_on_listen {
+                println!("Listening on http://{}", "localhost:0");
+            }
             server.serve("localhost:0",
                          self.keep_alive_timeout,
                          self.options.thread_count)?
         } else {
+            // TODO: fixme
+            // if self.options.output_on_listen {
+            //     println!("Listening on http://{}", addr);
+            // }
             server.serve(addr,
                          self.keep_alive_timeout,
                          self.options.thread_count)?
         };
 
         if self.options.output_on_listen {
-            println!("Listening on http://{}", listener.socket());
             println!("Ctrl-C to shutdown server");
         }
 
-        Ok(listener)
+        Ok(())
     }
 
     /// Set the timeout for the keep-alive loop
@@ -308,7 +311,7 @@ impl<B, D: Sync + Send + 'static> Nickel<B, D> {
     // where T: ToSocketAddrs,
     //       S: SslServer + Send + Clone + 'static {
     //     self.middleware_stack.add_middleware(middleware! {
-    //         (StatusCode::NotFound, "File Not Found")
+    //         (StatusCode::NOT_FOUND, "File Not Found")
     //     });
 
     //     let server = Server::new(self.middleware_stack, self.options.reload_policy, self.data);

@@ -20,7 +20,6 @@ pub use crate::router::{Router, Route, RouteResult, HttpRouter};
 pub use crate::nickel_error::NickelError;
 pub use crate::mimes::MediaType;
 pub use crate::responder::Responder;
-pub use crate::server::ListeningServer;
 pub use crate::template_cache::{ReloadPolicy, TemplateCache};
 
 #[macro_use] pub mod macros;

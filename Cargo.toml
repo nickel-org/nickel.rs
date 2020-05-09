@@ -20,6 +20,7 @@ unstable = ["hyper/nightly", "compiletest_rs"]
 
 [dependencies]
 futures = "0.3"
+futures-util = { version = "0.3", default-features = false }
 groupable = "0.2"
 hyper = "0.13"
 lazy_static = "1.0"

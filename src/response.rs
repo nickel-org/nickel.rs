@@ -124,7 +124,7 @@ impl<'a, B, D> Response<'a, B, D> {
         self.origin.headers_mut().remove(header::CONTENT_LENGTH);
         // Determine content type by file extension or default to binary
         let mime = mime_from_filename(path).unwrap_or(MediaType::Bin);
-        self.set_header_fallback(header::CONTENT_TYPE, &mime.into());
+        self.set_header_fallback(&header::CONTENT_TYPE, &mime.into());
 
         let mut file = try_with!(self, {
             File::open(path).map_err(|e| format!("Failed to send file '{:?}': {}",
@@ -185,7 +185,7 @@ impl<'a, B, D> Response<'a, B, D> {
     /// }
     /// ```
     pub fn set_header_fallback(&mut self, name: &HeaderName, value: &HeaderValue) {
-        self.origin.headers_mut().entry(name).or_insert(*value);
+        self.origin.headers_mut().entry(name).or_insert(value.clone());
     }
 
     /// Renders the given template bound with the given data.

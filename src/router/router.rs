@@ -19,12 +19,12 @@ pub struct Route<B, D=()> {
 /// It contains the matched `route` and also a `params` property holding
 /// a HashMap with the keys being the variable names and the value being the
 /// evaluated string
-pub struct RouteResult<'mw, D = ()> {
-    pub route: &'mw Route<D>,
+pub struct RouteResult<'mw, B, D = ()> {
+    pub route: &'mw Route<B, D>,
     params: Vec<(String, String)>
 }
 
-impl<'mw, D> RouteResult<'mw, D> {
+impl<'mw, B, D> RouteResult<'mw, B, D> {
     pub fn param(&self, key: &str) -> Option<&str> {
         for &(ref k, ref v) in &self.params {
             if k == &key {
@@ -44,18 +44,18 @@ impl<'mw, D> RouteResult<'mw, D> {
 /// The Router's job is it to hold routes and to resolve them later against
 /// concrete URLs. The router is also a regular middleware and needs to be
 /// added to the middleware stack with `server.utilize(router)`.
-pub struct Router<D=()> {
-    routes: Vec<Route<D>>,
+pub struct Router<B, D=()> {
+    routes: Vec<Route<B, D>>,
 }
 
-impl<D> Router<D> {
-    pub fn new() -> Router<D> {
+impl<B, D> Router<B, D> {
+    pub fn new() -> Router<B, D> {
         Router {
             routes: Vec::new()
         }
     }
 
-    pub fn match_route<'mw>(&'mw self, method: &Method, path: &str) -> Option<RouteResult<'mw, D>> {
+    pub fn match_route<'mw>(&'mw self, method: &Method, path: &str) -> Option<RouteResult<'mw, B, D>> {
         self.routes
             .iter()
             .find(|item| item.method == *method && item.matcher.is_match(path))
@@ -68,7 +68,7 @@ impl<D> Router<D> {
     }
 }
 
-fn extract_params<D>(route: &Route<D>, path: &str) -> Vec<(String, String)> {
+fn extract_params<B, D>(route: &Route<B, D>, path: &str) -> Vec<(String, String)> {
     let captures = match route.matcher.captures(path) {
         Some(cap) => cap,
         None => { return vec![]; },
@@ -90,7 +90,7 @@ fn extract_params<D>(route: &Route<D>, path: &str) -> Vec<(String, String)> {
         .collect()
 }
 
-impl<D> HttpRouter<D> for Router<D> {
+impl<B,D> HttpRouter<B, D> for Router<B, D> {
     fn add_route<M: Into<Matcher>, H: Middleware<B, D>>(&mut self, method: Method, matcher: M, handler: H) -> &mut Self {
         let route = Route {
             matcher: matcher.into(),
@@ -103,20 +103,19 @@ impl<D> HttpRouter<D> for Router<D> {
     }
 }
 
-impl<D: 'static> Middleware<B, D> for Router<D> {
-    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, D>, mut res: Response<'mw, D>)
-                          -> MiddlewareResult<'mw, D> {
-        debug!("Router::invoke for '{:?}'", req.origin.uri);
+impl<B: 'static, D: 'static> Middleware<B, D> for Router<B, D> {
+    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, B, D>, mut res: Response<'mw, B, D>)
+                          -> MiddlewareResult<'mw, B, D> {
+        debug!("Router::invoke for '{:?}'", req.origin.uri());
 
         // Strip off the querystring when matching a route
-        let route_result = req.path_without_query()
-                              .and_then(|path| self.match_route(&req.origin.method, path));
+        let route_result = self.match_route(&req.origin.method(), req.path_without_query());
 
         debug!("route_result.route.path: {:?}", route_result.as_ref().map(|r| r.route.matcher.path()));
 
         match route_result {
             Some(route_result) => {
-                res.set(StatusCode::Ok);
+                res.set(StatusCode::OK);
                 let handler = &route_result.route.handler;
                 req.route_result = Some(route_result);
                 handler.invoke(req, res)
