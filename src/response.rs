@@ -223,7 +223,7 @@ impl<'a, B, D> Response<'a, B, D> {
         // on_send then it would possibly set redundant things.
         self.set_fallback_headers();
 
-        // Todo: migration cleanup
+        // TODO: migration cleanup
         //
         // Should be easy, may not even be needed
         // let Response { origin, templates, data, map, on_send } = self;
@@ -267,14 +267,14 @@ impl<'a, B, D> Response<'a, B, D> {
 impl<'a, B, D> Write for Response<'a, B, D> {
     #[inline(always)]
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        // Todo: migration cleanup
+        // TODO: migration cleanup
         // self.origin.write(buf)
         unimplemented!();
     }
 
     #[inline(always)]
     fn flush(&mut self) -> io::Result<()> {
-        // Todo: migration cleanup
+        // TODO: migration cleanup
         // self.origin.flush()
         unimplemented!();
     }
@@ -292,7 +292,7 @@ impl<'a, B, D> Response<'a, B, D> {
     }
 
     /// Flushes all writing of a response to the client.
-    // Todo: migration cleanup
+    // TODO: migration cleanup
     //
     // Should be easy, may not even be needed
     pub fn end(self) -> io::Result<()> {

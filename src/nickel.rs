@@ -4,7 +4,7 @@ use std::env;
 use std::error::Error as StdError;
 use crate::router::{Router, HttpRouter, Matcher};
 use crate::middleware::{MiddlewareStack, Middleware, ErrorHandler};
-use crate::server::Server;
+use crate::server::{self, Server};
 use crate::template_cache::ReloadPolicy;
 use hyper::{Body, Method, StatusCode};
 //use hyper::net::SslServer;
@@ -224,7 +224,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     /// # // unblock the server so the test doesn't block forever
     /// # listening.detach();
     /// ```
-    pub fn listen<T: ToSocketAddrs>(mut self, addr: T) -> Result<(), Box<dyn StdError>> {
+    pub async fn listen<T: ToSocketAddrs>(mut self, addr: T) -> Result<(), Box<dyn StdError>> {
         self.middleware_stack.add_middleware(middleware! {
             (StatusCode::NOT_FOUND, "File Not Found")
         });
@@ -239,17 +239,19 @@ impl<D: Sync + Send + 'static> Nickel<D> {
             if self.options.output_on_listen {
                 println!("Listening on http://{}", "localhost:0");
             }
-            server.serve("localhost:0",
-                         self.keep_alive_timeout,
-                         self.options.thread_count)?
+            server::serve(server,
+                          "localhost:0",
+                          self.keep_alive_timeout,
+                          self.options.thread_count).await?
         } else {
             // TODO: fixme
             // if self.options.output_on_listen {
             //     println!("Listening on http://{}", addr);
             // }
-            server.serve(addr,
-                         self.keep_alive_timeout,
-                         self.options.thread_count)?
+            server::serve(server,
+                          addr,
+                          self.keep_alive_timeout,
+                          self.options.thread_count).await?
         };
 
         if self.options.output_on_listen {
