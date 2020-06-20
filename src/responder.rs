@@ -22,28 +22,28 @@ use std::io::Write;
 /// also modifying the `Response` as required.
 ///
 /// Please see the examples for some uses.
-pub trait Responder<B, D> {
-    fn respond<'a>(self, _: Response<'a, B, D>) -> MiddlewareResult<'a, B, D>;
+pub trait Responder<D> {
+    fn respond<'a>(self, _: Response<'a, D>) -> MiddlewareResult<'a, D>;
 }
 
-impl<B, D> Responder<B, D> for () {
-    fn respond<'a>(self, res: Response<'a, B, D>) -> MiddlewareResult<'a, B, D> {
+impl<D> Responder<D> for () {
+    fn respond<'a>(self, res: Response<'a, D>) -> MiddlewareResult<'a, D> {
         res.next_middleware()
     }
 }
 
-impl<B, D> Responder<B, D> for serde_json::Value {
-    fn respond<'a>(self, mut res: Response<'a, B, D>) -> MiddlewareResult<'a, B, D> {
+impl<D> Responder<D> for serde_json::Value {
+    fn respond<'a>(self, mut res: Response<'a, D>) -> MiddlewareResult<'a, D> {
         maybe_set_type(&mut res, MediaType::Json);
         res.send(serde_json::to_string(&self)
                       .map_err(|e| format!("Failed to parse JSON: {}", e)))
     }
 }
 
-impl<T, E, B, D> Responder<B, D> for Result<T, E>
-        where T: Responder<B, D>,
-              for<'e> NickelError<'e, B, D>: From<(Response<'e, B, D>, E)> {
-    fn respond<'a>(self, res: Response<'a, B, D>) -> MiddlewareResult<'a, B, D> {
+impl<T, E, D> Responder<D> for Result<T, E>
+        where T: Responder<D>,
+              for<'e> NickelError<'e, D>: From<(Response<'e, D>, E)> {
+    fn respond<'a>(self, res: Response<'a, D>) -> MiddlewareResult<'a, D> {
         let data = try_with!(res, self);
         res.send(data)
     }
@@ -51,16 +51,16 @@ impl<T, E, B, D> Responder<B, D> for Result<T, E>
 
 macro_rules! dual_impl {
     ($view:ty, $alloc:ty, |$s:ident, $res:ident| $b:block) => (
-        impl<'a, B, D> Responder<B, D> for $view {
+        impl<'a, D> Responder<D> for $view {
             #[allow(unused_mut)]
             #[inline]
-            fn respond<'c>($s, mut $res: Response<'c, B, D>) -> MiddlewareResult<'c, B, D> $b
+            fn respond<'c>($s, mut $res: Response<'c, D>) -> MiddlewareResult<'c, D> $b
         }
 
-        impl<'a, B, D> Responder<B, D> for $alloc {
+        impl<'a, D> Responder<D> for $alloc {
             #[allow(unused_mut)]
             #[inline]
-            fn respond<'c>($s, mut $res: Response<'c, B, D>) -> MiddlewareResult<'c, B, D> $b
+            fn respond<'c>($s, mut $res: Response<'c, D>) -> MiddlewareResult<'c, D> $b
         }
     )
 }
@@ -97,9 +97,9 @@ dual_impl!((StatusCode, &'static str),
                 }                    
             });
 
-impl<'a, B, D> Responder<B, D> for StatusCode {
+impl<'a, D> Responder<D> for StatusCode {
     #[inline]
-    fn respond<'c>(self, res: Response<'c, B, D>) -> MiddlewareResult<'c, B, D> {
+    fn respond<'c>(self, res: Response<'c, D>) -> MiddlewareResult<'c, D> {
         res.send((self, ""))
     }
 }
@@ -146,7 +146,7 @@ dual_impl!((u16, &'static str),
 //                 Ok(Halt)
 //             })
 
-fn maybe_set_type<B, D>(res: &mut Response<'_, B, D>, media_type: MediaType) {
+fn maybe_set_type<D>(res: &mut Response<'_, D>, media_type: MediaType) {
     let value: HeaderValue = media_type.into();
     res.set_header_fallback(&header::CONTENT_TYPE, &media_type.into());
 }

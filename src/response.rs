@@ -2,8 +2,7 @@ use std::mem;
 use std::borrow::Cow;
 use std::path::Path;
 use serde::Serialize;
-use hyper::StatusCode;
-use hyper::Response as HyperResponse;
+use hyper::{Body, Response as HyperResponse, StatusCode};
 use hyper::header::{self, HeaderMap, HeaderName, HeaderValue};
 use time;
 use crate::mimes::MediaType;
@@ -17,21 +16,21 @@ use plugin::{Extensible, Pluggable};
 use typemap::TypeMap;
 
 ///A container for the response
-pub struct Response<'a, B, D: 'a = ()> {
+pub struct Response<'a, D: 'a = ()> {
     ///the original `hyper::server::Response`
-    origin: HyperResponse<B>,
+    origin: HyperResponse<Body>,
     templates: &'a TemplateCache,
     data: &'a D,
     map: TypeMap,
     // This should be FnBox, but that's currently unstable
-    on_send: Vec<Box<dyn FnMut(&mut Response<'a, B, D>)>>
+    on_send: Vec<Box<dyn FnMut(&mut Response<'a, D>)>>
 }
 
-impl<'a, B, D> Response<'a, B, D> {
-    pub fn from_internal<'c, 'd>(response: HyperResponse<B>,
+impl<'a, D> Response<'a, D> {
+    pub fn from_internal<'c, 'd>(response: HyperResponse<Body>,
                                  templates: &'c TemplateCache,
                                  data: &'c D)
-                                -> Response<'c, B, D> {
+                                -> Response<'c, D> {
         Response {
             origin: response,
             templates: templates,
@@ -84,7 +83,7 @@ impl<'a, B, D> Response<'a, B, D> {
     /// }
     /// ```
     // TODO: replace with set_status, set_content_type, and set_header methods
-    pub fn set<T: Modifier<Response<'a, B, D>>>(&mut self, attribute: T) -> &mut Response<'a, B, D> {
+    pub fn set<T: Modifier<Response<'a, D>>>(&mut self, attribute: T) -> &mut Response<'a, D> {
         attribute.modify(self);
         self
     }
@@ -101,7 +100,7 @@ impl<'a, B, D> Response<'a, B, D> {
     /// }
     /// ```
     #[inline]
-    pub fn send<T: Responder<B, D>>(self, data: T) -> MiddlewareResult<'a, B, D> {
+    pub fn send<T: Responder<D>>(self, data: T) -> MiddlewareResult<'a, D> {
         data.respond(self)
     }
 
@@ -118,7 +117,7 @@ impl<'a, B, D> Response<'a, B, D> {
     ///     res.send_file(favicon)
     /// }
     /// ```
-    pub fn send_file<P:AsRef<Path>>(mut self, path: P) -> MiddlewareResult<'a, B, D> {
+    pub fn send_file<P:AsRef<Path>>(mut self, path: P) -> MiddlewareResult<'a, D> {
         let path = path.as_ref();
         // Chunk the response
         self.origin.headers_mut().remove(header::CONTENT_LENGTH);
@@ -151,7 +150,7 @@ impl<'a, B, D> Response<'a, B, D> {
 
     /// Return an error with the appropriate status code for error handlers to
     /// provide output for.
-    pub fn error<T>(self, status: StatusCode, message: T) -> MiddlewareResult<'a, B, D>
+    pub fn error<T>(self, status: StatusCode, message: T) -> MiddlewareResult<'a, D>
             where T: Into<Cow<'static, str>> {
         Err(NickelError::new(self, message, status))
     }
@@ -202,7 +201,7 @@ impl<'a, B, D> Response<'a, B, D> {
     ///     res.render("examples/assets/template.tpl", &data)
     /// }
     /// ```
-    pub fn render<T, P>(self, path: P, data: &T) -> MiddlewareResult<'a, B, D>
+    pub fn render<T, P>(self, path: P, data: &T) -> MiddlewareResult<'a, D>
         where T: Serialize, P: AsRef<Path> + Into<String> {
 
         let mut self_started = self.start()?;
@@ -212,7 +211,7 @@ impl<'a, B, D> Response<'a, B, D> {
         }
     }
 
-    pub fn start(mut self) -> Result<Response<'a, B, D>, NickelError<'a, B, D>> {
+    pub fn start(mut self) -> Result<Response<'a, D>, NickelError<'a, D>> {
         let on_send = mem::replace(&mut self.on_send, vec![]);
         for mut f in on_send.into_iter().rev() {
             // TODO: Ensure `f` doesn't call on_send again
@@ -251,7 +250,7 @@ impl<'a, B, D> Response<'a, B, D> {
     }
 
     pub fn on_send<F>(&mut self, f: F)
-            where F: FnMut(&mut Response<'a, B, D>) + 'static {
+            where F: FnMut(&mut Response<'a, D>) + 'static {
         self.on_send.push(Box::new(f))
     }
 
@@ -259,12 +258,12 @@ impl<'a, B, D> Response<'a, B, D> {
     ///
     /// When returned from a Middleware, it allows computation to continue
     /// in any Middleware queued after the active one.
-    pub fn next_middleware(self) -> MiddlewareResult<'a, B, D> {
+    pub fn next_middleware(self) -> MiddlewareResult<'a, D> {
         Ok(Action::Continue(self))
     }
 }
 
-impl<'a, B, D> Write for Response<'a, B, D> {
+impl<'a, D> Write for Response<'a, D> {
     #[inline(always)]
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
         // TODO: migration cleanup
@@ -280,12 +279,12 @@ impl<'a, B, D> Write for Response<'a, B, D> {
     }
 }
 
-impl<'a, B, D> Response<'a, B, D> {
+impl<'a, D> Response<'a, D> {
     /// In the case of an unrecoverable error while a stream is already in
     /// progress, there is no standard way to signal to the client that an
     /// error has occurred. `bail` will drop the connection and log an error
     /// message.
-    pub fn bail<T>(self, message: T) -> MiddlewareResult<'a, B, D>
+    pub fn bail<T>(self, message: T) -> MiddlewareResult<'a, D>
             where T: Into<Cow<'static, str>> {
         let _ = self.end();
         unsafe { Err(NickelError::without_response(message)) }
@@ -301,7 +300,7 @@ impl<'a, B, D> Response<'a, B, D> {
     }
 }
 
-impl <'a, B, D> Response<'a, B, D> {
+impl <'a, D> Response<'a, D> {
     /// The status of this response.
     pub fn status(&self) -> StatusCode {
         self.origin.status()
@@ -317,7 +316,7 @@ impl <'a, B, D> Response<'a, B, D> {
     }
 }
 
-impl<'a, B, D> Extensible for Response<'a, B, D> {
+impl<'a, D> Extensible for Response<'a, D> {
     fn extensions(&self) -> &TypeMap {
         &self.map
     }
@@ -327,7 +326,7 @@ impl<'a, B, D> Extensible for Response<'a, B, D> {
     }
 }
 
-impl<'a, B, D> Pluggable for Response<'a, B, D> {}
+impl<'a, D> Pluggable for Response<'a, D> {}
 
 fn mime_from_filename<P: AsRef<Path>>(path: P) -> Option<MediaType> {
     path.as_ref()
@@ -349,8 +348,8 @@ mod modifier_impls {
     use modifier::Modifier;
     use crate::{Response, MediaType};
 
-    impl<'a, B, D> Modifier<Response<'a, B, D>> for StatusCode {
-        fn modify(self, res: &mut Response<'a, B, D>) {
+    impl<'a, D> Modifier<Response<'a, D>> for StatusCode {
+        fn modify(self, res: &mut Response<'a, D>) {
             *res.status_mut() = self
         }
     }

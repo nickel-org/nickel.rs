@@ -71,7 +71,7 @@ impl Default for Options {
 /// Nickel is the application object. It's the surface that
 /// holds all public APIs.
 pub struct Nickel<D: Sync + Send + 'static = ()> {
-    middleware_stack: MiddlewareStack<Body, D>,
+    middleware_stack: MiddlewareStack<D>,
     data: D,
     keep_alive_timeout: Option<Duration>,
 
@@ -79,8 +79,8 @@ pub struct Nickel<D: Sync + Send + 'static = ()> {
     pub options: Options,
 }
 
-impl<D: Sync + Send + 'static> HttpRouter<Body, D> for Nickel<D> {
-    fn add_route<M: Into<Matcher>, H: Middleware<Body, D>>(&mut self, method: Method, matcher: M, handler: H) -> &mut Self {
+impl<D: Sync + Send + 'static> HttpRouter<D> for Nickel<D> {
+    fn add_route<M: Into<Matcher>, H: Middleware<D>>(&mut self, method: Method, matcher: M, handler: H) -> &mut Self {
         let mut router = Router::new();
         router.add_route(method, matcher, handler);
         self.utilize(router);
@@ -147,7 +147,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     /// });
     /// # }
     /// ```
-    pub fn utilize<T: Middleware<Body, D>>(&mut self, handler: T){
+    pub fn utilize<T: Middleware<D>>(&mut self, handler: T){
         self.middleware_stack.add_middleware(handler);
     }
 
@@ -185,7 +185,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     /// server.handle_error(ehandler)
     /// # }
     /// ```
-    pub fn handle_error<T: ErrorHandler<Body, D>>(&mut self, handler: T){
+    pub fn handle_error<T: ErrorHandler<D>>(&mut self, handler: T){
         self.middleware_stack.add_error_handler(handler);
     }
 

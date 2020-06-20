@@ -93,18 +93,18 @@ macro_rules! _middleware_inner {
         use $crate::{MiddlewareResult,Responder, Response, Request};
 
         #[inline(always)]
-        fn restrict<'mw, B, D, R: Responder<B, D>>(r: R, res: Response<'mw, B, D>)
-                -> MiddlewareResult<'mw, B, D> {
+        fn restrict<'mw, D, R: Responder<D>>(r: R, res: Response<'mw, D>)
+                -> MiddlewareResult<'mw, D> {
             res.send(r)
         }
 
         // Inference fails due to thinking it's a (&Request, Response) with
         // different mutability requirements
         #[inline(always)]
-        fn restrict_closure<F, B, D>(f: F) -> F
+        fn restrict_closure<F, D>(f: F) -> F
             where F: for<'r, 'mw>
-                        Fn(&'r mut Request<'mw, B, D>, Response<'mw, B, D>)
-                            -> MiddlewareResult<'mw, B, D> + Send + Sync { f }
+                        Fn(&'r mut Request<'mw, D>, Response<'mw, D>)
+                            -> MiddlewareResult<'mw, D> + Send + Sync { f }
 
         restrict_closure(move |as_pat!($req), $res_binding| {
             restrict(as_block!({$($b)+}), $res)

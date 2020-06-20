@@ -5,7 +5,7 @@ use std::task::{Context, Poll};
 use std::time::Duration;
 use futures_util::future;
 use hyper::Result as HttpResult;
-use hyper::{Body, Request, Response};
+use hyper::{Body, Request, Response, StatusCode};
 use hyper::server::Server as HyperServer;
 use hyper::service::Service;
 //use hyper::net::SslServer;
@@ -16,7 +16,7 @@ use crate::response;
 use crate::template_cache::{ReloadPolicy, TemplateCache};
 
 pub struct BaseSrv<D> {
-    middleware_stack: MiddlewareStack<Body, D>,
+    middleware_stack: MiddlewareStack<D>,
     templates: TemplateCache,
     shared_data: D,
 }
@@ -39,14 +39,15 @@ impl <D: Sync + Send + 'static> Service<Request<Body>> for Srv<D> {
     }
 
     fn call(&mut self, req: Request<Body>) -> Self::Future {
+        // Creating an empty response, defaulting to 404. We unwrap because this code shouldn't be able to fail.
+        //let res = Response::builder().status(StatusCode::NOT_FOUND).body(()).unwrap();
+        //let nickel_req = request::Request::from_internal(req,
+        //                                                 None, // TODO: get remote address
+        //                                                 &self.0.shared_data);
+        //let nickel_res = response::Response::from_internal(res,
+        //                                                   &self.0.templates,
+        //                                                   &self.0.shared_data);
         unimplemented!();
-        // let res = Response::builder();
-        // let nickel_req = request::Request::from_internal(req,
-        //                                                  None, // TODO: get remote address
-        //                                                  &self.0.shared_data);
-        // let nickel_res = response::Response::from_internal(res,
-        //                                                    &self.0.templates,
-        //                                                    &self.0.shared_data);
         // self.0.middleware_stack.invoke(nickel_req, nickel_res) // needs to return future::ok(res)
     }
 }
@@ -56,7 +57,7 @@ pub struct Server<D> {
 }
 
 impl<D: Sync + Send> Server<D> {
-    pub fn new(middleware_stack: MiddlewareStack<Body, D>, reload_policy: ReloadPolicy, data: D) -> Server<D> {
+    pub fn new(middleware_stack: MiddlewareStack<D>, reload_policy: ReloadPolicy, data: D) -> Server<D> {
         let server_base = BaseSrv {
             middleware_stack: middleware_stack,
             templates: TemplateCache::with_policy(reload_policy),
