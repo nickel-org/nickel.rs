@@ -18,7 +18,7 @@ use typemap::TypeMap;
 ///A container for the response
 pub struct Response<'a, D: 'a = ()> {
     ///the original `hyper::server::Response`
-    origin: HyperResponse<Body>,
+    pub origin: HyperResponse<Body>,
     templates: &'a TemplateCache,
     data: &'a D,
     map: TypeMap,
