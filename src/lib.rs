@@ -40,7 +40,7 @@ pub mod mimes;
 mod urlencoded;
 mod nickel_error;
 mod default_error_handler;
-//pub mod extensions;
+pub mod extensions;
 pub mod template_cache;
 
 pub mod status {

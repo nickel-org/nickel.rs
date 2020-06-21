@@ -1,4 +1,4 @@
-use crate::{Response, MiddlewareResult};
+use crate::{Response, MiddlewareResult, NickelError};
 use hyper::header;
 use crate::status::StatusCode;
 
@@ -25,12 +25,12 @@ pub trait Redirect: Sized {
     /// ```
     fn redirect<T>(self, target: T) -> Self::Result
     where T: Into<String> {
-        self.redirect_with(target, StatusCode::Found)
+        self.redirect_with(target, StatusCode::FOUND)
     }
 
     fn redirect_permanently<T>(self, target: T) -> Self::Result
     where T: Into<String> {
-        self.redirect_with(target, StatusCode::MovedPermanently)
+        self.redirect_with(target, StatusCode::MOVED_PERMANENTLY)
     }
 
     fn redirect_with<T>(self, target: T, status: StatusCode) -> Self::Result
@@ -44,11 +44,17 @@ impl<'a, D> Redirect for Response<'a, D> {
 
     fn redirect_with<T>(mut self, target: T, status: StatusCode) -> Self::Result
     where T: Into<String> {
-        self.set(header::Location(target.into()));
+        let header_value: header::HeaderValue = match target.into().parse() {
+            Ok(v) => v,
+            Err(e) => {
+                return self.error(StatusCode::INTERNAL_SERVER_ERROR, e.to_string());
+            }
+        };
+        self.headers_mut().insert(header::LOCATION, header_value);
 
-        let code = status.to_u16();
+        let code = status.as_u16();
         if code < 300 || code >= 400 {
-            self.error(StatusCode::InternalServerError, "redirect_with called with non-3xx status code")
+            self.error(StatusCode::INTERNAL_SERVER_ERROR, "redirect_with called with non-3xx status code")
         } else {
             self.send(status)
         }
