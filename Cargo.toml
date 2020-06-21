@@ -114,10 +114,10 @@ path = "examples/route_data.rs"
 name = "regex_route"
 path = "examples/regex_route.rs"
 
-# [[example]]
+[[example]]
 
-# name = "query_string"
-# path = "examples/query_string.rs"
+name = "query_string"
+path = "examples/query_string.rs"
 
 # [[example]]
 
