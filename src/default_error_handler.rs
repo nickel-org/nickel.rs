@@ -16,7 +16,7 @@ impl<D> ErrorHandler<D> for DefaultErrorHandler {
                 _ => b"Internal Server Error"
             };
 
-            let _ = res.write_all(msg);
+            let _ = res.set_body(msg);
         } else {
             println!("Error: {}", err.message);
         }

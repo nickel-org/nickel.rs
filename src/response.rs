@@ -88,6 +88,11 @@ impl<'a, D> Response<'a, D> {
         self
     }
 
+    /// Set the body of the hyper response, discarding any already set
+    pub fn set_body<T: Into<Body>>(&mut self, body: T) {
+        *self.origin.body_mut() = body.into();
+    }
+
     /// Writes a response
     ///
     /// # Examples
@@ -251,21 +256,22 @@ impl<'a, D> Response<'a, D> {
     }
 }
 
-impl<'a, D> Write for Response<'a, D> {
-    #[inline(always)]
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        // TODO: migration cleanup
-        // self.origin.write(buf)
-        unimplemented!();
-    }
-
-    #[inline(always)]
-    fn flush(&mut self) -> io::Result<()> {
-        // TODO: migration cleanup
-        // self.origin.flush()
-        unimplemented!();
-    }
-}
+// TODO: migration cleanup - delete this
+// impl<'a, D> Write for Response<'a, D> {
+//     #[inline(always)]
+//     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+//         // TODO: migration cleanup
+//         // self.origin.write(buf)
+//         unimplemented!();
+//     }
+//
+//     #[inline(always)]
+//     fn flush(&mut self) -> io::Result<()> {
+//         // TODO: migration cleanup
+//         // self.origin.flush()
+//         unimplemented!();
+//     }
+// }
 
 impl<'a, D> Response<'a, D> {
     /// In the case of an unrecoverable error while a stream is already in

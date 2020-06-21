@@ -65,8 +65,7 @@ impl <'a, D> Responder<D> for Vec<u8> {
         maybe_set_type(&mut res, MediaType::Bin);
 
         res.start();
-        let body: Body = self.into();
-        *res.origin.body_mut() = body;
+        res.set_body(self);
         Ok(Halt(res))
     }
 }
