@@ -26,7 +26,7 @@ impl Key for MyData {
  * First middleware: Load the structure in the response
  * Side note: req can also have a map field you can use to store custom information
  */
-fn init_data<'mw>(_req: &mut Request<'_, '_>, mut res: Response<'mw>) -> MiddlewareResult<'mw> {
+fn init_data<'mw>(_req: &mut Request<'_>, mut res: Response<'mw>) -> MiddlewareResult<'mw> {
     let data = MyData {
         name: "".to_string()
     };
@@ -38,7 +38,7 @@ fn init_data<'mw>(_req: &mut Request<'_, '_>, mut res: Response<'mw>) -> Middlew
 /**
  * Second: The handler will get the structure and set some stuff in it
  */
-fn handler<'mw>(req: &mut Request<'_, '_>, mut res: Response<'mw>) -> MiddlewareResult<'mw> {
+fn handler<'mw>(req: &mut Request<'_>, mut res: Response<'mw>) -> MiddlewareResult<'mw> {
     // Get a mutable reference to the data so it can be updated
     let data = res.extensions_mut().get_mut::<MyData>().unwrap();
 
@@ -56,7 +56,7 @@ fn get_data(res: &Response<'_>) -> String {
     data.name.clone()
 }
 
-fn end_data<'mw>(_req: &mut Request<'_, '_>, res: Response<'mw>) -> MiddlewareResult<'mw> {
+fn end_data<'mw>(_req: &mut Request<'_>, res: Response<'mw>) -> MiddlewareResult<'mw> {
     let name = get_data(&res);
     // let data = res.extensions().get::<MyData>().unwrap(); // Would crash build since this borrow res and prevent its reuse
 
@@ -66,11 +66,12 @@ fn end_data<'mw>(_req: &mut Request<'_, '_>, res: Response<'mw>) -> MiddlewareRe
 /**
  * Note that the order you declare the middleware and handler are important here
  */
-fn main() {
+#[tokio::main]
+async fn main() {
     let mut server = Nickel::new();
 
     server.utilize(init_data);
     server.get("/data/:some_stuff", handler);
     server.utilize(end_data);
-    server.listen("127.0.0.1:6767").unwrap();
+    server.listen("127.0.0.1:6767").await.unwrap();
 }

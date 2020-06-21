@@ -2,7 +2,8 @@
 
 use nickel::{Nickel, HttpRouter};
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let mut server = Nickel::new();
 
     // For the purpose of this example, this represents any type which is not `Copy`.
@@ -25,5 +26,5 @@ fn main() {
     // the value by 'ref' by doing `&*x` (the additional `*` in this case is to
     // deref from `String` to `str`).
     server.get("**", middleware!(&*x));
-    server.listen("127.0.0.1:6767").unwrap();
+    server.listen("127.0.0.1:6767").await.unwrap();
 }

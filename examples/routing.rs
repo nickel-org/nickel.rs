@@ -1,9 +1,10 @@
 #[macro_use] extern crate nickel;
 
 use nickel::{Nickel, HttpRouter};
-use hyper::method::Method;
+use hyper::Method;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let mut server = Nickel::new();
 
     // Nickel provides a default router on the server for getting
@@ -16,7 +17,7 @@ fn main() {
     // For other HTTP verbs, you can use the `add_route` method.
 
     // go to http://localhost:6767/bar to see this route in action
-    server.add_route(Method::Get, "/bar", middleware! {
+    server.add_route(Method::GET, "/bar", middleware! {
         "This is the /bar handler"
     });
 
@@ -27,7 +28,7 @@ fn main() {
         format!("Foo is '{}'. The requested format is '{}'", foo, format)
     });
 
-    server.listen("127.0.0.1:6767").unwrap();
+    server.listen("127.0.0.1:6767").await.unwrap();
 }
 
 fn explicit_router() -> nickel::Router {
