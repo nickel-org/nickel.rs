@@ -129,12 +129,13 @@ impl<'a, D> Response<'a, D> {
             File::open(path).map_err(|e| format!("Failed to send file '{:?}': {}",
                                                  path, e))
         });
-
-        let mut stream = self.start()?;
-        match copy(&mut file, &mut stream) {
-            Ok(_) => Ok(Halt(stream)),
-            Err(e) => stream.bail(format!("Failed to send file: {}", e))
-        }
+        unimplemented!();
+        // TODO: migration cleanup - correctly implement sending files
+        // let mut stream = self.start()?;
+        // match copy(&mut file, &mut stream) {
+        //     Ok(_) => Ok(Halt(stream)),
+        //     Err(e) => stream.bail(format!("Failed to send file: {}", e))
+        // }
     }
 
     // TODO: This needs to be more sophisticated to return the correct headers
@@ -203,46 +204,33 @@ impl<'a, D> Response<'a, D> {
     /// ```
     pub fn render<T, P>(self, path: P, data: &T) -> MiddlewareResult<'a, D>
         where T: Serialize, P: AsRef<Path> + Into<String> {
-
-        let mut self_started = self.start()?;
-        match self_started.templates.render(path, &mut self_started, data) {
-            Ok(()) => Ok(Halt(self_started)),
-            Err(e) => self_started.bail(format!("Problem rendering template: {:?}", e))
-        }
+        unimplemented!();
+        // TODO: migration cleanup
+        // let mut self_started = self.start()?;
+        // match self_started.templates.render(path, &mut self_started, data) {
+        //     Ok(()) => Ok(Halt(self_started)),
+        //     Err(e) => self_started.bail(format!("Problem rendering template: {:?}", e))
+        // }
     }
 
-    pub fn start(mut self) -> Result<Response<'a, D>, NickelError<'a, D>> {
+    // Todo: migration cleanup
+    //
+    // hyper::Response no longer has a start() method. The api has
+    // changed a lot, so this may not longer be necessary.
+    //
+    // What we are still doing is running the on_send mthods, and
+    // setting fallback headers. Do we need this dedicated method in
+    // the workflow to make sure that happens?
+    pub fn start(&mut self) {
         let on_send = mem::replace(&mut self.on_send, vec![]);
         for mut f in on_send.into_iter().rev() {
             // TODO: Ensure `f` doesn't call on_send again
-            f(&mut self)
+            f(self)
         }
 
         // Set fallback headers last after everything runs, if we did this before as an
         // on_send then it would possibly set redundant things.
         self.set_fallback_headers();
-
-        // TODO: migration cleanup
-        //
-        // Should be easy, may not even be needed
-        // let Response { origin, templates, data, map, on_send } = self;
-        // match origin.start() {
-        //     Ok(origin) => {
-        //         Ok(Response {
-        //             origin: origin,
-        //             templates: templates,
-        //             data: data,
-        //             map: map,
-        //             on_send: on_send
-        //         })
-        //     },
-        //     Err(e) =>
-        //         unsafe {
-        //             Err(NickelError::without_response(format!("Failed to start response: {}", e)))
-        //         }
-        // }
-
-        Ok(self)
     }
 
     pub fn server_data(&self) -> &'a D {

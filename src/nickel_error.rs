@@ -36,13 +36,10 @@ impl<'a, D> NickelError<'a, D> {
             where T: Into<Cow<'static, str>> {
         stream.set(status_code);
 
-        match stream.start() {
-            Ok(stream) =>
-                NickelError {
-                    stream: Some(stream),
-                    message: message.into(),
-                },
-            Err(e) => e
+        stream.start();
+        NickelError {
+            stream: Some(stream),
+            message: message.into(),
         }
     }
 
