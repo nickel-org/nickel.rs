@@ -84,10 +84,10 @@ path = "examples/hello_world_macro.rs"
 # name = "json"
 # path = "examples/json.rs"
 
-# [[example]]
+[[example]]
 
-# name = "custom_error_handler"
-# path = "examples/custom_error_handler.rs"
+name = "custom_error_handler"
+path = "examples/custom_error_handler.rs"
 
 [[example]]
 
