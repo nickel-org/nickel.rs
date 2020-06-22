@@ -88,6 +88,11 @@ impl<'a, D> Response<'a, D> {
         self
     }
 
+    /// Set a header value, return the od value if present.
+    pub fn set_header<N: Into<HeaderName>, V: Into<HeaderValue>>(&mut self, name: N, value: V) -> Option<HeaderValue> {
+        self.origin.headers_mut().insert(name.into(), value.into())
+    }
+
     /// Set the body of the hyper response, discarding any already set
     pub fn set_body<T: Into<Body>>(&mut self, body: T) {
         *self.origin.body_mut() = body.into();
@@ -339,6 +344,7 @@ fn matches_content_type () {
 
 mod modifier_impls {
     use hyper::StatusCode;
+    use hyper::header;
     use modifier::Modifier;
     use crate::{Response, MediaType};
 
@@ -348,11 +354,11 @@ mod modifier_impls {
         }
     }
 
-    // impl<'a, D> Modifier<Response<'a, D>> for MediaType {
-    //     fn modify(self, res: &mut Response<'a, D>) {
-    //         ContentType(self.into()).modify(res)
-    //     }
-    // }
+    impl<'a, D> Modifier<Response<'a, D>> for MediaType {
+        fn modify(self, res: &mut Response<'a, D>) {
+            res.set_header(header::CONTENT_TYPE, self);
+        }
+    }
 
 //     macro_rules! header_modifiers {
 //         ($($t:ty),+) => (
