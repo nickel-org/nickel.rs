@@ -1,6 +1,7 @@
 use nickel::{Nickel, StaticFilesHandler};
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let mut server = Nickel::new();
 
     // For more complicated uses of `StaticFilesHandler`, you probably want to
@@ -9,5 +10,5 @@ fn main() {
     // go to http://localhost:6767/thoughtram_logo_brain.png to see static file serving in action
     server.utilize(StaticFilesHandler::new("examples/assets/"));
 
-    server.listen("127.0.0.1:6767").unwrap();
+    server.listen("127.0.0.1:6767").await.unwrap();
 }

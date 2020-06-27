@@ -18,7 +18,7 @@ impl TemplateEntry {
     // Loads a template from the given filename
     fn from_template_file<P: AsRef<Path>>(filename: P) -> Result<TemplateEntry, Error> {
         let path = filename.as_ref();
-        let template = compile_path(path)?;
+        let template = compile_path(path)?; // TODO: migration cleanup - needs async file reads
         let attr = metadata(path)?;
         Ok(TemplateEntry{template: template, mtime: attr.modified()?, last_checked: SystemTime::now()})
     }

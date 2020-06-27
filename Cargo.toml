@@ -104,10 +104,10 @@ path = "examples/route_data.rs"
 # name = "integration_testing"
 # path = "examples/integration_testing.rs"
 
-# [[example]]
+[[example]]
 
-# name = "static_files"
-# path = "examples/static_files.rs"
+name = "static_files"
+path = "examples/static_files.rs"
 
 [[example]]
 
