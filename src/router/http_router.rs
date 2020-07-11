@@ -2,7 +2,7 @@ use hyper::Method;
 use crate::middleware::Middleware;
 use crate::router::Matcher;
 
-pub trait HttpRouter<D> {
+pub trait HttpRouter<D: Send + 'static + Sync> {
     /// Registers a handler to be used for a specified method.
     /// A handler can be anything implementing the `RequestHandler` trait.
     ///

@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use std::fs::File;
 use std::path::{PathBuf, Path};
 use std::io::Read;
@@ -18,9 +19,10 @@ pub struct FaviconHandler {
     icon_path: PathBuf, // Is it useful to log where in-memory favicon came from every request?
 }
 
-impl<D> Middleware<D> for FaviconHandler {
-    fn invoke<'a>(&'a self, req: &mut Request<'a, D>, res: Response<'a, D>)
-            -> MiddlewareResult<'a, D> {
+#[async_trait]
+impl<D: Send + 'static + Sync> Middleware<D> for FaviconHandler {
+    async fn invoke(&self, req: &mut Request<D>, res: Response<D>)
+            -> MiddlewareResult<D> {
         if FaviconHandler::is_favicon_request(req) {
             self.handle_request(req, res)
         } else {
@@ -53,14 +55,14 @@ impl FaviconHandler {
     }
 
     #[inline]
-    pub fn is_favicon_request<D>(req: &Request<'_, D>) -> bool {
+    pub fn is_favicon_request<D>(req: &Request<D>) -> bool {
         // Todo: migration cleanup
         // do we need to check req.origin.uri.is_absolute here?
         // would just req.origin.uri.path() work?
         req.origin.uri().path() == "/favicon.ico"
     }
 
-    pub fn handle_request<'a, D>(&self, req: &Request<'_, D>, mut res: Response<'a, D>) -> MiddlewareResult<'a, D> {
+    pub fn handle_request<D: Send + 'static + Sync>(&self, req: &Request<D>, mut res: Response<D>) -> MiddlewareResult<D> {
         match req.origin.method() {
             &Method::GET | &Method::HEAD => {
                 self.send_favicon(req, res)
@@ -78,7 +80,7 @@ impl FaviconHandler {
         }
     }
 
-    pub fn send_favicon<'a, D>(&self, req: &Request<'_, D>, mut res: Response<'a, D>) -> MiddlewareResult<'a, D> {
+    pub fn send_favicon<D: Send + 'static + Sync>(&self, req: &Request<D>, mut res: Response<D>) -> MiddlewareResult<D> {
         debug!("{:?} {:?}", req.origin.method(), self.icon_path.display());
         res.set(MediaType::Ico);
         res.send(&*self.icon)

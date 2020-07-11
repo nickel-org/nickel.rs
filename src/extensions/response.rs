@@ -39,8 +39,8 @@ pub trait Redirect: Sized {
 
 // TODO: rework this to return a Responder so it will work with the
 // middleware macro
-impl<'a, D> Redirect for Response<'a, D> {
-    type Result = MiddlewareResult<'a, D>;
+impl<D: Send + 'static + Sync> Redirect for Response<D> {
+    type Result = MiddlewareResult<D>;
 
     fn redirect_with<T>(mut self, target: T, status: StatusCode) -> Self::Result
     where T: Into<String> {

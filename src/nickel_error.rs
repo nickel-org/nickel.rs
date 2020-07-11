@@ -6,12 +6,12 @@ use crate::response::Response;
 
 /// NickelError is the basic error type for HTTP errors as well as user defined errors.
 /// One can pattern match against the `kind` property to handle the different cases.
-pub struct NickelError<'a, D = ()> {
-    pub stream: Option<Response<'a, D>>,
+pub struct NickelError<D: Send + 'static + Sync = ()> {
+    pub stream: Option<Response<D>>,
     pub message: Cow<'static, str>
 }
 
-impl<'a, D> NickelError<'a, D> {
+impl<D: Send + 'static + Sync> NickelError<D> {
     /// Creates a new `NickelError` instance.
     ///
     /// You should probably use `Response#error` in favor of this.
@@ -25,14 +25,14 @@ impl<'a, D> NickelError<'a, D> {
     /// use nickel::status::StatusCode;
     ///
     /// # #[allow(dead_code)]
-    /// fn handler<'a, D>(_: &mut Request<D>, res: Response<'a, D>) -> MiddlewareResult<'a, D> {
+    /// fn handler<D>(_: &mut Request<D>, res: Response<D>) -> MiddlewareResult<D> {
     ///     Err(NickelError::new(res, "Error Parsing JSON", StatusCode::BadRequest))
     /// }
     /// # }
     /// ```
-    pub fn new<T>(mut stream: Response<'a, D>,
+    pub fn new<T>(mut stream: Response<D>,
                   message: T,
-                  status_code: StatusCode) -> NickelError<'a, D>
+                  status_code: StatusCode) -> NickelError<D>
             where T: Into<Cow<'static, str>> {
         stream.set(status_code);
 
@@ -52,7 +52,7 @@ impl<'a, D> NickelError<'a, D> {
     ///
     /// This is considered `unsafe` as deadlock can occur if the `Response`
     /// does not have the underlying stream flushed when processing is finished.
-    pub unsafe fn without_response<T>(message: T) -> NickelError<'a, D>
+    pub unsafe fn without_response<T>(message: T) -> NickelError<D>
             where T: Into<Cow<'static, str>> {
         NickelError {
             stream: None,
@@ -65,22 +65,22 @@ impl<'a, D> NickelError<'a, D> {
     }
 }
 
-impl<'a, T, D> From<(Response<'a, D>, (StatusCode, T))> for NickelError<'a, D>
+impl<T, D: Send + 'static + Sync> From<(Response<D>, (StatusCode, T))> for NickelError<D>
         where T: Into<Box<dyn Error + 'static>> {
-    fn from((res, (errorcode, err)): (Response<'a, D>, (StatusCode, T))) -> NickelError<'a, D> {
+    fn from((res, (errorcode, err)): (Response<D>, (StatusCode, T))) -> NickelError<D> {
         let err = err.into();
         NickelError::new(res, err.to_string(), errorcode)
     }
 }
 
-impl<'a, D> From<(Response<'a, D>, String)> for NickelError<'a, D> {
-    fn from((res, msg): (Response<'a, D>, String)) -> NickelError<'a, D> {
+impl<D: Send + 'static + Sync> From<(Response<D>, String)> for NickelError<D> {
+    fn from((res, msg): (Response<D>, String)) -> NickelError<D> {
         NickelError::new(res, msg, StatusCode::INTERNAL_SERVER_ERROR)
     }
 }
 
-impl<'a, D> From<(Response<'a, D>, StatusCode)> for NickelError<'a, D> {
-    fn from((res, code): (Response<'a, D>, StatusCode)) -> NickelError<'a, D> {
+impl<D: Send + 'static + Sync> From<(Response<D>, StatusCode)> for NickelError<D> {
+    fn from((res, code): (Response<D>, StatusCode)) -> NickelError<D> {
         NickelError::new(res, "", code)
     }
 }

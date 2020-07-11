@@ -13,30 +13,31 @@ use crate::{NickelError, Halt, MiddlewareResult, Responder, Action};
 use crate::template_cache::TemplateCache;
 use modifier::Modifier;
 use plugin::{Extensible, Pluggable};
-use typemap::TypeMap;
+use std::sync::Arc;
+use typemap::ShareMap;
 
 ///A container for the response
-pub struct Response<'a, D: 'a = ()> {
+pub struct Response<D: Send + 'static + Sync = ()> {
     ///the original `hyper::server::Response`
     pub origin: HyperResponse<Body>,
-    templates: &'a TemplateCache,
-    data: &'a D,
-    map: TypeMap,
+    templates: Arc<TemplateCache>,
+    data: Arc<D>,
+    map: SharedMap,
     // This should be FnBox, but that's currently unstable
-    on_send: Vec<Box<dyn FnMut(&mut Response<'a, D>)>>
+    //on_send: Vec<Box<dyn FnMut(&mut Response<'a, D>)>>
 }
 
-impl<'a, D> Response<'a, D> {
-    pub fn from_internal<'c, 'd>(response: HyperResponse<Body>,
-                                 templates: &'c TemplateCache,
-                                 data: &'c D)
-                                -> Response<'c, D> {
+impl<D: Send + 'static + Sync> Response<D> {
+    pub fn from_internal(response: HyperResponse<Body>,
+                         templates: Arc<TemplateCache>,
+                         data: Arc<D>)
+                         -> Response<D> {
         Response {
             origin: response,
             templates: templates,
             data: data,
-            map: TypeMap::new(),
-            on_send: vec![]
+            map: SharedMap::new(),
+            //on_send: vec![]
         }
     }
 
@@ -83,7 +84,7 @@ impl<'a, D> Response<'a, D> {
     /// }
     /// ```
     // TODO: replace with set_status, set_content_type, and set_header methods
-    pub fn set<T: Modifier<Response<'a, D>>>(&mut self, attribute: T) -> &mut Response<'a, D> {
+    pub fn set<T: Modifier<Response<D>>>(&mut self, attribute: T) -> &mut Response<D> {
         attribute.modify(self);
         self
     }
@@ -105,12 +106,12 @@ impl<'a, D> Response<'a, D> {
     /// use nickel::{Request, Response, MiddlewareResult};
     ///
     /// # #[allow(dead_code)]
-    /// fn handler<'a, D>(_: &mut Request<D>, res: Response<'a, D>) -> MiddlewareResult<'a, D> {
+    /// fn handler<D>(_: &mut Request<D>, res: Response<D>) -> MiddlewareResult<D> {
     ///     res.send("hello world")
     /// }
     /// ```
     #[inline]
-    pub fn send<T: Responder<D>>(self, data: T) -> MiddlewareResult<'a, D> {
+    pub fn send<T: Responder<D>>(self, data: T) -> MiddlewareResult<D> {
         data.respond(self)
     }
 
@@ -122,12 +123,12 @@ impl<'a, D> Response<'a, D> {
     /// use std::path::Path;
     ///
     /// # #[allow(dead_code)]
-    /// fn handler<'a, D>(_: &mut Request<D>, res: Response<'a, D>) -> MiddlewareResult<'a, D> {
+    /// fn handler<D>(_: &mut Request<D>, res: Response<D>) -> MiddlewareResult<D> {
     ///     let favicon = Path::new("/assets/favicon.ico");
     ///     res.send_file(favicon)
     /// }
     /// ```
-    pub fn send_file<P:AsRef<Path>>(mut self, path: P) -> MiddlewareResult<'a, D> {
+    pub fn send_file<P:AsRef<Path>>(mut self, path: P) -> MiddlewareResult<D> {
         let path = path.as_ref();
         // Chunk the response
         self.origin.headers_mut().remove(header::CONTENT_LENGTH);
@@ -161,7 +162,7 @@ impl<'a, D> Response<'a, D> {
 
     /// Return an error with the appropriate status code for error handlers to
     /// provide output for.
-    pub fn error<T>(self, status: StatusCode, message: T) -> MiddlewareResult<'a, D>
+    pub fn error<T>(self, status: StatusCode, message: T) -> MiddlewareResult<D>
             where T: Into<Cow<'static, str>> {
         Err(NickelError::new(self, message, status))
     }
@@ -206,13 +207,13 @@ impl<'a, D> Response<'a, D> {
     /// use nickel::{Request, Response, MiddlewareResult};
     ///
     /// # #[allow(dead_code)]
-    /// fn handler<'a, D>(_: &mut Request<D>, res: Response<'a, D>) -> MiddlewareResult<'a, D> {
+    /// fn handler<D>(_: &mut Request<D>, res: Response<D>) -> MiddlewareResult<D> {
     ///     let mut data = HashMap::new();
     ///     data.insert("name", "user");
     ///     res.render("examples/assets/template.tpl", &data)
     /// }
     /// ```
-    pub fn render<T, P>(self, path: P, data: &T) -> MiddlewareResult<'a, D>
+    pub fn render<T, P>(self, path: P, data: &T) -> MiddlewareResult<D>
         where T: Serialize, P: AsRef<Path> + Into<String> {
         unimplemented!();
         // TODO: migration cleanup
@@ -232,37 +233,37 @@ impl<'a, D> Response<'a, D> {
     // setting fallback headers. Do we need this dedicated method in
     // the workflow to make sure that happens?
     pub fn start(&mut self) {
-        let on_send = mem::replace(&mut self.on_send, vec![]);
-        for mut f in on_send.into_iter().rev() {
-            // TODO: Ensure `f` doesn't call on_send again
-            f(self)
-        }
+        // let on_send = mem::replace(&mut self.on_send, vec![]);
+        // for mut f in on_send.into_iter().rev() {
+        //     // TODO: Ensure `f` doesn't call on_send again
+        //     f(self)
+        // }
 
         // Set fallback headers last after everything runs, if we did this before as an
         // on_send then it would possibly set redundant things.
         self.set_fallback_headers();
     }
 
-    pub fn server_data(&self) -> &'a D {
-        &self.data
+    pub fn server_data(&self) -> Arc<D> {
+        self.data.clone()
     }
 
-    pub fn on_send<F>(&mut self, f: F)
-            where F: FnMut(&mut Response<'a, D>) + 'static {
-        self.on_send.push(Box::new(f))
-    }
+    // pub fn on_send<F>(&mut self, f: F)
+    //         where F: FnMut(&mut Response<D>) + 'static {
+    //     self.on_send.push(Box::new(f))
+    // }
 
     /// Pass execution off to another Middleware
     ///
     /// When returned from a Middleware, it allows computation to continue
     /// in any Middleware queued after the active one.
-    pub fn next_middleware(self) -> MiddlewareResult<'a, D> {
+    pub fn next_middleware(self) -> MiddlewareResult<D> {
         Ok(Action::Continue(self))
     }
 }
 
 // TODO: migration cleanup - delete this
-// impl<'a, D> Write for Response<'a, D> {
+// impl<D> Write for Response<D> {
 //     #[inline(always)]
 //     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
 //         // TODO: migration cleanup
@@ -278,12 +279,12 @@ impl<'a, D> Response<'a, D> {
 //     }
 // }
 
-impl<'a, D> Response<'a, D> {
+impl<D: Send + 'static + Sync> Response<D> {
     /// In the case of an unrecoverable error while a stream is already in
     /// progress, there is no standard way to signal to the client that an
     /// error has occurred. `bail` will drop the connection and log an error
     /// message.
-    pub fn bail<T>(self, message: T) -> MiddlewareResult<'a, D>
+    pub fn bail<T>(self, message: T) -> MiddlewareResult<D>
             where T: Into<Cow<'static, str>> {
         let _ = self.end();
         unsafe { Err(NickelError::without_response(message)) }
@@ -299,7 +300,7 @@ impl<'a, D> Response<'a, D> {
     }
 }
 
-impl <'a, D> Response<'a, D> {
+impl <D: Send + 'static + Sync> Response<D> {
     /// The status of this response.
     pub fn status(&self) -> StatusCode {
         self.origin.status()
@@ -310,22 +311,22 @@ impl <'a, D> Response<'a, D> {
         self.origin.headers()
     }
 
-    pub fn data(&self) -> &'a D {
-        &self.data
+    pub fn data(&self) -> Arc<D> {
+        self.data.clone()
     }
 }
 
-impl<'a, D> Extensible for Response<'a, D> {
-    fn extensions(&self) -> &TypeMap {
+impl<D: Send + 'static + Sync> Extensible for Response<D> {
+    fn extensions(&self) -> &ShareMap {
         &self.map
     }
 
-    fn extensions_mut(&mut self) -> &mut TypeMap {
+    fn extensions_mut(&mut self) -> &mut ShareMap {
         &mut self.map
     }
 }
 
-impl<'a, D> Pluggable for Response<'a, D> {}
+impl<D: Send + 'static + Sync> Pluggable for Response<D> {}
 
 fn mime_from_filename<P: AsRef<Path>>(path: P) -> Option<MediaType> {
     path.as_ref()
@@ -348,14 +349,14 @@ mod modifier_impls {
     use modifier::Modifier;
     use crate::{Response, MediaType};
 
-    impl<'a, D> Modifier<Response<'a, D>> for StatusCode {
-        fn modify(self, res: &mut Response<'a, D>) {
+    impl<D: Send + 'static + Sync> Modifier<Response<D>> for StatusCode {
+        fn modify(self, res: &mut Response<D>) {
             *res.status_mut() = self
         }
     }
 
-    impl<'a, D> Modifier<Response<'a, D>> for MediaType {
-        fn modify(self, res: &mut Response<'a, D>) {
+    impl<D: Send + 'static + Sync> Modifier<Response<D>> for MediaType {
+        fn modify(self, res: &mut Response<D>) {
             res.set_header(header::CONTENT_TYPE, self);
         }
     }
@@ -363,8 +364,8 @@ mod modifier_impls {
 //     macro_rules! header_modifiers {
 //         ($($t:ty),+) => (
 //             $(
-//                 impl<'a, D> Modifier<Response<'a, D>> for $t {
-//                     fn modify(self, res: &mut Response<'a, D>) {
+//                 impl<D> Modifier<Response<D>> for $t {
+//                     fn modify(self, res: &mut Response<D>) {
 //                         res.headers_mut().set(self)
 //                     }
 //                 }

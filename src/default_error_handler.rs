@@ -7,8 +7,8 @@ use std::io::Write;
 #[derive(Clone, Copy)]
 pub struct DefaultErrorHandler;
 
-impl<D> ErrorHandler<D> for DefaultErrorHandler {
-    fn handle_error(&self, err: &mut NickelError<'_, D>, _req: &mut Request<'_, D>) -> Action {
+impl<D: Send + 'static + Sync> ErrorHandler<D> for DefaultErrorHandler {
+    fn handle_error(&self, err: &mut NickelError<D>, _req: &mut Request<D>) -> Action {
         if let Some(ref mut res) = err.stream {
             let msg : &[u8] = match res.status() {
                 StatusCode::NOT_FOUND => b"Not Found",

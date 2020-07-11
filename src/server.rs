@@ -15,15 +15,15 @@ use crate::request;
 use crate::response;
 use crate::template_cache::{ReloadPolicy, TemplateCache};
 
-pub struct BaseSrv<D> {
+pub struct BaseSrv<D: Send + 'static + Sync> {
     middleware_stack: MiddlewareStack<D>,
-    templates: TemplateCache,
-    shared_data: D,
+    templates: Arc<TemplateCache>,
+    shared_data: Arc<D>,
 }
 
-pub struct Srv<D>(Arc<BaseSrv<D>>);
+pub struct Srv<D: Send + 'static + Sync>(Arc<BaseSrv<D>>);
 
-impl<D> Clone for Srv<D> {
+impl<D: Send + 'static + Sync> Clone for Srv<D> {
     fn clone(&self) -> Srv<D> {
         Srv(self.0.clone())
     }
@@ -43,31 +43,31 @@ impl <D: Sync + Send + 'static> Service<Request<Body>> for Srv<D> {
         let res = Response::builder().status(StatusCode::NOT_FOUND).body(Body::empty()).unwrap();
         let nickel_req = request::Request::from_internal(req,
                                                         None, // TODO: get remote address
-                                                        &self.0.shared_data);
+                                                        self.0.shared_data.clone());
         let nickel_res = response::Response::from_internal(res,
-                                                          &self.0.templates,
-                                                          &self.0.shared_data);
+                                                          self.0.templates.clone(),
+                                                          self.0.shared_data.clone());
         let final_res = self.0.middleware_stack.invoke(nickel_req, nickel_res);
         future::ok(final_res.origin)
     }
 }
 
-pub struct Server<D> {
+pub struct Server<D: Send + 'static + Sync> {
     base: Srv<D>
 }
 
-impl<D: Sync + Send> Server<D> {
+impl<D: Sync + Send + 'static> Server<D> {
     pub fn new(middleware_stack: MiddlewareStack<D>, reload_policy: ReloadPolicy, data: D) -> Server<D> {
         let server_base = BaseSrv {
             middleware_stack: middleware_stack,
-            templates: TemplateCache::with_policy(reload_policy),
-            shared_data: data
+            templates: Arc::new(TemplateCache::with_policy(reload_policy)),
+            shared_data: Arc::new(data)
         };
         Server { base: Srv(Arc::new(server_base)) }
     }
 }
 
-impl <T, D: Sync + Send> Service<T> for Server<D> {
+impl <T, D: Sync + Send + 'static> Service<T> for Server<D> {
     type Response = Srv<D>;
     type Error = std::io::Error;
     type Future = future::Ready<Result<Self::Response, Self::Error>>;

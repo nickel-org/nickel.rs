@@ -1,8 +1,9 @@
 use crate::router::RouteResult;
 use plugin::{Extensible, Pluggable};
-use typemap::TypeMap;
+use typemap::ShareMap;
 use hyper::{Body, Request as HyperRequest};
 use std::net::SocketAddr;
+use std::sync::Arc;
 
 /// A container for all the request data.
 ///
@@ -11,27 +12,27 @@ use std::net::SocketAddr;
 ///
 /// The lifetime `'server` represents the lifetime of data internal to
 /// the server. It is fixed and longer than `'mw`.
-pub struct Request<'mw, D: 'mw = ()> {
+pub struct Request<D: = ()> {
     ///the original `hyper::server::Request`
     pub origin: HyperRequest<Body>,
     ///a `HashMap<String, String>` holding all params with names and values
-    pub route_result: Option<RouteResult<'mw, D>>,
+    pub route_result: Option<RouteResult>,
 
-    map: TypeMap,
+    map: SharedMap,
 
-    data: &'mw D,
+    data: Arc<D>,
 
     remote_addr: Option<SocketAddr>,
 }
 
-impl<'mw, D> Request<'mw, D> {
+impl<D> Request<D> {
     pub fn from_internal(req: HyperRequest<Body>,
                          remote_addr: Option<SocketAddr>,
-                         data: &'mw D) -> Request<'mw, D> {
+                         data: Arc<D>) -> Request<D> {
         Request {
             origin: req,
             route_result: None,
-            map: TypeMap::new(),
+            map: SharedMap::new(),
             data: data,
             remote_addr: remote_addr
         }
@@ -45,8 +46,8 @@ impl<'mw, D> Request<'mw, D> {
         self.origin.uri().path()
     }
 
-    pub fn server_data(&self) -> &'mw D {
-        &self.data
+    pub fn server_data(&self) -> Arc<D> {
+        self.data.clone()
     }
 
     pub fn remote_addr(&self) -> Option<&SocketAddr> {
@@ -54,14 +55,14 @@ impl<'mw, D> Request<'mw, D> {
     }
 }
 
-impl<'mw, D> Extensible for Request<'mw, D> {
-    fn extensions(&self) -> &TypeMap {
+impl<D> Extensible for Request<D> {
+    fn extensions(&self) -> &ShareMap {
         &self.map
     }
 
-    fn extensions_mut(&mut self) -> &mut TypeMap {
+    fn extensions_mut(&mut self) -> &mut ShareMap {
         &mut self.map
     }
 }
 
-impl<'mw, D> Pluggable for Request<'mw, D> {}
+impl<D> Pluggable for Request<D> {}
