@@ -45,13 +45,15 @@ impl StaticFilesHandler {
         }
     }
 
-    fn extract_path<'a, D>(&self, req: &'a mut Request<D>) -> Option<&'a str> {
+    fn extract_path<'a, D>(&self, req: &'a mut Request<D>) -> Option<String> {
         req.path_without_query().map(|path| {
-            debug!("{:?} {:?}{:?}", req.origin.method, self.root_path.display(), path);
+            let percent_decoded_path = percent_encoding::percent_decode(path.as_bytes()).decode_utf8().unwrap();
+
+            debug!("{:?} {:?}{:?}", req.origin.method, self.root_path.display(), percent_decoded_path);
 
             match path {
-                "/" => "index.html",
-                path => &path[1..],
+                "/" => String::from("index.html"),
+                path => percent_decoded_path[1..].to_string(),
             }
         })
     }
