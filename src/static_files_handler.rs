@@ -1,6 +1,8 @@
 use std::path::{Path, PathBuf};
 use std::io::ErrorKind::NotFound;
 use std::fs;
+use std::borrow::Cow;
+use std::str::Utf8Error;
 
 use hyper::method::Method::{Get, Head};
 
@@ -47,13 +49,13 @@ impl StaticFilesHandler {
 
     fn extract_path<'a, D>(&self, req: &'a mut Request<D>) -> Option<String> {
         req.path_without_query().map(|path| {
-            let percent_decoded_path = percent_encoding::percent_decode(path.as_bytes()).decode_utf8().unwrap();
+            let percent_decoded_path = percent_decode_path(path).unwrap();
 
             debug!("{:?} {:?}{:?}", req.origin.method, self.root_path.display(), percent_decoded_path);
 
             match path {
                 "/" => String::from("index.html"),
-                path => percent_decoded_path[1..].to_string(),
+                _path => percent_decoded_path[1..].to_string(),
             }
         })
     }
@@ -94,6 +96,10 @@ fn safe_path<P: AsRef<Path>>(path: P) -> bool {
     })
 }
 
+fn percent_decode_path(path: &str) -> Result<Cow<str>, Utf8Error> {
+    percent_encoding::percent_decode(path.as_bytes()).decode_utf8()
+}
+
 #[test]
 fn bad_paths() {
     let bad_paths = &[
@@ -121,5 +127,20 @@ fn valid_paths() {
 
     for &path in good_paths {
         assert!(safe_path(path), "expected {:?} to not be suspicious", path);
+    }
+}
+
+#[test]
+fn percent_decoded_paths() {
+    let paths_to_match = &[
+        ("file-without-percent", "file-without-percent"),
+        ("file%20with%20percent", "file with percent"),
+        ("folder%20with%20percent/file", "folder with percent/file"),
+        ("folder%20with%20percent/file%20with%20percent", "folder with percent/file with percent"),
+        ("folder-without-percent/file%20with%20percent", "folder-without-percent/file with percent"),
+    ];
+
+    for &path in paths_to_match {
+        assert_eq!(percent_decode_path(path.0).unwrap(), path.1, "expected {:?} to be decoded to {:?}", path.0, path.1);
     }
 }
