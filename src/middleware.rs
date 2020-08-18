@@ -15,13 +15,13 @@ pub enum Action<T=()> {
 // the usage of + Send is weird here because what we really want is + Static
 // but that's not possible as of today. We have to use + Send for now.
 pub trait Middleware<D>: Send + 'static + Sync {
-    fn invoke<'mw, 'conn>(&'mw self, _req: &mut Request<'mw, D>, res: Response<'mw, D>) -> MiddlewareResult<'mw, D> {
+    fn invoke<'mw>(&'mw self, _req: &mut Request<'mw, D>, res: Response<'mw, D>) -> MiddlewareResult<'mw, D> {
         res.next_middleware()
     }
 }
 
-impl<T, D> Middleware<D> for T where T: for<'r, 'mw, 'conn> Fn(&'r mut Request<'mw, D>, Response<'mw, D>) -> MiddlewareResult<'mw, D> + Send + Sync + 'static {
-    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, D>, res: Response<'mw, D>) -> MiddlewareResult<'mw, D> {
+impl<T, D> Middleware<D> for T where T: for<'r, 'mw> Fn(&'r mut Request<'mw, D>, Response<'mw, D>) -> MiddlewareResult<'mw, D> + Send + Sync + 'static {
+    fn invoke<'mw>(&'mw self, req: &mut Request<'mw, D>, res: Response<'mw, D>) -> MiddlewareResult<'mw, D> {
         (*self)(req, res)
     }
 }
@@ -50,7 +50,7 @@ impl<D: 'static> MiddlewareStack<D> {
         self.error_handlers.push(Box::new(handler));
     }
 
-    pub fn invoke<'mw, 'conn>(&'mw self, mut req: Request<'mw, D>, mut res: Response<'mw, D>) -> Response<'mw, D> {
+    pub fn invoke<'mw>(&'mw self, mut req: Request<'mw, D>, mut res: Response<'mw, D>) -> Response<'mw, D> {
         for handler in self.handlers.iter() {
             match handler.invoke(&mut req, res) {
                 Ok(Halt(res)) => {
