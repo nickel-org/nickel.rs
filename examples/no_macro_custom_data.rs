@@ -4,7 +4,7 @@ struct MyConfig {
     greet: String,
 }
 
-fn greeter<'mw>(req: &mut Request<'_, MyConfig>, res: Response<'mw, MyConfig>) -> MiddlewareResult<'mw, MyConfig> {
+fn greeter(req: &mut Request<MyConfig>, res: Response<MyConfig>) -> MiddlewareResult<MyConfig> {
     let my_config = req.server_data();
     res.send(&*my_config.greet)
 }

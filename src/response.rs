@@ -14,7 +14,7 @@ use crate::template_cache::TemplateCache;
 use modifier::Modifier;
 use plugin::{Extensible, Pluggable};
 use std::sync::Arc;
-use typemap::ShareMap;
+use typemap::{ShareMap, TypeMap};
 
 ///A container for the response
 pub struct Response<D: Send + 'static + Sync = ()> {
@@ -22,7 +22,7 @@ pub struct Response<D: Send + 'static + Sync = ()> {
     pub origin: HyperResponse<Body>,
     templates: Arc<TemplateCache>,
     data: Arc<D>,
-    map: SharedMap,
+    map: ShareMap,
     // This should be FnBox, but that's currently unstable
     //on_send: Vec<Box<dyn FnMut(&mut Response<'a, D>)>>
 }
@@ -36,7 +36,7 @@ impl<D: Send + 'static + Sync> Response<D> {
             origin: response,
             templates: templates,
             data: data,
-            map: SharedMap::new(),
+            map: TypeMap::custom(),
             //on_send: vec![]
         }
     }
@@ -316,17 +316,18 @@ impl <D: Send + 'static + Sync> Response<D> {
     }
 }
 
-impl<D: Send + 'static + Sync> Extensible for Response<D> {
-    fn extensions(&self) -> &ShareMap {
-        &self.map
-    }
+// TODO: migration cleanup - Extensible does not support ShareMap, but TypeMap is not Sync+Send
+// impl<D: Send + 'static + Sync> Extensible for Response<D> {
+//     fn extensions(&self) -> &ShareMap {
+//         &self.map
+//     }
 
-    fn extensions_mut(&mut self) -> &mut ShareMap {
-        &mut self.map
-    }
-}
+//     fn extensions_mut(&mut self) -> &mut ShareMap {
+//         &mut self.map
+//     }
+// }
 
-impl<D: Send + 'static + Sync> Pluggable for Response<D> {}
+// impl<D: Send + 'static + Sync> Pluggable for Response<D> {}
 
 fn mime_from_filename<P: AsRef<Path>>(path: P) -> Option<MediaType> {
     path.as_ref()

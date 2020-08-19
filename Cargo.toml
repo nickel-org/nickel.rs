@@ -60,10 +60,10 @@ path = "examples/routing.rs"
 # name = "enable_cors"
 # path = "examples/enable_cors.rs"
 
-# [[example]]
+[[example]]
 
-# name = "template"
-# path = "examples/template.rs"
+name = "template"
+path = "examples/template.rs"
 
 # [[example]]
 

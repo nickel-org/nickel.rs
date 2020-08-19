@@ -60,12 +60,7 @@ impl<D> Router<D> {
         self.routes
             .iter()
             .find(|item| item.method == *method && item.matcher.is_match(path))
-            .map(|route|
-                (RouteResult {
-                    params: extract_params(route, path),
-                },
-                 route)
-            )
+            .map(|route| (RouteResult{params: extract_params(route, path)}, route))
     }
 }
 

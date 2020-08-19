@@ -2,7 +2,7 @@
 
 use nickel::{Nickel, Request, Response, Middleware, MiddlewareResult};
 
-fn logger_fn<'mw>(req: &mut Request<'_>, res: Response<'mw>) -> MiddlewareResult<'mw> {
+fn logger_fn(req: &mut Request, res: Response) -> MiddlewareResult {
     println!("logging request from logger fn: {:?}", req.origin.uri());
     res.next_middleware()
 }
@@ -10,8 +10,8 @@ fn logger_fn<'mw>(req: &mut Request<'_>, res: Response<'mw>) -> MiddlewareResult
 struct Logger;
 
 impl<D> Middleware<D> for Logger {
-    fn invoke<'mw>(&self, req: &mut Request<'mw, D>, res: Response<'mw, D>)
-    -> MiddlewareResult<'mw, D> {
+    fn invoke(&self, req: &mut Request<D>, res: Response<D>)
+    -> MiddlewareResult<D> {
         println!("logging request from logger middleware: {:?}", req.origin.uri());
         res.next_middleware()
     }

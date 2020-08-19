@@ -1,6 +1,6 @@
 use crate::router::RouteResult;
 use plugin::{Extensible, Pluggable};
-use typemap::ShareMap;
+use typemap::{ShareMap, TypeMap};
 use hyper::{Body, Request as HyperRequest};
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -12,13 +12,13 @@ use std::sync::Arc;
 ///
 /// The lifetime `'server` represents the lifetime of data internal to
 /// the server. It is fixed and longer than `'mw`.
-pub struct Request<D: = ()> {
+pub struct Request<D = ()> {
     ///the original `hyper::server::Request`
     pub origin: HyperRequest<Body>,
     ///a `HashMap<String, String>` holding all params with names and values
     pub route_result: Option<RouteResult>,
 
-    map: SharedMap,
+    map: ShareMap,
 
     data: Arc<D>,
 
@@ -32,7 +32,7 @@ impl<D> Request<D> {
         Request {
             origin: req,
             route_result: None,
-            map: SharedMap::new(),
+            map: TypeMap::custom(),
             data: data,
             remote_addr: remote_addr
         }
@@ -55,14 +55,15 @@ impl<D> Request<D> {
     }
 }
 
-impl<D> Extensible for Request<D> {
-    fn extensions(&self) -> &ShareMap {
-        &self.map
-    }
+// TODO: migration cleanup - Extensible does not support ShareMap, but TypeMap is not Sync+Send
+// impl<D> Extensible for Request<D> {
+//     fn extensions(&self) -> &ShareMap {
+//         &self.map
+//     }
 
-    fn extensions_mut(&mut self) -> &mut ShareMap {
-        &mut self.map
-    }
-}
+//     fn extensions_mut(&mut self) -> &mut ShareMap {
+//         &mut self.map
+//     }
+// }
 
-impl<D> Pluggable for Request<D> {}
+// impl<D> Pluggable for Request<D> {}

@@ -72,7 +72,7 @@ macro_rules! _middleware_inner {
         use $crate::{MiddlewareResult,Responder, Response, Request};
 
         #[inline(always)]
-        fn restrict<'mw, R: Responder<$data>>(r: R, res: Response<$data>)
+        fn restrict<R: Responder<$data>>(r: R, res: Response<$data>)
                 -> MiddlewareResult<$data> {
             res.send(r)
         }
@@ -93,7 +93,7 @@ macro_rules! _middleware_inner {
         use $crate::{MiddlewareResult,Responder, Response, Request};
 
         #[inline(always)]
-        fn restrict<'mw, D: Send + 'static + Sync, R: Responder<D>>(r: R, res: Response<D>)
+        fn restrict<D: Send + 'static + Sync, R: Responder<D>>(r: R, res: Response<D>)
                 -> MiddlewareResult<D> {
             res.send(r)
         }

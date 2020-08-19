@@ -75,13 +75,13 @@ macro_rules! dual_impl {
         impl<D: Send + 'static + Sync> Responder<D> for $view {
             #[allow(unused_mut)]
             #[inline]
-            fn respond<'c>($s, mut $res: Response<D>) -> MiddlewareResult<D> $b
+            fn respond($s, mut $res: Response<D>) -> MiddlewareResult<D> $b
         }
 
         impl<D: Send + 'static + Sync> Responder<D> for $alloc {
             #[allow(unused_mut)]
             #[inline]
-            fn respond<'c>($s, mut $res: Response<D>) -> MiddlewareResult<D> $b
+            fn respond($s, mut $res: Response<D>) -> MiddlewareResult<D> $b
         }
     )
 }
@@ -108,7 +108,7 @@ dual_impl!((StatusCode, &'static str),
 
 impl<D: Send + 'static + Sync> Responder<D> for StatusCode {
     #[inline]
-    fn respond<'c>(self, res: Response<D>) -> MiddlewareResult<D> {
+    fn respond(self, res: Response<D>) -> MiddlewareResult<D> {
         res.send((self, ""))
     }
 }

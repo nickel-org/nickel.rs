@@ -56,7 +56,7 @@ impl<D: Send + 'static + Sync> MiddlewareStack<D> {
         self.error_handlers.push(Box::new(handler));
     }
 
-    pub async fn invoke<'mw>(&'mw self, mut req: Request<D>, mut res: Response<D>) -> Response<D> {
+    pub async fn invoke(&self, mut req: Request<D>, mut res: Response<D>) -> Response<D> {
         for handler in self.handlers.iter() {
             match handler.invoke(&mut req, res).await {
                 Ok(Halt(res)) => {
