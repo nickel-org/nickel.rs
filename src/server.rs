@@ -17,8 +17,8 @@ use crate::template_cache::{ReloadPolicy, TemplateCache};
 
 pub struct BaseSrv<D> {
     middleware_stack: MiddlewareStack<D>,
-    templates: TemplateCache,
-    shared_data: D,
+    templates: Arc<TemplateCache>,
+    shared_data: Arc<D>,
 }
 
 pub struct Srv<D>(Arc<BaseSrv<D>>);
@@ -42,11 +42,11 @@ impl <D: Sync + Send + 'static> Service<Request<Body>> for Srv<D> {
         // Creating an empty response, defaulting to 404. We unwrap because this code shouldn't be able to fail.
         let res = Response::builder().status(StatusCode::NOT_FOUND).body(Body::empty()).unwrap();
         let nickel_req = request::Request::from_internal(req,
-                                                        None, // TODO: get remote address
-                                                        &self.0.shared_data);
+                                                         None, // TODO: get remote address
+                                                         self.0.shared_data.clone());
         let nickel_res = response::Response::from_internal(res,
-                                                          &self.0.templates,
-                                                          &self.0.shared_data);
+                                                           self.0.templates.clone(),
+                                                           self.0.shared_data.clone());
         let final_res = self.0.middleware_stack.invoke(nickel_req, nickel_res);
         future::ok(final_res.origin)
     }
@@ -60,8 +60,8 @@ impl<D: Sync + Send> Server<D> {
     pub fn new(middleware_stack: MiddlewareStack<D>, reload_policy: ReloadPolicy, data: D) -> Server<D> {
         let server_base = BaseSrv {
             middleware_stack: middleware_stack,
-            templates: TemplateCache::with_policy(reload_policy),
-            shared_data: data
+            templates: Arc::new(TemplateCache::with_policy(reload_policy)),
+            shared_data: Arc::new(data)
         };
         Server { base: Srv(Arc::new(server_base)) }
     }

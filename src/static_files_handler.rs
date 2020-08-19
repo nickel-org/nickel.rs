@@ -17,8 +17,8 @@ pub struct StaticFilesHandler {
 }
 
 impl<D> Middleware<D> for StaticFilesHandler {
-    fn invoke<'a>(&self, req: &mut Request<'_, D>, res: Response<'a, D>)
-            -> MiddlewareResult<'a, D> {
+    fn invoke(&self, req: &mut Request<D>, res: Response<D>)
+            -> MiddlewareResult<D> {
         match *req.origin.method() {
             Method::GET | Method::HEAD => self.with_file(self.extract_path(req), res),
             _ => res.next_middleware()
@@ -45,7 +45,7 @@ impl StaticFilesHandler {
         }
     }
 
-    fn extract_path<'a, D>(&self, req: &'a mut Request<'_, D>) -> &'a str {
+    fn extract_path<'a, D>(&self, req: &'a mut Request<D>) -> &'a str {
         let path = req.path_without_query();
         debug!("{:?} {:?}{:?}", req.origin.method(), self.root_path.display(), path);
         
@@ -55,10 +55,10 @@ impl StaticFilesHandler {
         }
     }
 
-    fn with_file<'a, 'b, D, P>(&self,
-                               relative_path: P,
-                               res: Response<'a, D>)
-            -> MiddlewareResult<'a, D> where P: AsRef<Path> {
+    fn with_file<D, P>(&self,
+                       relative_path: P,
+                       res: Response<D>)
+                       -> MiddlewareResult<D> where P: AsRef<Path> {
         let path = relative_path.as_ref();
         if !safe_path(path) {
             let log_msg = format!("The path '{:?}' was denied access.", path);

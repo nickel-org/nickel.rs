@@ -19,12 +19,12 @@ pub struct Route<D=()> {
 /// It contains the matched `route` and also a `params` property holding
 /// a HashMap with the keys being the variable names and the value being the
 /// evaluated string
-pub struct RouteResult<'mw, D = ()> {
-    pub route: &'mw Route<D>,
+pub struct RouteResult {
+    // pub route: &Route<D>,
     params: Vec<(String, String)>
 }
 
-impl<'mw, D> RouteResult<'mw, D> {
+impl RouteResult {
     pub fn param(&self, key: &str) -> Option<&str> {
         for &(ref k, ref v) in &self.params {
             if k == &key {
@@ -55,16 +55,11 @@ impl<D> Router<D> {
         }
     }
 
-    pub fn match_route<'mw>(&'mw self, method: &Method, path: &str) -> Option<RouteResult<'mw, D>> {
+    pub fn match_route(&self, method: &Method, path: &str) -> Option<(RouteResult, &Route<D>)> {
         self.routes
             .iter()
             .find(|item| item.method == *method && item.matcher.is_match(path))
-            .map(|route|
-                RouteResult {
-                    params: extract_params(route, path),
-                    route: route
-                }
-            )
+            .map(|route| (RouteResult{params: extract_params(route, path)}, route))
     }
 }
 
@@ -104,21 +99,20 @@ impl<D> HttpRouter<D> for Router<D> {
 }
 
 impl<D: 'static> Middleware<D> for Router<D> {
-    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, D>, mut res: Response<'mw, D>)
-                          -> MiddlewareResult<'mw, D> {
+    fn invoke(&self, req: &mut Request<D>, mut res: Response<D>)
+                          -> MiddlewareResult<D> {
         debug!("Router::invoke for '{:?}'", req.origin.uri());
 
         // Strip off the querystring when matching a route
         let route_result = self.match_route(&req.origin.method(), req.path_without_query());
 
-        debug!("route_result.route.path: {:?}", route_result.as_ref().map(|r| r.route.matcher.path()));
+        debug!("route_result.route.path: {:?}", route_result.as_ref().map(|r| r.1.matcher.path()));
 
         match route_result {
-            Some(route_result) => {
+            Some((route_result, route)) => {
                 res.set(StatusCode::OK);
-                let handler = &route_result.route.handler;
                 req.route_result = Some(route_result);
-                handler.invoke(req, res)
+                route.handler.invoke(req, res)
             },
             None => res.next_middleware()
         }

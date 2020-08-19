@@ -4,8 +4,8 @@ use crate::nickel_error::NickelError;
 
 pub use self::Action::{Continue, Halt};
 
-pub type MiddlewareResult<'mw, D= ()> = Result<Action<Response<'mw, D>>,
-                                                  NickelError<'mw, D>>;
+pub type MiddlewareResult<D= ()> = Result<Action<Response<D>>,
+                                                  NickelError<D>>;
 
 pub enum Action<T=()> {
     Continue(T),
@@ -15,23 +15,23 @@ pub enum Action<T=()> {
 // the usage of + Send is weird here because what we really want is + Static
 // but that's not possible as of today. We have to use + Send for now.
 pub trait Middleware<D>: Send + 'static + Sync {
-    fn invoke<'mw>(&'mw self, _req: &mut Request<'mw, D>, res: Response<'mw, D>) -> MiddlewareResult<'mw, D> {
+    fn invoke(&self, _req: &mut Request<D>, res: Response<D>) -> MiddlewareResult<D> {
         res.next_middleware()
     }
 }
 
-impl<T, D> Middleware<D> for T where T: for<'r, 'mw> Fn(&'r mut Request<'mw, D>, Response<'mw, D>) -> MiddlewareResult<'mw, D> + Send + Sync + 'static {
-    fn invoke<'mw>(&'mw self, req: &mut Request<'mw, D>, res: Response<'mw, D>) -> MiddlewareResult<'mw, D> {
+impl<T, D> Middleware<D> for T where T: for<'r> Fn(&'r mut Request<D>, Response<D>) -> MiddlewareResult<D> + Send + Sync + 'static {
+    fn invoke(&self, req: &mut Request<D>, res: Response<D>) -> MiddlewareResult<D> {
         (*self)(req, res)
     }
 }
 
 pub trait ErrorHandler<D>: Send + 'static + Sync {
-    fn handle_error(&self, _: &mut NickelError<'_, D>, _: &mut Request<'_, D>) -> Action;
+    fn handle_error(&self, _: &mut NickelError<D>, _: &mut Request<D>) -> Action;
 }
 
-impl<D: 'static> ErrorHandler<D> for fn(&mut NickelError<'_, D>, &mut Request<'_, D>) -> Action {
-    fn handle_error(&self, err: &mut NickelError<'_, D>, req: &mut Request<'_, D>) -> Action {
+impl<D: 'static> ErrorHandler<D> for fn(&mut NickelError<D>, &mut Request<D>) -> Action {
+    fn handle_error(&self, err: &mut NickelError<D>, req: &mut Request<D>) -> Action {
         (*self)(err, req)
     }
 }
@@ -50,7 +50,7 @@ impl<D: 'static> MiddlewareStack<D> {
         self.error_handlers.push(Box::new(handler));
     }
 
-    pub fn invoke<'mw>(&'mw self, mut req: Request<'mw, D>, mut res: Response<'mw, D>) -> Response<'mw, D> {
+    pub fn invoke(&self, mut req: Request<D>, mut res: Response<D>) -> Response<D> {
         for handler in self.handlers.iter() {
             match handler.invoke(&mut req, res) {
                 Ok(Halt(res)) => {

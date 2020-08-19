@@ -23,17 +23,17 @@ use std::io::Write;
 ///
 /// Please see the examples for some uses.
 pub trait Responder<D> {
-    fn respond<'a>(self, _: Response<'a, D>) -> MiddlewareResult<'a, D>;
+    fn respond(self, _: Response<D>) -> MiddlewareResult<D>;
 }
 
 impl<D> Responder<D> for () {
-    fn respond<'a>(self, res: Response<'a, D>) -> MiddlewareResult<'a, D> {
+    fn respond(self, res: Response<D>) -> MiddlewareResult<D> {
         res.next_middleware()
     }
 }
 
 impl<D> Responder<D> for serde_json::Value {
-    fn respond<'a>(self, mut res: Response<'a, D>) -> MiddlewareResult<'a, D> {
+    fn respond(self, mut res: Response<D>) -> MiddlewareResult<D> {
         maybe_set_type(&mut res, MediaType::Json);
         res.send(serde_json::to_string(&self)
                       .map_err(|e| format!("Failed to parse JSON: {}", e)))
@@ -42,26 +42,26 @@ impl<D> Responder<D> for serde_json::Value {
 
 impl<T, E, D> Responder<D> for Result<T, E>
         where T: Responder<D>,
-              for<'e> NickelError<'e, D>: From<(Response<'e, D>, E)> {
-    fn respond<'a>(self, res: Response<'a, D>) -> MiddlewareResult<'a, D> {
+              for<'a> NickelError<D>: From<(Response<D>, E)> {
+    fn respond(self, res: Response<D>) -> MiddlewareResult<D> {
         let data = try_with!(res, self);
         res.send(data)
     }
 }
 
-impl <'a, D> Responder<D> for &'a [u8] {
+impl <D> Responder<D> for &[u8] {
     #[allow(unused_mut)]
     #[inline]
-    fn respond<'c>(self, mut res: Response<'c, D>) -> MiddlewareResult<'c, D> {
+    fn respond(self, mut res: Response<D>) -> MiddlewareResult<D> {
         // this may be inefficient, copies int a Vec
         self.to_vec().respond(res)
     }
 }
 
-impl <'a, D> Responder<D> for Vec<u8> {
+impl <D> Responder<D> for Vec<u8> {
     #[allow(unused_mut)]
     #[inline]
-    fn respond<'c>(self, mut res: Response<'c, D>) -> MiddlewareResult<'c, D> {
+    fn respond(self, mut res: Response<D>) -> MiddlewareResult<D> {
         maybe_set_type(&mut res, MediaType::Bin);
 
         res.start();
@@ -72,21 +72,21 @@ impl <'a, D> Responder<D> for Vec<u8> {
 
 macro_rules! dual_impl {
     ($view:ty, $alloc:ty, |$s:ident, $res:ident| $b:block) => (
-        impl<'a, D> Responder<D> for $view {
+        impl<D> Responder<D> for $view {
             #[allow(unused_mut)]
             #[inline]
-            fn respond<'c>($s, mut $res: Response<'c, D>) -> MiddlewareResult<'c, D> $b
+            fn respond($s, mut $res: Response<D>) -> MiddlewareResult<D> $b
         }
 
-        impl<'a, D> Responder<D> for $alloc {
+        impl<D> Responder<D> for $alloc {
             #[allow(unused_mut)]
             #[inline]
-            fn respond<'c>($s, mut $res: Response<'c, D>) -> MiddlewareResult<'c, D> $b
+            fn respond($s, mut $res: Response<D>) -> MiddlewareResult<D> $b
         }
     )
 }
 
-dual_impl!(&'a str,
+dual_impl!(&str,
            String,
             |self, res| {
                 maybe_set_type(&mut res, MediaType::Html);
@@ -106,15 +106,15 @@ dual_impl!((StatusCode, &'static str),
                 }                    
             });
 
-impl<'a, D> Responder<D> for StatusCode {
+impl<D> Responder<D> for StatusCode {
     #[inline]
-    fn respond<'c>(self, res: Response<'c, D>) -> MiddlewareResult<'c, D> {
+    fn respond(self, res: Response<D>) -> MiddlewareResult<D> {
         res.send((self, ""))
     }
 }
 
-dual_impl!(&'a [&'a str],
-           &'a [String],
+dual_impl!(&[&str],
+           &[String],
            |self, res| {
                // this may be inefficient, copies everything to one String
                self.iter().fold("".to_string(), |a, s| {a + s}).respond(res)
@@ -148,7 +148,7 @@ dual_impl!((u16, &'static str),
 //                 Ok(Halt)
 //             })
 
-fn maybe_set_type<D>(res: &mut Response<'_, D>, media_type: MediaType) {
+fn maybe_set_type<D>(res: &mut Response<D>, media_type: MediaType) {
     let value: HeaderValue = media_type.into();
     res.set_header_fallback(&header::CONTENT_TYPE, &media_type.into());
 }

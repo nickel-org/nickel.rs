@@ -1,6 +1,6 @@
 use nickel::{Nickel, HttpRouter, Request, Response, MiddlewareResult};
 
-fn hello_world<'mw>(_req: &mut Request<'_>, res: Response<'mw>) -> MiddlewareResult<'mw> {
+fn hello_world(_req: &mut Request, res: Response) -> MiddlewareResult {
     res.send("Hello World")
 }
 

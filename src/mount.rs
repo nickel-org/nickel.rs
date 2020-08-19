@@ -71,8 +71,8 @@ impl<M> Mount<M> {
 }
 
 impl<D, M: Middleware<D>> Middleware<D> for Mount<M> {
-    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, D>, res: Response<'mw, D>)
-                          -> MiddlewareResult<'mw, D> {
+    fn invoke(&self, req: &mut Request<D>, res: Response<D>)
+                          -> MiddlewareResult<D> {
         // two clones in this method, there ought to be a way to avoid that
         let mut parts = req.origin.uri().clone().into_parts();
         match req.origin.uri().path_and_query() {

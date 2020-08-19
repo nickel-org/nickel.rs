@@ -5,7 +5,7 @@ pub trait Referer {
     fn referer(&self) -> Option<&str>;
 }
 
-impl<'mw, D> Referer for Request<'mw, D> {
+impl<D> Referer for Request<D> {
     /// Get the Request's referer header
     ///
     /// # Examples

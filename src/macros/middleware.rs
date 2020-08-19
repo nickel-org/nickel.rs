@@ -72,8 +72,8 @@ macro_rules! _middleware_inner {
         use $crate::{MiddlewareResult,Responder, Response, Request};
 
         #[inline(always)]
-        fn restrict<'mw, R: Responder<$data>>(r: R, res: Response<'mw, $data>)
-                -> MiddlewareResult<'mw, $data> {
+        fn restrict<R: Responder<$data>>(r: R, res: Response<$data>)
+                -> MiddlewareResult<$data> {
             res.send(r)
         }
 
@@ -81,9 +81,9 @@ macro_rules! _middleware_inner {
         // different mutability requirements
         #[inline(always)]
         fn restrict_closure<F>(f: F) -> F
-            where F: for<'r, 'mw, 'conn>
-                        Fn(&'r mut Request<'mw, 'conn, $data>, Response<'mw, $data>)
-                            -> MiddlewareResult<'mw, $data> + Send + Sync { f }
+            where F: for<'r>
+                        Fn(&'r mut Request<$data>, Response<$data>)
+                            -> MiddlewareResult<$data> + Send + Sync { f }
 
         restrict_closure(move |as_pat!($req), $res_binding| {
             restrict(as_block!({$($b)+}), $res)
@@ -93,8 +93,8 @@ macro_rules! _middleware_inner {
         use $crate::{MiddlewareResult,Responder, Response, Request};
 
         #[inline(always)]
-        fn restrict<'mw, D, R: Responder<D>>(r: R, res: Response<'mw, D>)
-                -> MiddlewareResult<'mw, D> {
+        fn restrict<D, R: Responder<D>>(r: R, res: Response<D>)
+                -> MiddlewareResult<D> {
             res.send(r)
         }
 
@@ -102,9 +102,9 @@ macro_rules! _middleware_inner {
         // different mutability requirements
         #[inline(always)]
         fn restrict_closure<F, D>(f: F) -> F
-            where F: for<'r, 'mw>
-                        Fn(&'r mut Request<'mw, D>, Response<'mw, D>)
-                            -> MiddlewareResult<'mw, D> + Send + Sync { f }
+            where F: for<'r>
+                        Fn(&'r mut Request<D>, Response<D>)
+                            -> MiddlewareResult<D> + Send + Sync { f }
 
         restrict_closure(move |as_pat!($req), $res_binding| {
             restrict(as_block!({$($b)+}), $res)
