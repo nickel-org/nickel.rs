@@ -7,13 +7,14 @@ use hyper::header::{self, HeaderMap, HeaderName, HeaderValue};
 use time;
 use crate::mimes::MediaType;
 use std::io::{self, Write, copy};
-use std::fs::File;
 use std::any::Any;
 use crate::{NickelError, Halt, MiddlewareResult, Responder, Action};
 use crate::template_cache::TemplateCache;
 use modifier::Modifier;
 use plugin::{Extensible, Pluggable};
 use std::sync::Arc;
+use tokio::fs::File;
+use tokio_util::codec::{BytesCodec, FramedRead};
 use typemap::{ShareMap, TypeMap};
 
 ///A container for the response
@@ -128,7 +129,7 @@ impl<D: Send + 'static + Sync> Response<D> {
     ///     res.send_file(favicon)
     /// }
     /// ```
-    pub fn send_file<P:AsRef<Path>>(mut self, path: P) -> MiddlewareResult<D> {
+    pub async fn send_file<P:AsRef<Path>>(mut self, path: P) -> MiddlewareResult<D> {
         let path = path.as_ref();
         // Chunk the response
         self.origin.headers_mut().remove(header::CONTENT_LENGTH);
@@ -136,17 +137,19 @@ impl<D: Send + 'static + Sync> Response<D> {
         let mime = mime_from_filename(path).unwrap_or(MediaType::Bin);
         self.set_header_fallback(&header::CONTENT_TYPE, &mime.into());
 
-        let mut file = try_with!(self, {
-            File::open(path).map_err(|e| format!("Failed to send file '{:?}': {}",
-                                                 path, e))
-        });
-        unimplemented!();
-        // TODO: migration cleanup - correctly implement sending files
-        // let mut stream = self.start()?;
-        // match copy(&mut file, &mut stream) {
-        //     Ok(_) => Ok(Halt(stream)),
-        //     Err(e) => stream.bail(format!("Failed to send file: {}", e))
-        // }
+        self.start();
+        match File::open(path).await {
+            Ok(file) => {
+                let stream = FramedRead::new(file, BytesCodec::new());
+                let body = Body::wrap_stream(stream);
+                self.set_body(body);
+                Ok(Halt(self))
+            },
+            Err(e) => {
+                self.error(StatusCode::NOT_FOUND,
+                           format!("Failed to send file '{:?}': {}", path, e))
+            }
+        }
     }
 
     // TODO: This needs to be more sophisticated to return the correct headers

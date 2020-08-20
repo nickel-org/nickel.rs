@@ -22,7 +22,7 @@ impl<D: Send + 'static + Sync> Middleware<D> for StaticFilesHandler {
     async fn invoke(&self, req: &mut Request<D>, res: Response<D>)
             -> MiddlewareResult<D> {
         match *req.origin.method() {
-            Method::GET | Method::HEAD => self.with_file(self.extract_path(req), res),
+            Method::GET | Method::HEAD => self.with_file(self.extract_path(req), res).await,
             _ => res.next_middleware()
         }
     }
@@ -57,7 +57,7 @@ impl StaticFilesHandler {
         }
     }
 
-    fn with_file<D: Send + 'static + Sync, P>(&self,
+    async fn with_file<D: Send + 'static + Sync, P>(&self,
                                               relative_path: P,
                                               res: Response<D>)
                                               -> MiddlewareResult<D> where P: AsRef<Path> {
@@ -69,7 +69,7 @@ impl StaticFilesHandler {
         
         let path = self.root_path.join(path);
         match fs::metadata(&path) {
-            Ok(ref attr) if attr.is_file() => return res.send_file(&path),
+            Ok(ref attr) if attr.is_file() => return res.send_file(&path).await,
             Err(ref e) if e.kind() != NotFound => debug!("Error getting metadata \
                                                           for file '{:?}': {:?}",
                                                          path, e),
