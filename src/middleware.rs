@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use crate::request::Request;
 use crate::response::Response;
 use crate::nickel_error::NickelError;
+use hyper::{Body, Response as HyperResponse};
 
 pub use self::Action::{Continue, Halt};
 
@@ -56,7 +57,7 @@ impl<D: Send + 'static + Sync> MiddlewareStack<D> {
         self.error_handlers.push(Box::new(handler));
     }
 
-    pub async fn invoke(&self, mut req: Request<D>, mut res: Response<D>) -> Response<D> {
+    pub async fn invoke(&self, mut req: Request<D>, mut res: Response<D>) -> HyperResponse<Body> {
         for handler in self.handlers.iter() {
             match handler.invoke(&mut req, res).await {
                 Ok(Halt(res)) => {
@@ -66,7 +67,7 @@ impl<D: Send + 'static + Sync> MiddlewareStack<D> {
                            req.origin.uri(),
                            res.status());
                     // let _ = res.end();
-                    return res;
+                    return res.origin;
                 },
                 Ok(Continue(fresh)) => res = fresh,
                 Err(mut err) => {
@@ -80,7 +81,7 @@ impl<D: Send + 'static + Sync> MiddlewareStack<D> {
                     for error_handler in self.error_handlers.iter().rev() {
                         if let Halt(()) = error_handler.handle_error(&mut err, &mut req) {
                             if let Some(res) = err.stream {
-                                return res;
+                                return res.origin;
                             } else {
                                 error!("Error without Response struct");
                                 // Create a new Response with an InternalServerError
@@ -101,7 +102,7 @@ impl<D: Send + 'static + Sync> MiddlewareStack<D> {
             }
         }
         // No middleware returned Halt, go with the last one in the train
-        res
+        res.origin
     }
 
     pub fn new () -> MiddlewareStack<D> {

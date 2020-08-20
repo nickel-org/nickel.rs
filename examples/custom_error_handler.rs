@@ -17,7 +17,7 @@ async fn main() {
     });
 
     //this is how to overwrite the default error handler to handle 404 cases with a custom view
-    fn custom_handler<D>(err: &mut NickelError<D>, req: &mut Request<D>) -> Action {
+    fn custom_handler<D: Send + 'static + Sync>(err: &mut NickelError<D>, req: &mut Request<D>) -> Action {
         // Print the internal error message and path to the console
         println!("[{}] ERROR: {}",
                  req.path_without_query(),

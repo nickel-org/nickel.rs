@@ -1,3 +1,6 @@
+// TODO: extensions support has been (hopefully) temporarily removed due to it
+// not working in the async environment
+
 use nickel::{Nickel, HttpRouter, Request, Response, MiddlewareResult};
 use plugin::Extensible;
 use typemap::Key;

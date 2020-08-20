@@ -1,5 +1,6 @@
 #[macro_use] extern crate nickel;
 
+use async_trait::async_trait;
 use nickel::{Nickel, Request, Response, Middleware, MiddlewareResult};
 
 fn logger_fn(req: &mut Request, res: Response) -> MiddlewareResult {
@@ -9,8 +10,9 @@ fn logger_fn(req: &mut Request, res: Response) -> MiddlewareResult {
 
 struct Logger;
 
-impl<D> Middleware<D> for Logger {
-    fn invoke(&self, req: &mut Request<D>, res: Response<D>)
+#[async_trait]
+impl<D: Send + 'static + Sync> Middleware<D> for Logger {
+    async fn invoke(&self, req: &mut Request<D>, res: Response<D>)
     -> MiddlewareResult<D> {
         println!("logging request from logger middleware: {:?}", req.origin.uri());
         res.next_middleware()

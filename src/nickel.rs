@@ -239,19 +239,17 @@ impl<D: Sync + Send + 'static> Nickel<D> {
             if self.options.output_on_listen {
                 println!("Listening on http://{}", "localhost:0");
             }
-            server::serve(server,
-                          "localhost:0",
-                          self.keep_alive_timeout,
-                          self.options.thread_count).await?
+            server.serve("localhost:0",
+                         self.keep_alive_timeout,
+                         self.options.thread_count).await?
         } else {
             // TODO: fixme
             // if self.options.output_on_listen {
             //     println!("Listening on http://{}", addr);
             // }
-            server::serve(server,
-                          addr,
-                          self.keep_alive_timeout,
-                          self.options.thread_count).await?
+            server.serve(addr,
+                         self.keep_alive_timeout,
+                         self.options.thread_count).await?
         };
 
         if self.options.output_on_listen {
