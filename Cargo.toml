@@ -56,11 +56,10 @@ path = "examples/logger_middleware.rs"
 name = "routing"
 path = "examples/routing.rs"
 
-# TODO: update for new way of setting headers
-# [[example]]
-#
-# name = "enable_cors"
-# path = "examples/enable_cors.rs"
+[[example]]
+
+name = "enable_cors"
+path = "examples/enable_cors.rs"
 
 [[example]]
 
