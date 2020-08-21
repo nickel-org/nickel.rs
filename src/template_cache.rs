@@ -1,11 +1,11 @@
-use mustache::{Error, Template, compile_path};
+use mustache::{Error, Template, compile_str};
 use serde::Serialize;
 use std::collections::HashMap;
-use std::fs::metadata;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::sync::RwLock;
 use std::time::{Duration, SystemTime};
+use tokio::fs::{read_to_string, metadata};
+use tokio::sync::RwLock;
 
 
 struct TemplateEntry {
@@ -16,17 +16,19 @@ struct TemplateEntry {
 
 impl TemplateEntry {
     // Loads a template from the given filename
-    fn from_template_file<P: AsRef<Path>>(filename: P) -> Result<TemplateEntry, Error> {
+    async fn from_template_file<P: AsRef<Path>>(filename: P) -> Result<TemplateEntry, Error> {
         let path = filename.as_ref();
-        let template = compile_path(path)?; // TODO: migration cleanup - needs async file reads
-        let attr = metadata(path)?;
+        let buf = read_to_string(&path).await?;
+        let template = compile_str(&buf)?;
+
+        let attr = metadata(path).await?;
         Ok(TemplateEntry{template: template, mtime: attr.modified()?, last_checked: SystemTime::now()})
     }
 
     // render the tempate with the given data
-    fn render<W, D>(&self, writer: &mut W, data: &D) -> Result<(), Error>
-        where W: Write, D: Serialize {
-        self.template.render(writer, data)
+    fn render<D>(&self, data: &D) -> Result<String, Error>
+        where D: Serialize {
+        self.template.render_to_string(data)
     }
 }
 
@@ -60,17 +62,17 @@ impl TemplateCache {
     }
 
     /// Remove all cache entries
-    pub fn clear(&self) {
-        let mut c = self.cache.write().expect("TemplateCache::clear - cache poisoned");
+    pub async fn clear(&self) {
+        let mut c = self.cache.write().await;
         c.clear();
     }
 
     /// Force a reload of a template into the cache
-    pub fn reload_template<P>(&self, path: P) -> Result<(), Error>
+    pub async fn reload_template<P>(&self, path: P) -> Result<(), Error>
         where P: AsRef<Path> {
 
-        let mut c = self.cache.write().expect("TemplateCache::reload_template - cache poisoned");
-        let template = TemplateEntry::from_template_file(&path)?;
+        let mut c = self.cache.write().await;
+        let template = TemplateEntry::from_template_file(&path).await?;
         c.insert(path.as_ref().to_path_buf(), template);
         Ok(())
     }
@@ -78,16 +80,16 @@ impl TemplateCache {
     // Tries to render the template with the given data. This method
     // only needs a read lock. Returns:
     //
-    //   * Ok(true)  - successfully rendered
+    //   * Ok(Some(String))  - successfully rendered
     //
-    //   * Ok(false) - template needs loading, either it was never
-    //                 loaded, or it is outdated
+    //   * Ok(None) - template needs loading, either it was never
+    //                loaded, or it is outdated
     //
     //   * Err(e) - mustache error
-    fn try_render_template<P, W, D>(&self, path: P, writer: &mut W, data: &D) -> Result<bool, Error>
-        where P: AsRef<Path>, W: Write, D: Serialize {
+    async fn try_render_template<P, D>(&self, path: P, data: &D) -> Result<Option<String>, Error>
+        where P: AsRef<Path>, D: Serialize {
 
-        let c = self.cache.read().expect("TemplateCache::try_render_template - cache poisoned");
+        let c = self.cache.read().await;
         if let Some(template) = c.get(&path.as_ref().to_path_buf()) {
             let check_mtime = match self.reload_policy {
                 ReloadPolicy::Never => false,
@@ -103,48 +105,48 @@ impl TemplateCache {
                 }
             };
             if check_mtime {
-                let mtime = metadata(path)?.modified()?;
+                let mtime = metadata(path).await?.modified()?;
                 if mtime > template.mtime {
-                    return Ok(false);
+                    return Ok(None);
                 }
             }
-            template.render(writer, data)?;
-            Ok(true)
+            let rendered = template.render(data)?;
+            Ok(Some(rendered))
         } else {
-            Ok(false)
+            Ok(None)
         }
     }
 
     // Load the template from disk, compile it, store the compiled
     // template in cache, and render. This needs a write lock.
-    fn load_render_template<P, W, D>(&self, path: P, writer: &mut W, data: &D) -> Result<(), Error>
-        where P: AsRef<Path>, W: Write, D: Serialize {
+    async fn load_render_template<P, D>(&self, path: P, data: &D) -> Result<String, Error>
+        where P: AsRef<Path>, D: Serialize {
 
-        let mut c = self.cache.write().expect("TemplateCache::load_render_template - cache poisoned");
-        let template = TemplateEntry::from_template_file(&path)?;
-        template.render(writer, data)?;
+        let mut c = self.cache.write().await;
+        let template = TemplateEntry::from_template_file(&path).await?;
+        let rendered = template.render(data)?;
         c.insert(path.as_ref().to_path_buf(), template);
-        Ok(())
+        Ok(rendered)
     }
 
     /// Render the template at `path` to `writer` with
     /// `data`. Templates will be reloaded if necessary according to
     /// the reload policy.
-    pub fn render<P, W, D>(&self, path: P, writer: &mut W, data: &D) -> Result<(), Error>
-        where P: AsRef<Path>, W: Write, D: Serialize {
-        let rendered = match self.try_render_template(&path, writer, data) {
+    pub async fn render<P, D>(&self, path: P, data: &D) -> Result<String, Error>
+        where P: AsRef<Path>, D: Serialize {
+        let rendered = match self.try_render_template(&path, data).await {
             Ok(r) => r,
             Err(e) => {
                 // Previously compiled template failed to render. Log
                 // an error and force a reload.
                 error!("Template render error: {:?}", e);
-                false
+                None
             },
         };
-        if !rendered {
-            self.load_render_template(&path, writer, data)
+        if let Some(r) = rendered {
+            Ok(r)
         } else {
-            Ok(())
+            self.load_render_template(&path, data).await
         }
     }
 }

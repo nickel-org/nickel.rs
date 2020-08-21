@@ -216,15 +216,18 @@ impl<D: Send + 'static + Sync> Response<D> {
     ///     res.render("examples/assets/template.tpl", &data)
     /// }
     /// ```
-    pub fn render<T, P>(self, path: P, data: &T) -> MiddlewareResult<D>
+    pub async fn render<T, P>(mut self, path: P, data: &T) -> MiddlewareResult<D>
         where T: Serialize, P: AsRef<Path> + Into<String> {
-        unimplemented!();
-        // TODO: migration cleanup
-        // let mut self_started = self.start()?;
-        // match self_started.templates.render(path, &mut self_started, data) {
-        //     Ok(()) => Ok(Halt(self_started)),
-        //     Err(e) => self_started.bail(format!("Problem rendering template: {:?}", e))
-        // }
+
+        self.start();
+        match self.templates.render(path, data).await {
+            Ok(r) => self.send(r),
+            Err(e) => {
+                let msg = format!("Problem rendering template: {:?}", e);
+                println!("{}", msg);
+                self.error(StatusCode::INTERNAL_SERVER_ERROR, msg)
+            }
+        }
     }
 
     // Todo: migration cleanup
