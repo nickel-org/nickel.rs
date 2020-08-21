@@ -35,7 +35,8 @@ fn custom_404<'a, D>(err: &mut NickelError<'_, D>, _req: &mut Request<'_, '_, D>
     Continue(())
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let mut server = Nickel::new();
 
     // middleware is optional and can be registered with `utilize`
@@ -126,5 +127,5 @@ fn main() {
     server.handle_error(custom_handler);
 
     println!("Running server!");
-    server.listen("127.0.0.1:6767").unwrap();
+    server.listen("127.0.0.1:6767").await.unwrap();
 }

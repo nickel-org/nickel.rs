@@ -56,8 +56,9 @@ path = "examples/logger_middleware.rs"
 name = "routing"
 path = "examples/routing.rs"
 
+# TODO: update for new way of setting headers
 # [[example]]
-
+#
 # name = "enable_cors"
 # path = "examples/enable_cors.rs"
 
@@ -66,8 +67,9 @@ path = "examples/routing.rs"
 name = "template"
 path = "examples/template.rs"
 
+# TODO: needs async body_parser
 # [[example]]
-
+#
 # name = "macro_example"
 # path = "examples/macro_example.rs"
 
@@ -81,8 +83,9 @@ path = "examples/hello_world.rs"
 name = "hello_world_macro"
 path = "examples/hello_world_macro.rs"
 
+# TODO: needs async body_parser
 # [[example]]
-
+#
 # name = "json"
 # path = "examples/json.rs"
 
@@ -101,8 +104,9 @@ path = "examples/moved_ownership.rs"
 name = "route_data"
 path = "examples/route_data.rs"
 
+# TODO: needs async body_parser
 # [[example]]
-
+#
 # name = "integration_testing"
 # path = "examples/integration_testing.rs"
 
@@ -121,23 +125,25 @@ path = "examples/regex_route.rs"
 name = "query_string"
 path = "examples/query_string.rs"
 
-# [[example]]
+[[example]]
 
-# name = "mount"
-# path = "examples/mount.rs"
+name = "mount"
+path = "examples/mount.rs"
 
 [[example]]
 
 name = "chaining"
 path = "examples/chaining.rs"
 
+# TODO: needs async body_parser
 # [[example]]
-
+#
 # name = "form_data"
 # path = "examples/form_data/form_data.rs"
 
+# TODO: long term, hyper support for https is very different now
 # [[example]]
-
+#
 # name = "https"
 # path = "examples/https.rs"
 
@@ -149,6 +155,6 @@ path = "examples/no_macro_custom_data.rs"
 # TODO: extensions support has been (hopefully) temporarily removed due to it
 # not working in the async environment
 # [[example]]
-
+#
 # name = "no_macro_response_custom_data"
 # path = "examples/no_macro_response_custom_data.rs"
