@@ -2,7 +2,6 @@
 // not working in the async environment
 
 use nickel::{Nickel, HttpRouter, Request, Response, MiddlewareResult};
-use plugin::Extensible;
 use typemap::Key;
 
 /**
