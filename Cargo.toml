@@ -153,7 +153,7 @@ path = "examples/no_macro_custom_data.rs"
 
 # TODO: extensions support has been (hopefully) temporarily removed due to it
 # not working in the async environment
-# [[example]]
-#
-# name = "no_macro_response_custom_data"
-# path = "examples/no_macro_response_custom_data.rs"
+[[example]]
+
+name = "no_macro_response_custom_data"
+path = "examples/no_macro_response_custom_data.rs"

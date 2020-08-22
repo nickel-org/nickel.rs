@@ -320,6 +320,17 @@ impl <D: Send + 'static + Sync> Response<D> {
     pub fn data(&self) -> Arc<D> {
         self.data.clone()
     }
+
+    // (Hopefully) temporary replacements for the Extensible trait. We can't
+    // support plugins without Extensible, but access to the ShareMap is used by
+    // itself.
+    pub fn extensions(&self) -> &ShareMap {
+        &self.map
+    }
+
+    pub fn extensions_mut(&mut self) -> &mut ShareMap {
+        &mut self.map
+    }
 }
 
 // TODO: migration cleanup - Extensible does not support ShareMap, but TypeMap is not Sync+Send
@@ -367,62 +378,4 @@ mod modifier_impls {
             res.set_header(header::CONTENT_TYPE, self);
         }
     }
-
-//     macro_rules! header_modifiers {
-//         ($($t:ty),+) => (
-//             $(
-//                 impl<D> Modifier<Response<D>> for $t {
-//                     fn modify(self, res: &mut Response<D>) {
-//                         res.headers_mut().set(self)
-//                     }
-//                 }
-//             )+
-//         )
-//     }
-
-//     header_modifiers! {
-//         Accept,
-//         AccessControlAllowHeaders,
-//         AccessControlAllowMethods,
-//         AccessControlAllowOrigin,
-//         AccessControlMaxAge,
-//         AccessControlRequestHeaders,
-//         AccessControlRequestMethod,
-//         AcceptCharset,
-//         AcceptEncoding,
-//         AcceptLanguage,
-//         AcceptRanges,
-//         Allow,
-//         Authorization<Basic>,
-//         Authorization<Bearer>,
-//         Authorization<String>,
-//         CacheControl,
-//         Cookie,
-//         Connection,
-//         ContentEncoding,
-//         ContentLanguage,
-//         ContentLength,
-//         ContentType,
-//         Date,
-//         ETag,
-//         Expect,
-//         Expires,
-//         From,
-//         Host,
-//         IfMatch,
-//         IfModifiedSince,
-//         IfNoneMatch,
-//         IfRange,
-//         IfUnmodifiedSince,
-//         LastModified,
-//         Location,
-//         Pragma,
-//         Referer,
-//         Server,
-//         SetCookie,
-//         TransferEncoding,
-//         Upgrade,
-//         UserAgent,
-//         Vary
-//     }
 }

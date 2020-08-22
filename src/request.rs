@@ -53,6 +53,17 @@ impl<D> Request<D> {
     pub fn remote_addr(&self) -> Option<&SocketAddr> {
         self.remote_addr.as_ref()
     }
+
+    // (Hopefully) temporary replacements for the Extensible trait. We can't
+    // support plugins without Extensible, but access to the ShareMap is used by
+    // itself.
+    pub fn extensions(&self) -> &ShareMap {
+        &self.map
+    }
+
+    pub fn extensions_mut(&mut self) -> &mut ShareMap {
+        &mut self.map
+    }
 }
 
 // TODO: migration cleanup - Extensible does not support ShareMap, but TypeMap is not Sync+Send
