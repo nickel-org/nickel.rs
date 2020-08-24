@@ -1,6 +1,9 @@
 use crate::router::RouteResult;
-use plugin::{Extensible, Pluggable};
-use typemap::{Key, ShareMap, TypeMap};
+
+// The plugin crate doesn't play well with async
+//use plugin::{Extensible, Pluggable};
+
+use typemap::{ShareMap, TypeMap};
 use hyper::{Body, Request as HyperRequest, StatusCode};
 use hyper::body::{self, Bytes};
 use hyper::header;

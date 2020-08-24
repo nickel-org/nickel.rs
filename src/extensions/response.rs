@@ -1,4 +1,4 @@
-use crate::{Response, MiddlewareResult, NickelError};
+use crate::{Response, MiddlewareResult};
 use hyper::header;
 use crate::status::StatusCode;
 

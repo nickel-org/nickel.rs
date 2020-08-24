@@ -2,7 +2,6 @@ use hyper::StatusCode;
 use crate::request::Request;
 use crate::middleware::{ErrorHandler, Action, Halt};
 use crate::nickel_error::NickelError;
-use std::io::Write;
 
 #[derive(Clone, Copy)]
 pub struct DefaultErrorHandler;

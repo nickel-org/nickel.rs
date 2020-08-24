@@ -1,4 +1,3 @@
-use std::mem;
 use std::borrow::Cow;
 use std::path::Path;
 use serde::Serialize;
@@ -6,12 +5,10 @@ use hyper::{Body, Response as HyperResponse, StatusCode};
 use hyper::header::{self, HeaderMap, HeaderName, HeaderValue};
 use time;
 use crate::mimes::MediaType;
-use std::io::{self, Write, copy};
-use std::any::Any;
+use std::io;
 use crate::{NickelError, Halt, MiddlewareResult, Responder, Action};
 use crate::template_cache::TemplateCache;
 use modifier::Modifier;
-use plugin::{Extensible, Pluggable};
 use std::sync::Arc;
 use tokio::fs::File;
 use tokio_util::codec::{BytesCodec, FramedRead};

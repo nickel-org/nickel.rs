@@ -4,9 +4,9 @@ use std::env;
 use std::error::Error as StdError;
 use crate::router::{Router, HttpRouter, Matcher};
 use crate::middleware::{MiddlewareStack, Middleware, ErrorHandler};
-use crate::server::{self, Server};
+use crate::server::Server;
 use crate::template_cache::ReloadPolicy;
-use hyper::{Body, Method, StatusCode};
+use hyper::{Method, StatusCode};
 //use hyper::net::SslServer;
 
 //pre defined middleware

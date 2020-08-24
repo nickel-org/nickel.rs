@@ -1,6 +1,4 @@
-use plugin::{Plugin, Pluggable};
 use crate::request::Request;
-use typemap::Key;
 use crate::urlencoded::{Query, parse_uri};
 
 // TODO: migration cleanup - Extensible does not support ShareMap, but TypeMap is not Sync+Send

@@ -10,12 +10,10 @@
 //!
 //! Please see the examples for usage.
 use crate::{Response, NickelError, MiddlewareResult, Halt};
-use hyper::{Body, StatusCode};
-use hyper::header::{self, HeaderValue};
-use mime::Mime;
+use hyper::StatusCode;
+use hyper::header;
 use serde_json;
 use crate::mimes::MediaType;
-use std::io::Write;
 
 /// This trait provides convenience for translating a number
 /// of common return types into a `MiddlewareResult` while
@@ -149,6 +147,5 @@ dual_impl!((u16, &'static str),
 //             })
 
 fn maybe_set_type<D: Send + 'static + Sync>(res: &mut Response<D>, media_type: MediaType) {
-    let value: HeaderValue = media_type.into();
     res.set_header_fallback(&header::CONTENT_TYPE, &media_type.into());
 }
