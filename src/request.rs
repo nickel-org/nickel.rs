@@ -3,24 +3,20 @@ use plugin::{Extensible, Pluggable};
 use typemap::{Key, ShareMap, TypeMap};
 use hyper::{Body, Request as HyperRequest, StatusCode};
 use hyper::body::{self, Bytes};
+use hyper::header;
 use serde::Deserialize;
 use serde_json;
 use std::mem;
 use std::net::SocketAddr;
 use std::sync::Arc;
+use crate::urlencoded::{self, Params};
 
 /// A container for all the request data.
-///
-/// The lifetime `'mw` represents the lifetime of various bits of
-/// middleware state within nickel. It can vary and get shorter.
-///
-/// The lifetime `'server` represents the lifetime of data internal to
-/// the server. It is fixed and longer than `'mw`.
 pub struct Request<D = ()> {
     ///the original `hyper::server::Request`
     pub origin: HyperRequest<Body>,
     body_taken: bool,
-    ///a `HashMap<String, String>` holding all params with names and values
+
     pub route_result: Option<RouteResult>,
 
     map: ShareMap,
@@ -28,6 +24,8 @@ pub struct Request<D = ()> {
     data: Arc<D>,
 
     remote_addr: Option<SocketAddr>,
+
+    raw_body_cache: Option<Bytes>,
 }
 
 impl<D> Request<D> {
@@ -40,7 +38,8 @@ impl<D> Request<D> {
             route_result: None,
             map: TypeMap::custom(),
             data: data,
-            remote_addr: remote_addr
+            remote_addr: remote_addr,
+            raw_body_cache: None
         }
     }
 
@@ -73,6 +72,14 @@ impl<D> Request<D> {
 
     /// Take the body from the hyper request. Once taken the body is not longer
     /// available. This method will return `None` in that case.
+    ///
+    /// For small non-streaming applications, the body access methods
+    /// `raw_body`, `string_body`, `json_as`, and `form_body` are probably more
+    /// convenient. Small in this case is hardware dependent, but even small
+    /// modern servers can handle multi-megabyte bodies.
+    ///
+    /// `take_body` and the body access method are mutually exclusive. Once one
+    /// is called, the other will fail.
     pub fn take_body(&mut self) -> Option<Body> {
         if self.body_taken {
             None
@@ -106,34 +113,49 @@ impl<D> Request<D> {
 // nickel need to implement Middleware. Since that is not needed for body
 // parsers, we will stick with something that will keep the interface simpler.
 
-struct RawBodyCache;
-
-impl Key for RawBodyCache {
-    type Value = Bytes;
-}
-
 impl<D> Request<D> {
+    /// Extract the raw body from the request. The body is cached so multiple
+    /// middleware may access the body. Note that this may consume a lot of
+    /// memory when large objects are uploaded.
+    ///
+    /// To allow access to the body in different ways, `string_body`, `json_as`
+    /// and `form_body` all call this and use the same underlying cache.
     pub async fn raw_body(&mut self) -> Result<&[u8], (StatusCode, String)> {
-        if !self.map.contains::<RawBodyCache>() {
+        if let None = self.raw_body_cache {
             // read and insert into cache
             let body = self.take_body().
                 ok_or((StatusCode::INTERNAL_SERVER_ERROR, "body already taken".to_string()))?;
             let bytes = body::to_bytes::<Body>(body).await.
                 map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
-            self.map.insert::<RawBodyCache>(bytes);
+            self.raw_body_cache = Some(bytes);
         }
         // we've garanteed this unwrap is safe above
-        Ok(self.map.get::<RawBodyCache>().unwrap())
+        Ok(self.raw_body_cache.as_ref().unwrap())
     }
 
+    /// Return the body parsed as a `String`. Returns an error if the body is
+    /// not uft8.
     pub async fn string_body(&mut self) -> Result<String, (StatusCode, String)> {
         let bytes = self.raw_body().await?;
         String::from_utf8(bytes.to_vec()).map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))
     }
 
+    /// Uses serde to deserialze thoe body as json into type `T`.
     pub async fn json_as<'a, T: Deserialize<'a>>(&'a mut self) -> Result<T, (StatusCode, String)> {
         let bytes = self.raw_body().await?;
         serde_json::from_slice::<T>(bytes).
             map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))
+    }
+
+    /// Extract the form data from the body.
+    pub async fn form_body(&mut self) -> Result<Params, (StatusCode, String)> {
+        // check content type
+        match self.origin.headers().get(header::CONTENT_TYPE).map(|v| v.to_str()) {
+            Some(Ok("application/x-www-form-urlencoded")) => {
+                let s = self.string_body().await?;
+                Ok(urlencoded::parse(&s))
+            },
+            _ => Err((StatusCode::BAD_REQUEST, "Wrong Content Type".to_string()))
+        }
     }
 }

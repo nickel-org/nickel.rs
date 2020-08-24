@@ -1,3 +1,6 @@
+// WARNING: this module is no longer used, and is only being kept around for
+// documentaion as part of migration to async.
+
 use hyper::header::ContentType;
 use hyper::mime::{Mime, SubLevel, TopLevel};
 use serde::Deserialize;

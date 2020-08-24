@@ -132,11 +132,10 @@ path = "examples/mount.rs"
 name = "chaining"
 path = "examples/chaining.rs"
 
-# TODO: needs async body_parser
-# [[example]]
-#
-# name = "form_data"
-# path = "examples/form_data/form_data.rs"
+[[example]]
+
+name = "form_data"
+path = "examples/form_data/form_data.rs"
 
 # TODO: long term, hyper support for https is very different now
 # [[example]]

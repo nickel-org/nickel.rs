@@ -34,7 +34,11 @@ mod responder;
 mod favicon_handler;
 mod static_files_handler;
 mod mount;
+
+// WARNING: this module is no longer used, and is only being kept around for
+// documentation as part of migration to async.
 //mod body_parser;
+
 mod query_string;
 pub mod mimes;
 mod urlencoded;
