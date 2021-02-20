@@ -90,7 +90,7 @@ impl<D> Request<D> {
             let stub = HyperRequest::new(Body::empty());
             let origin = mem::replace(&mut self.origin, stub);
             let (parts, body) = origin.into_parts();
-            mem::replace(&mut self.origin, HyperRequest::from_parts(parts, Body::empty()));
+            let _stub = mem::replace(&mut self.origin, HyperRequest::from_parts(parts, Body::empty()));
             self.body_taken = true;
             Some(body)
         }

@@ -102,7 +102,7 @@ impl<D: Send + 'static + Sync> MiddlewareStack<D> {
             }
         }
         // No middleware returned Halt, go with the last one in the train
-        res.origin
+        res.origin // Todo: migration cleanup - return 404
     }
 
     pub fn new () -> MiddlewareStack<D> {
