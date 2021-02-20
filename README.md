@@ -60,5 +60,5 @@ And hey, did you know you can also contribute by just starring the project here 
 | Version | Branch       | Description                                                            |
 | ------- | ------------ | -------------------------------------------------- |
 | 0.11.x  | maint-0.11.x | hyper-0.10.x (synchronous version), bug fixes only |
-| 0.12.x  | master       | hyper-0.13.x (asynchronous version)                |
+| 0.12.x  | master       | hyper-0.14.x (asynchronous version)                |
 | 0.13.x  |              | new features, possibly will be 1.0 instead         |
