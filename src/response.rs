@@ -1,9 +1,9 @@
 use std::borrow::Cow;
+use chrono::prelude::Utc;
 use std::path::Path;
 use serde::Serialize;
 use hyper::{Body, Response as HyperResponse, StatusCode};
 use hyper::header::{self, HeaderMap, HeaderName, HeaderValue};
-use time;
 use crate::mimes::MediaType;
 use std::io;
 use crate::{NickelError, Halt, MiddlewareResult, Responder, Action};
@@ -154,7 +154,7 @@ impl<D: Send + 'static + Sync> Response<D> {
     //
     // Also, it should only set them if not already set.
     fn set_fallback_headers(&mut self) {
-        let now = HeaderValue::from_str(&time::now_utc().rfc822().to_string()).unwrap(); // rfc822 should always be valid
+        let now = HeaderValue::from_str(&Utc::now().to_rfc2822()).unwrap(); // rfc2822 should always be valid
         self.set_header_fallback(&header::DATE, &now);
         self.set_header_fallback(&header::SERVER, &HeaderValue::from_static("Nickel"));
         self.set_header_fallback(&header::CONTENT_TYPE, &MediaType::Html.into());

@@ -20,6 +20,7 @@ unstable = ["hyper/nightly", "compiletest_rs"]
 
 [dependencies]
 async-trait = "0.1"
+chrono = "0.4"
 futures = "0.3"
 futures-util = { version = "0.3", default-features = false }
 groupable = "0.2"
@@ -33,7 +34,6 @@ plugin = "0.2"
 regex = "1.0"
 serde = "1.0"
 serde_json = "1.0"
-time = "0.1"
 tokio = { version = "0.2", features = ["full"] }
 tokio-util = { version = "0.3", features = ["codec"] }
 typemap = "0.3"
