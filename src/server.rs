@@ -1,114 +1,83 @@
+use std::clone::Clone;
+use std::convert::Infallible;
 use std::net::{SocketAddr, ToSocketAddrs};
 use std::sync::Arc;
 use std::time::Duration;
-use hyper::Result as HttpResult;
-use hyper::server::{Request, Response, Handler, Listening};
+use hyper::{Body, Request, Response, StatusCode};
 use hyper::server::Server as HyperServer;
-use hyper::net::SslServer;
+use hyper::server::conn::AddrStream;
+use hyper::service::{make_service_fn, service_fn};
+//use hyper::net::SslServer;
 
-use middleware::MiddlewareStack;
-use request;
-use response;
-use template_cache::{ReloadPolicy, TemplateCache};
+use crate::middleware::MiddlewareStack;
+use crate::request;
+use crate::response;
+use crate::template_cache::{ReloadPolicy, TemplateCache};
 
-pub struct Server<D> {
-    middleware_stack: MiddlewareStack<D>,
-    templates: TemplateCache,
-    shared_data: D,
-}
-
-// FIXME: Any better coherence solutions?
-struct ArcServer<D>(Arc<Server<D>>);
-
-impl<D: Sync + Send + 'static> Handler for ArcServer<D> {
-    fn handle<'a, 'k>(&'a self, req: Request<'a, 'k>, res: Response<'a>) {
-        let nickel_req = request::Request::from_internal(req,
-                                                         &self.0.shared_data);
-
-        let nickel_res = response::Response::from_internal(res,
-                                                           &self.0.templates,
-                                                           &self.0.shared_data);
-
-        self.0.middleware_stack.invoke(nickel_req, nickel_res);
-    }
+pub struct Server<D: Send + 'static + Sync> {
+    middleware_stack: Arc<MiddlewareStack<D>>,
+    templates: Arc<TemplateCache>,
+    shared_data: Arc<D>,
 }
 
 impl<D: Sync + Send + 'static> Server<D> {
     pub fn new(middleware_stack: MiddlewareStack<D>, reload_policy: ReloadPolicy, data: D) -> Server<D> {
         Server {
-            middleware_stack: middleware_stack,
-            templates: TemplateCache::with_policy(reload_policy),
-            shared_data: data
+            middleware_stack: Arc::new(middleware_stack),
+            templates: Arc::new(TemplateCache::with_policy(reload_policy)),
+            shared_data: Arc::new(data)
         }
     }
 
-    pub fn serve<A: ToSocketAddrs>(self,
-                                   addr: A,
-                                   keep_alive_timeout: Option<Duration>,
-                                   thread_count: Option<usize>)
-                                    -> HttpResult<ListeningServer> {
-        let arc = ArcServer(Arc::new(self));
-        let mut server = try!(HyperServer::http(addr));
+    pub async fn serve<A: ToSocketAddrs>(self,
+                                         addr: A,
+                                         keep_alive_timeout: Option<Duration>, // TODO: migration cleanup - use this
+                                         thread_count: Option<usize>) // TODO: migration cleanup - use or remove this
+                                         -> Result<(), Box<dyn std::error::Error>> {
+        let socket_addr: SocketAddr = addr.to_socket_addrs()?.next().ok_or(ServerError("bad address".to_string()))?;
 
-        server.keep_alive(keep_alive_timeout);
+        let make_svc = make_service_fn(move |socket: &AddrStream| {
+            let remote_addr = socket.remote_addr();
+            let mw = self.middleware_stack.clone();
+            let data = self.shared_data.clone();
+            let res_templates = self.templates.clone();
+            async move {
+                Ok::<_, Infallible>(service_fn(move |req: Request<Body>| {
+                    let mw2 = mw.clone();
+                    let req_data2 = data.clone();
+                    let res_data2 = data.clone();
+                    let res_templates2 = res_templates.clone();
+                    async move {
+                        let res = Response::builder().status(StatusCode::NOT_FOUND).body(Body::empty()).unwrap();
+                        let nickel_req = request::Request::from_internal(req,
+                                                                         Some(remote_addr.to_owned()),
+                                                                         req_data2);
+                        let nickel_res = response::Response::from_internal(res,
+                                                                           res_templates2,
+                                                                           res_data2);
+                        let final_res = mw2.invoke(nickel_req, nickel_res).await;
+                        Ok::<_, Infallible>(final_res)
+                    }
+                }))
+            }
+        });
+        let server = HyperServer::bind(&socket_addr).serve(make_svc);
 
-        let listening = match thread_count {
-            Some(threads) => server.handle_threads(arc, threads),
-            None => server.handle(arc),
-        };
-
-        listening.map(ListeningServer)
-    }
-
-    pub fn serve_https<A,S>(self,
-                            addr: A,
-                            keep_alive_timeout: Option<Duration>,
-                            thread_count: Option<usize>,
-                            ssl: S)
-                            -> HttpResult<ListeningServer>
-        where A: ToSocketAddrs,
-              S: SslServer + Clone + Send + 'static {
-        let arc = ArcServer(Arc::new(self));
-        let mut server = try!(HyperServer::https(addr, ssl));
-
-        server.keep_alive(keep_alive_timeout);
-
-        let listening = match thread_count {
-            Some(threads) => server.handle_threads(arc, threads),
-            None => server.handle(arc),
-        };
-
-        listening.map(ListeningServer)
+        println!("Listening on http://{}", socket_addr);
+        
+        server.await?;
+        
+        Ok(())
     }
 }
 
-/// A server listeing on a socket
-pub struct ListeningServer(Listening);
+#[derive(Debug)]
+struct ServerError(String);
 
-impl ListeningServer {
-    /// Gets the `SocketAddr` which the server is currently listening on.
-    pub fn socket(&self) -> SocketAddr {
-        self.0.socket
-    }
+impl std::error::Error for ServerError { }
 
-    /// Detaches the server thread.
-    ///
-    /// This doesn't actually kill the server, it just stops the current thread from
-    /// blocking due to the server running. In the case where `main` returns due to
-    /// this unblocking, then the server will be killed due to process death.
-    ///
-    /// The required use of this is when writing unit tests which spawn servers and do
-    /// not want to block the test-runner by waiting on the server to stop because
-    /// it probably never will.
-    ///
-    /// See [this hyper issue](https://github.com/hyperium/hyper/issues/338) for more
-    /// information.
-    pub fn detach(self) {
-        // We want this handle to be dropped without joining.
-        let _ = ::std::thread::spawn(move || {
-            // This will hang the spawned thread.
-            // See: https://github.com/hyperium/hyper/issues/338
-            let _ = self.0;
-        });
+impl std::fmt::Display for ServerError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "ServerError: {}", self.0)
     }
 }

@@ -3,7 +3,8 @@
 use nickel::status::StatusCode;
 use nickel::{Nickel, QueryString, HttpRouter};
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let mut server = Nickel::new();
 
     // try calling http://localhost:6767/all?foo=bar&foo=car
@@ -19,11 +20,11 @@ fn main() {
     // then try calling http://localhost:6767/get?state=invalid
     server.get("/get", middleware! { |request|
         if request.query().get("state") != Some("valid") {
-            (StatusCode::BadRequest, "State parameter was not valid")
+            (StatusCode::BAD_REQUEST, "State parameter was not valid")
         } else {
-            (StatusCode::Ok, "Congratulations on conforming!")
+            (StatusCode::OK, "Congratulations on conforming!")
         }
     });
 
-    server.listen("127.0.0.1:6767").unwrap();
+    server.listen("127.0.0.1:6767").await.unwrap();
 }

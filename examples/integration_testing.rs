@@ -2,13 +2,10 @@
 // test setup for testing examples. Usually, it should just require `#[macro_use]`.
 #[cfg_attr(not(test), macro_use)]
 extern crate nickel;
-extern crate hyper;
-extern crate serde;
-extern crate serde_json;
-extern crate serde_derive;
 
-use nickel::{Nickel, ListeningServer, HttpRouter, JsonBody, Request, Response, MiddlewareResult};
-use nickel::status::StatusCode;
+use serde_json;
+use async_trait::async_trait;
+use nickel::{Nickel, HttpRouter, Request, Response, Middleware, MiddlewareResult};
 use serde_derive::{Serialize, Deserialize};
 use std::error::Error as StdError;
 use std::{env, str};
@@ -35,7 +32,7 @@ struct ServerData {
     //
     // To counter this limitation, we've boxed the trait so that specifying the
     // typeparam is unnecessary.
-    database: Box<Database>
+    database: Box<dyn Database>
 }
 
 impl ServerData {
@@ -52,20 +49,50 @@ impl ServerData {
     }
 }
 
-fn main() {
+struct JsonPost;
+
+#[async_trait]
+impl Middleware<ServerData> for JsonPost {
+    async fn invoke(&self, req: &mut Request<ServerData>, res: Response<ServerData>) -> MiddlewareResult<ServerData> {
+        #[derive(Serialize, Deserialize)]
+        struct Data { name: String, age: Option<u32> }
+
+        let client = try_with!(res, req.json_as::<Data>().await);
+
+        let msg = match client.age {
+            Some(age) => {
+                serde_json::from_str::<serde_json::Value>(&format!(
+                    r#"{{ "message": "Hello {}, your age is {}" }}"#,
+                    client.name,
+                    age
+                )).unwrap()
+            }
+            None => {
+                serde_json::from_str::<serde_json::Value>(&format!(
+                    r#"{{ "message": "Hello {}, I don't know your age" }}"#,
+                    client.name
+                )).unwrap()
+            }
+        };
+        res.send(msg)
+    }
+}
+
+#[tokio::main]
+async fn main() {
     let port = env::var("PORT").map(|s| s.parse().unwrap()).unwrap_or(3000);
     let address = &format!("0.0.0.0:{}", port);
     let database = vec![];
 
-    start_server(address, database).unwrap();
+    start_server(address, database).await.unwrap();
 }
 
-fn log_hit<'mw, 'conn>(_req: &mut Request<'mw, 'conn, ServerData>, res: Response<'mw, ServerData>) -> MiddlewareResult<'mw, ServerData> {
+fn log_hit(_req: &mut Request<ServerData>, res: Response<ServerData>) -> MiddlewareResult<ServerData> {
     res.data().log_hit();
     return res.next_middleware()
 }
 
-fn start_server<D>(address: &str, database: D) -> Result<ListeningServer, Box<StdError>>
+async fn start_server<D>(address: &str, database: D) -> Result<(), Box<dyn StdError>>
 where D: Database {
     let server_data = ServerData {
         hits: AtomicUsize::new(0),
@@ -87,35 +114,37 @@ where D: Database {
     });
 
     // Json example
-    server.post("/", middleware! { |req, res|
-        #[derive(Serialize, Deserialize)]
-        struct Data { name: String, age: Option<u32> }
+    server.post("/", JsonPost);
+    // TODO: the middleware macro has not yet been updated to support async    
+    // server.post("/", middleware! { |req, res|
+    //     #[derive(Serialize, Deserialize)]
+    //     struct Data { name: String, age: Option<u32> }
 
-        let client = try_with!(res, req.json_as::<Data>().map_err(|e| (StatusCode::BadRequest, e)));
+    //     let client = try_with!(res, req.json_as::<Data>().map_err(|e| (StatusCode::BadRequest, e)));
 
-        match client.age {
-            Some(age) => {
-                serde_json::from_str::<serde_json::Value>(&format!(
-                    r#"{{ "message": "Hello {}, your age is {}" }}"#,
-                    client.name,
-                    age
-                )).unwrap()
-            }
-            None => {
-                serde_json::from_str::<serde_json::Value>(&format!(
-                    r#"{{ "message": "Hello {}, I don't know your age" }}"#,
-                    client.name
-                )).unwrap()
-            }
-        }
-    });
+    //     match client.age {
+    //         Some(age) => {
+    //             serde_json::from_str::<serde_json::Value>(&format!(
+    //                 r#"{{ "message": "Hello {}, your age is {}" }}"#,
+    //                 client.name,
+    //                 age
+    //             )).unwrap()
+    //         }
+    //         None => {
+    //             serde_json::from_str::<serde_json::Value>(&format!(
+    //                 r#"{{ "message": "Hello {}, I don't know your age" }}"#,
+    //                 client.name
+    //             )).unwrap()
+    //         }
+    //     }
+    // });
 
     // Get the hitcount
     server.get("/hits", middleware!{ |_req, res| <ServerData>
         res.data().hitcount().to_string()
     });
 
-    server.listen(address)
+    server.listen(address).await
 }
 
 #[cfg(test)]

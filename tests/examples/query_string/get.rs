@@ -1,5 +1,5 @@
 use super::with_path;
-use util::*;
+use crate::util::*;
 
 use hyper::client::Response;
 use hyper::status::StatusCode;

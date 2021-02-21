@@ -46,7 +46,7 @@ impl From<String> for Matcher {
         let wildcarded = star_replaced.replace("___DOUBLE_WILDCARD___", VAR_SEQ_WITH_SLASH);
 
         // Add a named capture for each :(variable) symbol
-        let named_captures = REGEX_VAR_SEQ.replace_all(&wildcarded, |captures: &Captures| {
+        let named_captures = REGEX_VAR_SEQ.replace_all(&wildcarded, |captures: &Captures<'_>| {
             // There should only ever be one match (after subgroup 0)
             let c = captures.iter().skip(1).next().unwrap();
             format!("(?P<{}>[,a-zA-Z0-9%_-]*)", c.unwrap().as_str())

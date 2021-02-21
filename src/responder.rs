@@ -9,74 +9,82 @@
 //! in any request.
 //!
 //! Please see the examples for usage.
-use {Response, NickelError, MiddlewareResult, Halt};
-use hyper::status::{StatusCode, StatusClass};
+use crate::{Response, NickelError, MiddlewareResult, Halt};
+use hyper::StatusCode;
 use hyper::header;
 use serde_json;
-use mimes::MediaType;
-use std::io::Write;
+use crate::mimes::MediaType;
 
 /// This trait provides convenience for translating a number
 /// of common return types into a `MiddlewareResult` while
 /// also modifying the `Response` as required.
 ///
 /// Please see the examples for some uses.
-pub trait Responder<D> {
-    fn respond<'a>(self, Response<'a, D>) -> MiddlewareResult<'a, D>;
+pub trait Responder<D: Send + 'static + Sync> {
+    fn respond(self, _: Response<D>) -> MiddlewareResult<D>;
 }
 
-impl<D> Responder<D> for () {
-    fn respond<'a>(self, res: Response<'a, D>) -> MiddlewareResult<'a, D> {
+impl<D: Send + 'static + Sync> Responder<D> for () {
+    fn respond(self, res: Response<D>) -> MiddlewareResult<D> {
         res.next_middleware()
     }
 }
 
-impl<D> Responder<D> for serde_json::Value {
-    fn respond<'a>(self, mut res: Response<'a, D>) -> MiddlewareResult<'a, D> {
+impl<D: Send + 'static + Sync> Responder<D> for serde_json::Value {
+    fn respond(self, mut res: Response<D>) -> MiddlewareResult<D> {
         maybe_set_type(&mut res, MediaType::Json);
         res.send(serde_json::to_string(&self)
                       .map_err(|e| format!("Failed to parse JSON: {}", e)))
     }
 }
 
-impl<T, E, D> Responder<D> for Result<T, E>
-        where T: Responder<D>,
-              for<'e> NickelError<'e, D>: From<(Response<'e, D>, E)> {
-    fn respond<'a>(self, res: Response<'a, D>) -> MiddlewareResult<'a, D> {
+impl<T, E, D: Send + 'static + Sync> Responder<D> for Result<T, E>
+where T: Responder<D>,
+for<> NickelError<D>: From<(Response<D>, E)> {
+    fn respond(self, res: Response<D>) -> MiddlewareResult<D> {
         let data = try_with!(res, self);
         res.send(data)
     }
 }
 
+impl <D: Send + 'static + Sync> Responder<D> for &[u8] {
+    #[allow(unused_mut)]
+    #[inline]
+    fn respond(self, mut res: Response<D>) -> MiddlewareResult<D> {
+        // this may be inefficient, copies int a Vec
+        self.to_vec().respond(res)
+    }
+}
+
+impl <D: Send + 'static + Sync> Responder<D> for Vec<u8> {
+    #[allow(unused_mut)]
+    #[inline]
+    fn respond(self, mut res: Response<D>) -> MiddlewareResult<D> {
+        maybe_set_type(&mut res, MediaType::Bin);
+
+        res.start();
+        res.set_body(self);
+        Ok(Halt(res))
+    }
+}
+
 macro_rules! dual_impl {
     ($view:ty, $alloc:ty, |$s:ident, $res:ident| $b:block) => (
-        impl<'a, D> Responder<D> for $view {
+        impl<D: Send + 'static + Sync> Responder<D> for $view {
             #[allow(unused_mut)]
             #[inline]
-            fn respond<'c>($s, mut $res: Response<'c, D>) -> MiddlewareResult<'c, D> $b
+            fn respond($s, mut $res: Response<D>) -> MiddlewareResult<D> $b
         }
 
-        impl<'a, D> Responder<D> for $alloc {
+        impl<D: Send + 'static + Sync> Responder<D> for $alloc {
             #[allow(unused_mut)]
             #[inline]
-            fn respond<'c>($s, mut $res: Response<'c, D>) -> MiddlewareResult<'c, D> $b
+            fn respond($s, mut $res: Response<D>) -> MiddlewareResult<D> $b
         }
     )
 }
 
-dual_impl!(&'a [u8],
-           Vec<u8>,
-            |self, res| {
-                maybe_set_type(&mut res, MediaType::Bin);
-
-                let mut stream = try!(res.start());
-                match stream.write_all(&self[..]) {
-                    Ok(()) => Ok(Halt(stream)),
-                    Err(e) => stream.bail(format!("Failed to send: {}", e))
-                }
-            });
-
-dual_impl!(&'a str,
+dual_impl!(&str,
            String,
             |self, res| {
                 maybe_set_type(&mut res, MediaType::Html);
@@ -87,44 +95,35 @@ dual_impl!((StatusCode, &'static str),
            (StatusCode, String),
             |self, res| {
                 let (status, message) = self;
-
-                match status.class() {
-                    StatusClass::ClientError | StatusClass::ServerError => {
-                        res.error(status, message)
-                    },
-                    _ => {
-                        res.set(status);
-                        res.send(message)
-                    }
-                }
+                let status_code = status.as_u16();
+                if status_code >= 400 && status_code <= 599 {
+                    res.error(status, message)
+                } else {
+                    res.set(status);
+                    res.send(message)
+                }                    
             });
 
-impl<'a, D> Responder<D> for StatusCode {
+impl<D: Send + 'static + Sync> Responder<D> for StatusCode {
     #[inline]
-    fn respond<'c>(self, res: Response<'c, D>) -> MiddlewareResult<'c, D> {
+    fn respond(self, res: Response<D>) -> MiddlewareResult<D> {
         res.send((self, ""))
     }
 }
 
-dual_impl!(&'a [&'a str],
-           &'a [String],
-            |self, res| {
-                maybe_set_type(&mut res, MediaType::Html);
-
-                let mut stream = try!(res.start());
-                for ref s in self.iter() {
-                    if let Err(e) = stream.write_all(s.as_bytes()) {
-                        return stream.bail(format!("Failed to write to stream: {}", e))
-                    }
-                }
-                Ok(Halt(stream))
+dual_impl!(&[&str],
+           &[String],
+           |self, res| {
+               // this may be inefficient, copies everything to one String
+               self.iter().fold("".to_string(), |a, s| {a + s}).respond(res)
             });
 
 dual_impl!((u16, &'static str),
            (u16, String),
            |self, res| {
-                let (status, message) = self;
-                res.send((StatusCode::from_u16(status), message))
+               let (status_u16, message) = self;
+               let status = StatusCode::from_u16(status_u16).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+               res.send((status, message))
             });
 
 // FIXME: Hyper uses traits for headers, so this needs to be a Vec of
@@ -147,6 +146,6 @@ dual_impl!((u16, &'static str),
 //                 Ok(Halt)
 //             })
 
-fn maybe_set_type<D>(res: &mut Response<D>, mime: MediaType) {
-    res.set_header_fallback(|| header::ContentType(mime.into()));
+fn maybe_set_type<D: Send + 'static + Sync>(res: &mut Response<D>, media_type: MediaType) {
+    res.set_header_fallback(&header::CONTENT_TYPE, &media_type.into());
 }

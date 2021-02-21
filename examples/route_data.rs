@@ -5,7 +5,8 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicUsize;
 use std::sync::atomic::Ordering::Relaxed;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let mut server = Nickel::new();
 
     // Here we'll use an 'atomic' counter, but any `Send`-able type should work.
@@ -28,5 +29,5 @@ fn main() {
         format!("{}", shared_visits.fetch_add(1, Relaxed))
     });
 
-    server.listen("127.0.0.1:6767").unwrap();
+    server.listen("127.0.0.1:6767").await.unwrap();
 }

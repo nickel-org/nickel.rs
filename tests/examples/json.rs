@@ -1,4 +1,4 @@
-use util::*;
+use crate::util::*;
 
 use hyper::client::Response;
 
@@ -11,7 +11,7 @@ fn with_path<F>(path: &str, f: F) where F: FnOnce(&mut Response) {
 }
 
 mod incoming {
-    use util::*;
+    use crate::util::*;
 
     use hyper::status::StatusCode;
     use hyper::client::Response;
@@ -46,7 +46,7 @@ mod incoming {
 mod outgoing {
     mod to_json {
         use super::super::with_path;
-        use util::*;
+        use crate::util::*;
 
         use serde_json;
 
@@ -75,7 +75,7 @@ mod outgoing {
 
     mod raw {
         use super::super::with_path;
-        use util::*;
+        use crate::util::*;
 
         use serde_json;
 

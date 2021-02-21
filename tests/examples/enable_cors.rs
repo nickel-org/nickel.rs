@@ -1,7 +1,7 @@
 use hyper::method::Method;
 use hyper::header::{AccessControlAllowOrigin, AccessControlAllowHeaders};
 
-use util::{run_example, response_for_method, read_body_to_string};
+use crate::util::{run_example, response_for_method, read_body_to_string};
 
 #[test]
 fn sets_headers() {

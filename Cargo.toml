@@ -1,14 +1,14 @@
 [package]
 
 name = "nickel"
-version = "0.11.0"
+version = "0.12.0"
 authors = [ "Christoph Burgdorf <christoph@thoughtram.io>",
             "Kevin Butler <haqkrs@gmail.com>",
             "Simon Persson <simon@flaskpost.org>",
             "Jeff Olhoeft <jolhoeft@gmail.com>" ]
 description = "An express.js inspired web framework"
 license = "MIT"
-
+edition = "2018"
 homepage = "http://nickel-org.github.io/"
 repository = "https://github.com/nickel-org/nickel.rs"
 readme = "README.md"
@@ -19,28 +19,31 @@ autoexamples = false
 unstable = ["hyper/nightly", "compiletest_rs"]
 
 [dependencies]
+async-trait = "0.1"
+chrono = "0.4"
+futures = "0.3"
+futures-util = { version = "0.3", default-features = false }
 groupable = "0.2"
+hyper = { version = "0.14", features = ["full"] }
 lazy_static = "1.0"
-log = "0.3"
+log = "0.4"
+mime = "0.3"
 modifier = "0.1"
 mustache = "0.9"
 plugin = "0.2"
 regex = "1.0"
 serde = "1.0"
 serde_json = "1.0"
-time = "0.1"
+tokio = { version = "1", features = ["full"] }
+tokio-util = { version = "0.6", features = ["codec"] }
 typemap = "0.3"
-url = "1.0"
+url = "2"
 
 [dev-dependencies]
 serde_derive = "1.0"
 
-[dependencies.hyper]
-version = "0.10"
-default-features = false
-
 [dependencies.compiletest_rs]
-version = "0.3"
+version = "0.6"
 optional = true
 
 [[example]]
@@ -63,10 +66,11 @@ path = "examples/enable_cors.rs"
 name = "template"
 path = "examples/template.rs"
 
-[[example]]
-
-name = "macro_example"
-path = "examples/macro_example.rs"
+# TODO: needs updated middleware and router macros
+# [[example]]
+#
+# name = "macro_example"
+# path = "examples/macro_example.rs"
 
 [[example]]
 
@@ -133,10 +137,11 @@ path = "examples/chaining.rs"
 name = "form_data"
 path = "examples/form_data/form_data.rs"
 
-[[example]]
-
-name = "https"
-path = "examples/https.rs"
+# TODO: long term, hyper support for https is very different now
+# [[example]]
+#
+# name = "https"
+# path = "examples/https.rs"
 
 [[example]]
 

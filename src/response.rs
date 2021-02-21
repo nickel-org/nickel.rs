@@ -1,46 +1,41 @@
-use std::mem;
 use std::borrow::Cow;
+use chrono::prelude::Utc;
 use std::path::Path;
 use serde::Serialize;
-use hyper::status::StatusCode;
-use hyper::server::Response as HyperResponse;
-use hyper::header::{
-    Headers, Date, HttpDate, Server, ContentType, ContentLength, Header, HeaderFormat
-};
-use hyper::net::{Fresh, Streaming};
-use time;
-use mimes::MediaType;
-use std::io::{self, Write, copy};
-use std::fs::File;
-use std::any::Any;
-use {NickelError, Halt, MiddlewareResult, Responder, Action};
-use template_cache::TemplateCache;
+use hyper::{Body, Response as HyperResponse, StatusCode};
+use hyper::header::{self, HeaderMap, HeaderName, HeaderValue};
+use crate::mimes::MediaType;
+use std::io;
+use crate::{NickelError, Halt, MiddlewareResult, Responder, Action};
+use crate::template_cache::TemplateCache;
 use modifier::Modifier;
-use plugin::{Extensible, Pluggable};
-use typemap::TypeMap;
+use std::sync::Arc;
+use tokio::fs::File;
+use tokio_util::codec::{BytesCodec, FramedRead};
+use typemap::{ShareMap, TypeMap};
 
 ///A container for the response
-pub struct Response<'a, D: 'a = (), T: 'static + Any = Fresh> {
+pub struct Response<D: Send + 'static + Sync = ()> {
     ///the original `hyper::server::Response`
-    origin: HyperResponse<'a, T>,
-    templates: &'a TemplateCache,
-    data: &'a D,
-    map: TypeMap,
+    pub origin: HyperResponse<Body>,
+    templates: Arc<TemplateCache>,
+    data: Arc<D>,
+    map: ShareMap,
     // This should be FnBox, but that's currently unstable
-    on_send: Vec<Box<FnMut(&mut Response<'a, D, Fresh>)>>
+    //on_send: Vec<Box<dyn FnMut(&mut Response<'a, D>)>>
 }
 
-impl<'a, D> Response<'a, D, Fresh> {
-    pub fn from_internal<'c, 'd>(response: HyperResponse<'c, Fresh>,
-                                 templates: &'c TemplateCache,
-                                 data: &'c D)
-                                -> Response<'c, D, Fresh> {
+impl<D: Send + 'static + Sync> Response<D> {
+    pub fn from_internal(response: HyperResponse<Body>,
+                         templates: Arc<TemplateCache>,
+                         data: Arc<D>)
+                         -> Response<D> {
         Response {
             origin: response,
             templates: templates,
             data: data,
-            map: TypeMap::new(),
-            on_send: vec![]
+            map: TypeMap::custom(),
+            //on_send: vec![]
         }
     }
 
@@ -49,8 +44,8 @@ impl<'a, D> Response<'a, D, Fresh> {
         self.origin.status_mut()
     }
 
-    /// Get a mutable reference to the Headers.
-    pub fn headers_mut(&mut self) -> &mut Headers {
+    /// Get a mutable reference to the HeaderMap.
+    pub fn headers_mut(&mut self) -> &mut HeaderMap {
         self.origin.headers_mut()
     }
 
@@ -86,9 +81,20 @@ impl<'a, D> Response<'a, D, Fresh> {
     ///     // ...
     /// }
     /// ```
-    pub fn set<T: Modifier<Response<'a, D>>>(&mut self, attribute: T) -> &mut Response<'a, D> {
+    // TODO: replace with set_status, set_content_type, and set_header methods
+    pub fn set<T: Modifier<Response<D>>>(&mut self, attribute: T) -> &mut Response<D> {
         attribute.modify(self);
         self
+    }
+
+    /// Set a header value, return the od value if present.
+    pub fn set_header<N: Into<HeaderName>, V: Into<HeaderValue>>(&mut self, name: N, value: V) -> Option<HeaderValue> {
+        self.origin.headers_mut().insert(name.into(), value.into())
+    }
+
+    /// Set the body of the hyper response, discarding any already set
+    pub fn set_body<T: Into<Body>>(&mut self, body: T) {
+        *self.origin.body_mut() = body.into();
     }
 
     /// Writes a response
@@ -98,12 +104,12 @@ impl<'a, D> Response<'a, D, Fresh> {
     /// use nickel::{Request, Response, MiddlewareResult};
     ///
     /// # #[allow(dead_code)]
-    /// fn handler<'a, D>(_: &mut Request<D>, res: Response<'a, D>) -> MiddlewareResult<'a, D> {
+    /// fn handler<D>(_: &mut Request<D>, res: Response<D>) -> MiddlewareResult<D> {
     ///     res.send("hello world")
     /// }
     /// ```
     #[inline]
-    pub fn send<T: Responder<D>>(self, data: T) -> MiddlewareResult<'a, D> {
+    pub fn send<T: Responder<D>>(self, data: T) -> MiddlewareResult<D> {
         data.respond(self)
     }
 
@@ -115,28 +121,31 @@ impl<'a, D> Response<'a, D, Fresh> {
     /// use std::path::Path;
     ///
     /// # #[allow(dead_code)]
-    /// fn handler<'a, D>(_: &mut Request<D>, res: Response<'a, D>) -> MiddlewareResult<'a, D> {
+    /// fn handler<D>(_: &mut Request<D>, res: Response<D>) -> MiddlewareResult<D> {
     ///     let favicon = Path::new("/assets/favicon.ico");
     ///     res.send_file(favicon)
     /// }
     /// ```
-    pub fn send_file<P:AsRef<Path>>(mut self, path: P) -> MiddlewareResult<'a, D> {
+    pub async fn send_file<P:AsRef<Path>>(mut self, path: P) -> MiddlewareResult<D> {
         let path = path.as_ref();
         // Chunk the response
-        self.origin.headers_mut().remove::<ContentLength>();
+        self.origin.headers_mut().remove(header::CONTENT_LENGTH);
         // Determine content type by file extension or default to binary
         let mime = mime_from_filename(path).unwrap_or(MediaType::Bin);
-        self.set_header_fallback(|| ContentType(mime.into()));
+        self.set_header_fallback(&header::CONTENT_TYPE, &mime.into());
 
-        let mut file = try_with!(self, {
-            File::open(path).map_err(|e| format!("Failed to send file '{:?}': {}",
-                                                 path, e))
-        });
-
-        let mut stream = try!(self.start());
-        match copy(&mut file, &mut stream) {
-            Ok(_) => Ok(Halt(stream)),
-            Err(e) => stream.bail(format!("Failed to send file: {}", e))
+        self.start();
+        match File::open(path).await {
+            Ok(file) => {
+                let stream = FramedRead::new(file, BytesCodec::new());
+                let body = Body::wrap_stream(stream);
+                self.set_body(body);
+                Ok(Halt(self))
+            },
+            Err(e) => {
+                self.error(StatusCode::NOT_FOUND,
+                           format!("Failed to send file '{:?}': {}", path, e))
+            }
         }
     }
 
@@ -145,14 +154,15 @@ impl<'a, D> Response<'a, D, Fresh> {
     //
     // Also, it should only set them if not already set.
     fn set_fallback_headers(&mut self) {
-        self.set_header_fallback(|| Date(HttpDate(time::now_utc())));
-        self.set_header_fallback(|| Server("Nickel".to_string()));
-        self.set_header_fallback(|| ContentType(MediaType::Html.into()));
+        let now = HeaderValue::from_str(&Utc::now().to_rfc2822()).unwrap(); // rfc2822 should always be valid
+        self.set_header_fallback(&header::DATE, &now);
+        self.set_header_fallback(&header::SERVER, &HeaderValue::from_static("Nickel"));
+        self.set_header_fallback(&header::CONTENT_TYPE, &MediaType::Html.into());
     }
 
     /// Return an error with the appropriate status code for error handlers to
     /// provide output for.
-    pub fn error<T>(self, status: StatusCode, message: T) -> MiddlewareResult<'a, D>
+    pub fn error<T>(self, status: StatusCode, message: T) -> MiddlewareResult<D>
             where T: Into<Cow<'static, str>> {
         Err(NickelError::new(self, message, status))
     }
@@ -185,10 +195,8 @@ impl<'a, D> Response<'a, D, Fresh> {
     ///     // ...
     /// }
     /// ```
-    pub fn set_header_fallback<F, H>(&mut self, f: F)
-            where H: Header + HeaderFormat, F: FnOnce() -> H {
-        let headers = self.origin.headers_mut();
-        if !headers.has::<H>() { headers.set(f()) }
+    pub fn set_header_fallback(&mut self, name: &HeaderName, value: &HeaderValue) {
+        self.origin.headers_mut().entry(name).or_insert(value.clone());
     }
 
     /// Renders the given template bound with the given data.
@@ -199,125 +207,141 @@ impl<'a, D> Response<'a, D, Fresh> {
     /// use nickel::{Request, Response, MiddlewareResult};
     ///
     /// # #[allow(dead_code)]
-    /// fn handler<'a, D>(_: &mut Request<D>, res: Response<'a, D>) -> MiddlewareResult<'a, D> {
+    /// fn handler<D>(_: &mut Request<D>, res: Response<D>) -> MiddlewareResult<D> {
     ///     let mut data = HashMap::new();
     ///     data.insert("name", "user");
     ///     res.render("examples/assets/template.tpl", &data)
     /// }
     /// ```
-    pub fn render<T, P>(self, path: P, data: &T) -> MiddlewareResult<'a, D>
+    pub async fn render<T, P>(mut self, path: P, data: &T) -> MiddlewareResult<D>
         where T: Serialize, P: AsRef<Path> + Into<String> {
 
-        let mut self_started = self.start()?;
-        match self_started.templates.render(path, &mut self_started, data) {
-            Ok(()) => Ok(Halt(self_started)),
-            Err(e) => self_started.bail(format!("Problem rendering template: {:?}", e))
+        self.start();
+        match self.templates.render(path, data).await {
+            Ok(r) => self.send(r),
+            Err(e) => {
+                let msg = format!("Problem rendering template: {:?}", e);
+                println!("{}", msg);
+                self.error(StatusCode::INTERNAL_SERVER_ERROR, msg)
+            }
         }
     }
 
-    pub fn start(mut self) -> Result<Response<'a, D, Streaming>, NickelError<'a, D>> {
-        let on_send = mem::replace(&mut self.on_send, vec![]);
-        for mut f in on_send.into_iter().rev() {
-            // TODO: Ensure `f` doesn't call on_send again
-            f(&mut self)
-        }
+    // Todo: migration cleanup
+    //
+    // hyper::Response no longer has a start() method. The api has
+    // changed a lot, so this may not longer be necessary.
+    //
+    // What we are still doing is running the on_send mthods, and
+    // setting fallback headers. Do we need this dedicated method in
+    // the workflow to make sure that happens?
+    pub fn start(&mut self) {
+        // let on_send = mem::replace(&mut self.on_send, vec![]);
+        // for mut f in on_send.into_iter().rev() {
+        //     // TODO: Ensure `f` doesn't call on_send again
+        //     f(self)
+        // }
 
         // Set fallback headers last after everything runs, if we did this before as an
         // on_send then it would possibly set redundant things.
         self.set_fallback_headers();
-
-        let Response { origin, templates, data, map, on_send } = self;
-        match origin.start() {
-            Ok(origin) => {
-                Ok(Response {
-                    origin: origin,
-                    templates: templates,
-                    data: data,
-                    map: map,
-                    on_send: on_send
-                })
-            },
-            Err(e) =>
-                unsafe {
-                    Err(NickelError::without_response(format!("Failed to start response: {}", e)))
-                }
-        }
     }
 
-    pub fn server_data(&self) -> &'a D {
-        &self.data
+    pub fn server_data(&self) -> Arc<D> {
+        self.data.clone()
     }
 
-    pub fn on_send<F>(&mut self, f: F)
-            where F: FnMut(&mut Response<'a, D, Fresh>) + 'static {
-        self.on_send.push(Box::new(f))
-    }
+    // pub fn on_send<F>(&mut self, f: F)
+    //         where F: FnMut(&mut Response<D>) + 'static {
+    //     self.on_send.push(Box::new(f))
+    // }
 
     /// Pass execution off to another Middleware
     ///
     /// When returned from a Middleware, it allows computation to continue
     /// in any Middleware queued after the active one.
-    pub fn next_middleware(self) -> MiddlewareResult<'a, D> {
+    pub fn next_middleware(self) -> MiddlewareResult<D> {
         Ok(Action::Continue(self))
     }
 }
 
-impl<'a, 'b, D> Write for Response<'a, D, Streaming> {
-    #[inline(always)]
-    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
-        self.origin.write(buf)
-    }
+// TODO: migration cleanup - delete this
+// impl<D> Write for Response<D> {
+//     #[inline(always)]
+//     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+//         // TODO: migration cleanup
+//         // self.origin.write(buf)
+//         unimplemented!();
+//     }
+//
+//     #[inline(always)]
+//     fn flush(&mut self) -> io::Result<()> {
+//         // TODO: migration cleanup
+//         // self.origin.flush()
+//         unimplemented!();
+//     }
+// }
 
-    #[inline(always)]
-    fn flush(&mut self) -> io::Result<()> {
-        self.origin.flush()
-    }
-}
-
-impl<'a, 'b, D> Response<'a, D, Streaming> {
+impl<D: Send + 'static + Sync> Response<D> {
     /// In the case of an unrecoverable error while a stream is already in
     /// progress, there is no standard way to signal to the client that an
     /// error has occurred. `bail` will drop the connection and log an error
     /// message.
-    pub fn bail<T>(self, message: T) -> MiddlewareResult<'a, D>
+    pub fn bail<T>(self, message: T) -> MiddlewareResult<D>
             where T: Into<Cow<'static, str>> {
         let _ = self.end();
         unsafe { Err(NickelError::without_response(message)) }
     }
 
     /// Flushes all writing of a response to the client.
+    // TODO: migration cleanup
+    //
+    // Should be easy, may not even be needed
     pub fn end(self) -> io::Result<()> {
-        self.origin.end()
+        // self.origin.end()
+        Ok(())
     }
 }
 
-impl <'a, D, T: 'static + Any> Response<'a, D, T> {
+impl <D: Send + 'static + Sync> Response<D> {
     /// The status of this response.
     pub fn status(&self) -> StatusCode {
         self.origin.status()
     }
 
     /// The headers of this response.
-    pub fn headers(&self) -> &Headers {
+    pub fn headers(&self) -> &HeaderMap {
         self.origin.headers()
     }
 
-    pub fn data(&self) -> &'a D {
-        &self.data
+    pub fn data(&self) -> Arc<D> {
+        self.data.clone()
     }
-}
 
-impl<'a, D, T: 'static + Any> Extensible for Response<'a, D, T> {
-    fn extensions(&self) -> &TypeMap {
+    // (Hopefully) temporary replacements for the Extensible trait. We can't
+    // support plugins without Extensible, but access to the ShareMap is used by
+    // itself.
+    pub fn extensions(&self) -> &ShareMap {
         &self.map
     }
 
-    fn extensions_mut(&mut self) -> &mut TypeMap {
+    pub fn extensions_mut(&mut self) -> &mut ShareMap {
         &mut self.map
     }
 }
 
-impl<'a, D, T: 'static + Any> Pluggable for Response<'a, D, T> {}
+// TODO: migration cleanup - Extensible does not support ShareMap, but TypeMap is not Sync+Send
+// impl<D: Send + 'static + Sync> Extensible for Response<D> {
+//     fn extensions(&self) -> &ShareMap {
+//         &self.map
+//     }
+
+//     fn extensions_mut(&mut self) -> &mut ShareMap {
+//         &mut self.map
+//     }
+// }
+
+// impl<D: Send + 'static + Sync> Pluggable for Response<D> {}
 
 fn mime_from_filename<P: AsRef<Path>>(path: P) -> Option<MediaType> {
     path.as_ref()
@@ -335,78 +359,20 @@ fn matches_content_type () {
 }
 
 mod modifier_impls {
-    use hyper::header::*;
-    use hyper::status::StatusCode;
+    use hyper::StatusCode;
+    use hyper::header;
     use modifier::Modifier;
-    use {Response, MediaType};
+    use crate::{Response, MediaType};
 
-    impl<'a, D> Modifier<Response<'a, D>> for StatusCode {
-        fn modify(self, res: &mut Response<'a, D>) {
+    impl<D: Send + 'static + Sync> Modifier<Response<D>> for StatusCode {
+        fn modify(self, res: &mut Response<D>) {
             *res.status_mut() = self
         }
     }
 
-    impl<'a, D> Modifier<Response<'a, D>> for MediaType {
-        fn modify(self, res: &mut Response<'a, D>) {
-            ContentType(self.into()).modify(res)
+    impl<D: Send + 'static + Sync> Modifier<Response<D>> for MediaType {
+        fn modify(self, res: &mut Response<D>) {
+            res.set_header(header::CONTENT_TYPE, self);
         }
-    }
-
-    macro_rules! header_modifiers {
-        ($($t:ty),+) => (
-            $(
-                impl<'a, D> Modifier<Response<'a, D>> for $t {
-                    fn modify(self, res: &mut Response<'a, D>) {
-                        res.headers_mut().set(self)
-                    }
-                }
-            )+
-        )
-    }
-
-    header_modifiers! {
-        Accept,
-        AccessControlAllowHeaders,
-        AccessControlAllowMethods,
-        AccessControlAllowOrigin,
-        AccessControlMaxAge,
-        AccessControlRequestHeaders,
-        AccessControlRequestMethod,
-        AcceptCharset,
-        AcceptEncoding,
-        AcceptLanguage,
-        AcceptRanges,
-        Allow,
-        Authorization<Basic>,
-        Authorization<Bearer>,
-        Authorization<String>,
-        CacheControl,
-        Cookie,
-        Connection,
-        ContentEncoding,
-        ContentLanguage,
-        ContentLength,
-        ContentType,
-        Date,
-        ETag,
-        Expect,
-        Expires,
-        From,
-        Host,
-        IfMatch,
-        IfModifiedSince,
-        IfNoneMatch,
-        IfRange,
-        IfUnmodifiedSince,
-        LastModified,
-        Location,
-        Pragma,
-        Referer,
-        Server,
-        SetCookie,
-        TransferEncoding,
-        Upgrade,
-        UserAgent,
-        Vary
     }
 }

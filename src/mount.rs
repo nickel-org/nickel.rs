@@ -1,13 +1,11 @@
-use nickel::Nickel;
-use request::Request;
-use response::Response;
-use middleware::{Continue, Middleware, MiddlewareResult};
+use async_trait::async_trait;
+use crate::nickel::Nickel;
+use crate::request::Request;
+use crate::response::Response;
+use crate::middleware::{Continue, Middleware, MiddlewareResult};
+use hyper::Uri;
 
-use hyper::uri::RequestUri::AbsolutePath;
-
-use std::mem;
-
-pub trait Mountable<D> {
+pub trait Mountable<D: Send + 'static + Sync>: Send + 'static + Sync {
     fn mount<S: Into<String>, M: Middleware<D>>(&mut self, mount_point: S, middleware: M);
 }
 
@@ -73,19 +71,24 @@ impl<M> Mount<M> {
     }
 }
 
-impl<D, M: Middleware<D>> Middleware<D> for Mount<M> {
-    fn invoke<'mw, 'conn>(&'mw self, req: &mut Request<'mw, 'conn, D>, res: Response<'mw, D>)
-        -> MiddlewareResult<'mw, D> {
-        let subpath = match req.origin.uri {
-            AbsolutePath(ref path) if path.starts_with(&*self.mount_point) => {
-                AbsolutePath(format!("/{}", &path[self.mount_point.len()..]))
+#[async_trait]
+impl<D: Send + 'static + Sync, M: Middleware<D>> Middleware<D> for Mount<M> {
+    async fn invoke(&self, req: &mut Request<D>, res: Response<D>)
+                          -> MiddlewareResult<D> {
+        // two clones in this method, there ought to be a way to avoid that
+        let mut parts = req.origin.uri().clone().into_parts();
+        match req.origin.uri().path_and_query() {
+            Some(paq) if paq.as_str().starts_with(&*self.mount_point) => {
+                let new_paq_str = format!("/{}", &paq.as_str()[self.mount_point.len()..]);
+                parts.path_and_query = Some(new_paq_str.parse().expect("TODO: can this ever fail?"));
             },
-            _ => return Ok(Continue(res))
+            _ => { return Ok(Continue(res)); }
         };
-
-        let original = mem::replace(&mut req.origin.uri, subpath);
-        let result = self.middleware.invoke(req, res);
-        req.origin.uri = original;
+        
+        let original = req.origin.uri().clone();
+        *req.origin.uri_mut() = Uri::from_parts(parts).expect("TODO: can this ever fail?");
+        let result = self.middleware.invoke(req, res).await;
+        *req.origin.uri_mut() = original;
         result
     }
 }

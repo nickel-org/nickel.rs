@@ -1,11 +1,11 @@
-use Request;
+use crate::Request;
 use hyper::header;
 
 pub trait Referer {
     fn referer(&self) -> Option<&str>;
 }
 
-impl<'mw, 'server, D> Referer for Request<'mw, 'server, D> {
+impl<D> Referer for Request<D> {
     /// Get the Request's referer header
     ///
     /// # Examples
@@ -26,7 +26,7 @@ impl<'mw, 'server, D> Referer for Request<'mw, 'server, D> {
     /// }
     /// ```
     fn referer(&self) -> Option<&str> {
-        self.origin.headers.get::<header::Referer>()
-                           .map(|r| &***r)
+        self.origin.headers().get(header::REFERER)
+                           .and_then(|r| r.to_str().ok())
     }
 }

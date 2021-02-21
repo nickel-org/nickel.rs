@@ -1,13 +1,14 @@
+use async_trait::async_trait;
 use std::path::{Path, PathBuf};
 use std::io::ErrorKind::NotFound;
 use std::fs;
 
-use hyper::method::Method::{Get, Head};
+use hyper::Method;
 
-use status::StatusCode;
-use request::Request;
-use response::Response;
-use middleware::{Middleware, MiddlewareResult};
+use crate::status::StatusCode;
+use crate::request::Request;
+use crate::response::Response;
+use crate::middleware::{Middleware, MiddlewareResult};
 
 // this should be much simpler after unboxed closures land in Rust.
 
@@ -16,11 +17,12 @@ pub struct StaticFilesHandler {
     root_path: PathBuf
 }
 
-impl<D> Middleware<D> for StaticFilesHandler {
-    fn invoke<'a>(&self, req: &mut Request<D>, res: Response<'a, D>)
-            -> MiddlewareResult<'a, D> {
-        match req.origin.method {
-            Get | Head => self.with_file(self.extract_path(req), res),
+#[async_trait]
+impl<D: Send + 'static + Sync> Middleware<D> for StaticFilesHandler {
+    async fn invoke(&self, req: &mut Request<D>, res: Response<D>)
+            -> MiddlewareResult<D> {
+        match *req.origin.method() {
+            Method::GET | Method::HEAD => self.with_file(self.extract_path(req), res).await,
             _ => res.next_middleware()
         }
     }
@@ -45,36 +47,33 @@ impl StaticFilesHandler {
         }
     }
 
-    fn extract_path<'a, D>(&self, req: &'a mut Request<D>) -> Option<&'a str> {
-        req.path_without_query().map(|path| {
-            debug!("{:?} {:?}{:?}", req.origin.method, self.root_path.display(), path);
-
-            match path {
-                "/" => "index.html",
-                path => &path[1..],
-            }
-        })
+    fn extract_path<'a, D>(&self, req: &'a mut Request<D>) -> &'a str {
+        let path = req.path_without_query();
+        debug!("{:?} {:?}{:?}", req.origin.method(), self.root_path.display(), path);
+        
+        match path {
+            "/" => "index.html",
+            path => &path[1..],
+        }
     }
 
-    fn with_file<'a, 'b, D, P>(&self,
-                            relative_path: Option<P>,
-                            res: Response<'a, D>)
-            -> MiddlewareResult<'a, D> where P: AsRef<Path> {
-        if let Some(path) = relative_path {
-            let path = path.as_ref();
-            if !safe_path(path) {
-                let log_msg = format!("The path '{:?}' was denied access.", path);
-                return res.error(StatusCode::BadRequest, log_msg);
-            }
-
-            let path = self.root_path.join(path);
-            match fs::metadata(&path) {
-                Ok(ref attr) if attr.is_file() => return res.send_file(&path),
-                Err(ref e) if e.kind() != NotFound => debug!("Error getting metadata \
-                                                              for file '{:?}': {:?}",
-                                                              path, e),
-                _ => {}
-            }
+    async fn with_file<D: Send + 'static + Sync, P>(&self,
+                                              relative_path: P,
+                                              res: Response<D>)
+                                              -> MiddlewareResult<D> where P: AsRef<Path> {
+        let path = relative_path.as_ref();
+        if !safe_path(path) {
+            let log_msg = format!("The path '{:?}' was denied access.", path);
+            return res.error(StatusCode::BAD_REQUEST, log_msg);
+        }
+        
+        let path = self.root_path.join(path);
+        match fs::metadata(&path) {
+            Ok(ref attr) if attr.is_file() => return res.send_file(&path).await,
+            Err(ref e) if e.kind() != NotFound => debug!("Error getting metadata \
+                                                          for file '{:?}': {:?}",
+                                                         path, e),
+            _ => {}
         };
 
         res.next_middleware()

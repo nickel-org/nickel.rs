@@ -1,21 +1,20 @@
-use plugin::{Plugin, Pluggable};
-use request::Request;
-use typemap::Key;
-use urlencoded::{Query, parse_uri};
+use crate::request::Request;
+use crate::urlencoded::{Query, parse_uri};
 
-struct QueryStringParser;
+// TODO: migration cleanup - Extensible does not support ShareMap, but TypeMap is not Sync+Send
+// struct QueryStringParser;
 
-impl Key for QueryStringParser {
-    type Value = Query;
-}
+// impl Key for QueryStringParser {
+//     type Value = Query;
+// }
 
-impl<'mw, 'conn, D> Plugin<Request<'mw, 'conn, D>> for QueryStringParser {
-    type Error = ();
+// impl<D> Plugin<Request<D>> for QueryStringParser {
+//     type Error = ();
 
-    fn eval(req: &mut Request<D>) -> Result<Query, ()> {
-        Ok(parse_uri(&req.origin.uri))
-    }
-}
+//     fn eval(req: &mut Request<D>) -> Result<Query, ()> {
+//         Ok(parse_uri(&req.origin.uri()))
+//     }
+// }
 
 pub trait QueryString {
     /// Extracts URL encoded data from the URL query string.
@@ -32,13 +31,15 @@ pub trait QueryString {
     ///     });
     /// }
     /// ```
-    fn query(&mut self) -> &Query;
+    fn query(&mut self) -> Query;
 }
 
-impl<'mw, 'conn, D> QueryString for Request<'mw, 'conn, D> {
-    fn query(&mut self) -> &Query {
-        self.get_ref::<QueryStringParser>()
-            .ok()
-            .expect("Bug: QueryStringParser returned None")
+impl<D> QueryString for Request<D> {
+    fn query(&mut self) -> Query {
+        parse_uri(self.origin.uri())
+        // TODO: migration cleanup - Extensible does not support ShareMap, but TypeMap is not Sync+Send
+        // self.get_ref::<QueryStringParser>()
+        //     .ok()
+        //     .expect("Bug: QueryStringParser returned None")
     }
 }

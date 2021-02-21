@@ -1,10 +1,10 @@
 #[macro_use] extern crate nickel;
-extern crate regex;
 
 use nickel::{Nickel, HttpRouter};
 use regex::Regex;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let mut server = Nickel::new();
 
     let hello_regex = Regex::new("/hello/(?P<name>[a-zA-Z]+)").unwrap();
@@ -13,5 +13,5 @@ fn main() {
         format!("Hello {}", request.param("name").unwrap())
     });
 
-    server.listen("127.0.0.1:6767").unwrap();
+    server.listen("127.0.0.1:6767").await.unwrap();
 }

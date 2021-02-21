@@ -1,15 +1,18 @@
+// WARNING: this module is no longer used, and is only being kept around for
+// documentation as part of migration to async.
+
 use hyper::header::ContentType;
 use hyper::mime::{Mime, SubLevel, TopLevel};
 use serde::Deserialize;
 use serde_json;
-use request::Request;
+use crate::request::Request;
 use plugin::{Plugin, Pluggable};
-use status::StatusCode;
+use crate::status::StatusCode;
 use std::error::Error as StdError;
 use std::fmt;
 use std::io::{self, ErrorKind, Read};
 use typemap::Key;
-use urlencoded::{self, Params};
+use crate::urlencoded::{self, Params};
 
 struct BodyReader;
 
@@ -20,9 +23,9 @@ impl Key for BodyReader {
 impl<'mw, 'conn, D> Plugin<Request<'mw, 'conn, D>> for BodyReader {
     type Error = io::Error;
 
-    fn eval(req: &mut Request<D>) -> Result<String, io::Error> {
+    fn eval(req: &mut Request<'_, '_, D>) -> Result<String, io::Error> {
         let mut buf = String::new();
-        try!(req.origin.read_to_string(&mut buf));
+        req.origin.read_to_string(&mut buf)?;
         Ok(buf)
     }
 }
@@ -36,14 +39,14 @@ impl Key for FormBodyParser {
 impl<'mw, 'conn, D> Plugin<Request<'mw, 'conn, D>> for FormBodyParser {
     type Error = BodyError;
 
-    fn eval(req: &mut Request<D>) -> Result<Params, BodyError> {
+    fn eval(req: &mut Request<'_, '_, D>) -> Result<Params, BodyError> {
         match req.origin.headers.get::<ContentType>() {
             Some(&ContentType(Mime(
                 TopLevel::Application,
                 SubLevel::WwwFormUrlEncoded,
                 _
             ))) => {
-                let body = try!(req.get_ref::<BodyReader>());
+                let body = req.get_ref::<BodyReader>()?;
                 Ok(urlencoded::parse(&*body))
             },
             _ => Err(BodyError::WrongContentType)
@@ -105,24 +108,20 @@ impl From<io::Error> for BodyError {
 }
 
 impl StdError for BodyError {
-    fn description(&self) -> &str {
-        match *self {
-            BodyError::Io(ref err) => err.description(),
-            BodyError::WrongContentType => "Wrong content type"
-        }
-    }
-
-    fn cause(&self) -> Option<&StdError> {
+    fn source(&self) -> Option<&(dyn StdError + 'static)> {
         match *self {
             BodyError::Io(ref err) => Some(err),
-            _ => None
+            BodyError::WrongContentType => None
         }
     }
 }
 
 impl fmt::Display for BodyError {
-    fn fmt(&self, out: &mut fmt::Formatter) -> fmt::Result {
-        write!(out, "{}", self.description())
+    fn fmt(&self, out: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            BodyError::Io(ref err) => { write!(out, "{}", err.to_string()) },
+            BodyError::WrongContentType => { write!(out, "Wrong content type") },
+        }
     }
 }
 
