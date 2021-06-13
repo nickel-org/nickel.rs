@@ -43,7 +43,7 @@ url = "2"
 serde_derive = "1.0"
 
 [dependencies.compiletest_rs]
-version = "0.6"
+version = "0.7"
 optional = true
 
 [[example]]
