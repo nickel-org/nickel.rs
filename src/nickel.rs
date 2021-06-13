@@ -102,7 +102,7 @@ impl Nickel<()> {
 
 impl<D: Sync + Send + 'static> Nickel<D> {
     /// Creates an instance of Nickel with default error handling,
-    /// default Ooptions, and custom data.
+    /// custom options, and custom data.
     pub fn with_data_and_options(data: D, options: Options) -> Nickel<D> {
         let mut middleware_stack = MiddlewareStack::new();
 
@@ -121,7 +121,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     }
 
     /// Creates an instance of Nickel with default error handling,
-    /// default Ooptions, and custom data.
+    /// default options, and custom data.
     pub fn with_data(data: D) -> Nickel<D> {
         Nickel::with_data_and_options(data, Options::default())
     }
@@ -347,25 +347,28 @@ mod tests {
     use std::str::FromStr;
     use std::net::SocketAddr;
 
-    #[test]
+    #[tokio::test]
     #[should_panic(expected = "invalid socket address")]
-    fn invalid_listen_addr() {
-        Nickel::new().listen("127.0.0.1.6667").unwrap();
+    async fn invalid_listen_addr() {
+        Nickel::new().listen("127.0.0.1.6667").await.unwrap();
     }
 
-    #[test]
-    fn can_get_server_address() {
-        let server = Nickel::new().listen("127.0.0.1:12345").unwrap();
+    // TODO: These tests are commented out since we no longher provide access to
+    // the underlying server. Do we need to?
 
-        assert_eq!(server.socket(), SocketAddr::from_str("127.0.0.1:12345").unwrap());
-        server.detach();
-    }
+    // #[test]
+    // fn can_get_server_address() {
+    //     let server = Nickel::new().listen("127.0.0.1:12345").await.unwrap();
 
-    #[test]
-    fn can_get_server_address_with_random_port() {
-        let server = Nickel::new().listen("127.0.0.1:0").unwrap();
+    //     assert_eq!(server.socket(), SocketAddr::from_str("127.0.0.1:12345").unwrap());
+    //     server.detach();
+    // }
 
-        assert_eq!(server.socket().ip().to_string(), "127.0.0.1");
-        server.detach();
-    }
+    // #[test]
+    // fn can_get_server_address_with_random_port() {
+    //     let server = Nickel::new().listen("127.0.0.1:0").await.unwrap();
+
+    //     assert_eq!(server.socket().ip().to_string(), "127.0.0.1");
+    //     server.detach();
+    // }
 }
