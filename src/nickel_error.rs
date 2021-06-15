@@ -25,8 +25,8 @@ impl<D: Send + 'static + Sync> NickelError<D> {
     /// use nickel::status::StatusCode;
     ///
     /// # #[allow(dead_code)]
-    /// fn handler<D>(_: &mut Request<D>, res: Response<D>) -> MiddlewareResult<D> {
-    ///     Err(NickelError::new(res, "Error Parsing JSON", StatusCode::BadRequest))
+    /// fn handler<D: Send + 'static + Sync>(_: &mut Request<D>, res: Response<D>) -> MiddlewareResult<D> {
+    ///     Err(NickelError::new(res, "Error Parsing JSON", StatusCode::BAD_REQUEST))
     /// }
     /// # }
     /// ```

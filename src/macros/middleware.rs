@@ -20,7 +20,8 @@
 /// # Examples
 /// ```rust,no_run
 /// # #[macro_use] extern crate nickel;
-/// # fn main() {
+/// # #[tokio::main]
+/// # async fn main() {
 /// use nickel::{Nickel, HttpRouter};
 /// use std::sync::atomic::{AtomicUsize, Ordering};
 ///
@@ -33,7 +34,7 @@
 ///     format!("{}", visits.fetch_add(1, Ordering::Relaxed))
 /// });
 ///
-/// server.listen("127.0.0.1:6767").unwrap();
+/// server.listen("127.0.0.1:6767").await.unwrap();
 /// # }
 /// ```
 ///
@@ -43,7 +44,9 @@
 /// supports annotating the macro so as to drive the inference allowing the handler
 /// code to remain with minimal annotations.
 ///
-/// ```
+/// # ignoring this, since the middleware macro needs work
+/// # TODO: migration cleanup
+/// ```rust,ignore
 /// # #[macro_use] extern crate nickel;
 /// # fn main() {
 /// # struct MyServerData;

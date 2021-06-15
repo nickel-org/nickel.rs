@@ -15,7 +15,7 @@ impl<D> Referer for Request<D> {
     /// use nickel::{Nickel, HttpRouter, Request, Response, MiddlewareResult};
     /// use nickel::extensions::{Referer, Redirect};
     ///
-    /// fn referer<'mw, 'conn>(req: &mut Request<'mw, 'conn>, res: Response<'mw>) -> MiddlewareResult<'mw> {
+    /// fn referer(req: &mut Request, res: Response) -> MiddlewareResult {
     ///     let back = req.referer().unwrap_or("http://nickel-org.github.io/");
     ///     return res.redirect(back)
     /// }

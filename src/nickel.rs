@@ -143,7 +143,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     /// use nickel::Nickel;
     /// let mut server = Nickel::new();
     /// server.utilize(middleware! { |req|
-    ///     println!("logging request: {:?}", req.origin.uri);
+    ///     println!("logging request: {:?}", req.origin.uri());
     /// });
     /// # }
     /// ```
@@ -162,15 +162,14 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     /// ```{rust}
     /// # extern crate nickel;
     /// # fn main() {
-    /// use std::io::Write;
     /// use nickel::{Nickel, Request, Continue, Halt};
     /// use nickel::{NickelError, Action};
-    /// use nickel::status::StatusCode::NOT_FOUND;
+    /// use nickel::status::StatusCode;
     ///
-    /// fn error_handler<D>(err: &mut NickelError<D>, _req: &mut Request<D>) -> Action {
+    /// fn error_handler<D: Send + Sync + 'static>(err: &mut NickelError<D>, _req: &mut Request<D>) -> Action {
     ///    if let Some(ref mut res) = err.stream {
-    ///        if res.status() == NotFound {
-    ///            let _ = res.write_all(b"<h1>Call the police!</h1>");
+    ///        if res.status() == StatusCode::NOT_FOUND {
+    ///            let _ = res.set_body("<h1>Call the police!</h1>");
     ///            return Halt(())
     ///        }
     ///    }
@@ -215,14 +214,14 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     /// Bind and listen for connections on the given host and port.
     ///
     /// # Examples
-    /// ```rust
+    /// ```rust,no_run
     /// use nickel::Nickel;
     ///
-    /// let server = Nickel::new();
-    /// let listening = server.listen("127.0.0.1:6767").expect("Failed to launch server");
-    /// println!("Listening on: {:?}", listening.socket());
-    /// # // unblock the server so the test doesn't block forever
-    /// # listening.detach();
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let server = Nickel::new();
+    ///     server.listen("127.0.0.1:6767").await.expect("Failed to launch server");
+    /// }
     /// ```
     pub async fn listen<T: ToSocketAddrs>(mut self, addr: T) -> Result<(), Box<dyn StdError>> {
         self.middleware_stack.add_middleware(middleware! {

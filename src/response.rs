@@ -58,15 +58,16 @@ impl<D: Send + 'static + Sync> Response<D> {
     ///
     /// use nickel::{Nickel, HttpRouter, MediaType};
     /// use nickel::status::StatusCode;
-    /// use hyper::header::Location;
+    /// use hyper::header::{self, HeaderValue};
     ///
     /// fn main() {
     ///     let mut server = Nickel::new();
     ///     server.get("/a", middleware! { |_, mut res|
     ///             // set the Status
-    ///         res.set(StatusCode::PermanentRedirect)
+    ///         res.set(StatusCode::PERMANENT_REDIRECT)
     ///             // update a Header value
-    ///            .set(Location("http://nickel.rs".into()));
+    ///            .set_header(header::LOCATION,
+    ///                        HeaderValue::from_static("http://nickel.rs".into()));
     ///
     ///         ""
     ///     });
@@ -104,7 +105,7 @@ impl<D: Send + 'static + Sync> Response<D> {
     /// use nickel::{Request, Response, MiddlewareResult};
     ///
     /// # #[allow(dead_code)]
-    /// fn handler<D>(_: &mut Request<D>, res: Response<D>) -> MiddlewareResult<D> {
+    /// fn handler<D: Send + 'static + Sync>(_: &mut Request<D>, res: Response<D>) -> MiddlewareResult<D> {
     ///     res.send("hello world")
     /// }
     /// ```
@@ -121,9 +122,9 @@ impl<D: Send + 'static + Sync> Response<D> {
     /// use std::path::Path;
     ///
     /// # #[allow(dead_code)]
-    /// fn handler<D>(_: &mut Request<D>, res: Response<D>) -> MiddlewareResult<D> {
+    /// async fn handler<D: Send + 'static + Sync>(_: &mut Request<D>, res: Response<D>) -> MiddlewareResult<D> {
     ///     let favicon = Path::new("/assets/favicon.ico");
-    ///     res.send_file(favicon)
+    ///     res.send_file(favicon).await
     /// }
     /// ```
     pub async fn send_file<P:AsRef<Path>>(mut self, path: P) -> MiddlewareResult<D> {
@@ -177,17 +178,16 @@ impl<D: Send + 'static + Sync> Response<D> {
     /// extern crate hyper;
     ///
     /// use nickel::{Nickel, HttpRouter, MediaType};
-    /// use hyper::header::ContentType;
+    /// use hyper::header;
     ///
     /// # #[allow(unreachable_code)]
     /// fn main() {
     ///     let mut server = Nickel::new();
     ///     server.get("/", middleware! { |_, mut res|
     ///         res.set(MediaType::Html);
-    ///         res.set_header_fallback(|| {
-    ///             panic!("Should not get called");
-    ///             ContentType(MediaType::Txt.into())
-    ///         });
+    ///         res.set_header_fallback(
+    ///             &header::CONTENT_TYPE,
+    ///             &MediaType::Txt.into());
     ///
     ///         "<h1>Hello World</h1>"
     ///     });
@@ -207,10 +207,10 @@ impl<D: Send + 'static + Sync> Response<D> {
     /// use nickel::{Request, Response, MiddlewareResult};
     ///
     /// # #[allow(dead_code)]
-    /// fn handler<D>(_: &mut Request<D>, res: Response<D>) -> MiddlewareResult<D> {
+    /// async fn handler<D: Send + 'static + Sync>(_: &mut Request<D>, res: Response<D>) -> MiddlewareResult<D> {
     ///     let mut data = HashMap::new();
     ///     data.insert("name", "user");
-    ///     res.render("examples/assets/template.tpl", &data)
+    ///     res.render("examples/assets/template.tpl", &data).await
     /// }
     /// ```
     pub async fn render<T, P>(mut self, path: P, data: &T) -> MiddlewareResult<D>
