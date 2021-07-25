@@ -1,5 +1,5 @@
-use hyper::client::{Client, Response};
-use hyper::method::Method;
+use reqwest::Method;
+use reqwest::blocking::{get, Client, Response};
 
 use std::collections::HashSet;
 use std::process::{Child, Command, Stdio};
@@ -29,33 +29,26 @@ impl Drop for Bomb {
 }
 
 pub fn response_for_post(url: &str, body: &str) -> Response {
-    Client::new()
-           .post(url)
-           .body(body)
-           .send()
-           .unwrap()
+    let client = reqwest::blocking::Client::new();
+    client.post(url).body(body.to_string()).send().unwrap()
 }
 
 pub fn response_for_method(method: Method, url: &str) -> Response {
-    Client::new()
-           .request(method, url)
-           .send()
-           .unwrap()
+    let client = reqwest::blocking::Client::new();
+    client.request(method, url).send().unwrap()
 }
 
 pub fn response_for(url: &str) -> Response {
-    response_for_method(Method::Get, url)
+    get(url).unwrap()
 }
 
-pub fn read_body_to_string(res: &mut Response) -> String {
-    let mut s = String::new();
-    res.read_to_string(&mut s).unwrap();
-    s
+pub fn read_body_to_string(mut res: Response) -> String {
+    res.text().unwrap()
 }
 
 pub fn read_url(url: &str) -> String {
     let mut res = response_for(url);
-    read_body_to_string(&mut res)
+    read_body_to_string(res)
 }
 
 pub fn run_example<F>(name: &str, f: F)

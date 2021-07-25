@@ -235,9 +235,6 @@ impl<D: Sync + Send + 'static> Nickel<D> {
         if is_test_harness {
             // If we're under a test harness, we'll pass zero to get assigned a random
             // port. See http://doc.rust-lang.org/std/net/struct.TcpListener.html#method.bind
-            if self.options.output_on_listen {
-                println!("Listening on http://{}", "localhost:0");
-            }
             server.serve("localhost:0",
                          self.keep_alive_timeout,
                          self.options.thread_count).await?

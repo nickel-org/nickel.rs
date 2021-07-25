@@ -8,16 +8,16 @@ extern crate nickel;
 #[macro_use] extern crate lazy_static;
 
 // TODO: re-enable tests in mod
-//mod util;
+mod util;
 
 mod examples {
     // TODO: re-enable these tests
-    // mod hello_world;
+    mod hello_world;
     // mod mount;
     // mod route_data;
     // mod routing;
-    // mod template;
-    // mod moved_ownership;
+    mod template;
+    mod moved_ownership;
     // mod chaining;
     // mod json;
     // mod query_string;
