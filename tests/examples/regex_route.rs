@@ -1,12 +1,12 @@
 use crate::util::*;
 
-use hyper::status::StatusCode;
-use hyper::client::Response;
+use reqwest::StatusCode;
+use reqwest::blocking::Response;
 
-fn with_path<F>(path: &str, f: F) where F: FnOnce(&mut Response) {
+fn with_path<F>(path: &str, f: F) where F: FnOnce(Response) {
     run_example("regex_route", |port| {
         let url = format!("http://localhost:{}{}", port, path);
-        let ref mut res = response_for(&url);
+        let mut res = response_for(&url);
         f(res)
     })
 }
@@ -43,6 +43,6 @@ fn fallthrough_too_many_params() {
 #[test]
 fn fallthrough_with_no_match() {
     with_path("/", |res| {
-        assert_eq!(res.status, StatusCode::NotFound);
+        assert_eq!(res.status(), StatusCode::NOT_FOUND);
     })
 }

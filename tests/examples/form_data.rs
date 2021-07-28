@@ -1,6 +1,6 @@
-use hyper::client::Client;
-use hyper::header::ContentType;
-use hyper::status::StatusCode;
+use reqwest::blocking::Client;
+use reqwest::header::CONTENT_TYPE;
+use reqwest::StatusCode;
 use crate::util::{read_body_to_string, read_url, run_example};
 
 #[test]
@@ -16,9 +16,9 @@ fn display_form() {
 fn post_with_data() {
     run_example("form_data", |port| {
         let url = format!("http://localhost:{}/confirmation", port);
-        let ref mut res = Client::new()
+        let mut res = Client::new()
             .post(&url)
-            .header(ContentType::form_url_encoded())
+            .header(CONTENT_TYPE, "application/x-www-form-urlencoded")
             .body(r#"firstname=John&lastname=Doe&phone=911&email=john@doe.com"#)
             .send()
             .unwrap();
@@ -31,9 +31,9 @@ fn post_with_data() {
 fn post_without_data() {
     run_example("form_data", |port| {
         let url = format!("http://localhost:{}/confirmation", port);
-        let ref mut res = Client::new()
+        let mut res = Client::new()
             .post(&url)
-            .header(ContentType::form_url_encoded())
+            .header(CONTENT_TYPE, "application/x-www-form-urlencoded")
             .send()
             .unwrap();
         let s = read_body_to_string(res);
@@ -46,6 +46,6 @@ fn post_without_content_type() {
     run_example("form_data", |port| {
         let url = format!("http://localhost:{}/confirmation", port);
         let res = Client::new().post(&url).send().unwrap();
-        assert_eq!(res.status, StatusCode::BadRequest);
+        assert_eq!(res.status(), StatusCode::BAD_REQUEST);
     })
 }

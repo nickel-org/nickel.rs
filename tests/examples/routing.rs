@@ -1,12 +1,12 @@
 use crate::util::*;
 
-use hyper::status::StatusCode;
-use hyper::client::Response;
+use reqwest::StatusCode;
+use reqwest::blocking::Response;
 
-fn with_path<F>(path: &str, f: F) where F: FnOnce(&mut Response) {
+fn with_path<F>(path: &str, f: F) where F: FnOnce(Response) {
     run_example("routing", |port| {
         let url = format!("http://localhost:{}{}", port, path);
-        let ref mut res = response_for(&url);
+        let mut res = response_for(&url);
         f(res)
     })
 }
@@ -38,7 +38,7 @@ fn single_wildcard_accept_single_directory() {
 #[test]
 fn single_wildcard_reject_multi_directory() {
     with_path("/some/super/crazy/route", |res| {
-        assert_eq!(res.status, StatusCode::NotFound);
+        assert_eq!(res.status(), StatusCode::NOT_FOUND);
     })
 }
 
@@ -65,6 +65,6 @@ fn parameterised_path_with_format() {
 #[test]
 fn fallthrough_with_no_match() {
     with_path("/foo/bar", |res| {
-        assert_eq!(res.status, StatusCode::NotFound);
+        assert_eq!(res.status(), StatusCode::NOT_FOUND);
     })
 }

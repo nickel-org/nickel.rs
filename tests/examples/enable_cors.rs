@@ -1,5 +1,5 @@
-use hyper::method::Method;
-use hyper::header::{AccessControlAllowOrigin, AccessControlAllowHeaders};
+use reqwest::Method;
+use reqwest::header::{ACCESS_CONTROL_ALLOW_ORIGIN, ACCESS_CONTROL_ALLOW_HEADERS};
 
 use crate::util::{run_example, response_for_method, read_body_to_string};
 
@@ -10,25 +10,20 @@ fn sets_headers() {
 
         for path in &paths {
             let url = format!("http://localhost:{}/{}", port, path);
-            let mut res = response_for_method(Method::Get, &url);
+            let mut res = response_for_method(Method::GET, &url);
 
             assert_eq!(
-                res.headers.get(),
-                Some(&AccessControlAllowOrigin::Any)
+                res.headers().get(ACCESS_CONTROL_ALLOW_ORIGIN).unwrap(),
+                "Any"
             );
 
             assert_eq!(
-                res.headers.get(),
-                Some(&AccessControlAllowHeaders(vec![
-                    "Origin".into(),
-                    "X-Requested-With".into(),
-                    "Content-Type".into(),
-                    "Accept".into(),
-                ]))
+                res.headers().get(ACCESS_CONTROL_ALLOW_HEADERS).unwrap(),
+                "Origin, X-Requested-With, Content-Type, Accept"
             );
 
 
-            let body = read_body_to_string(&mut res);
+            let body = read_body_to_string(res);
             assert_eq!(body, "Hello CORS Enabled World");
         }
     })
