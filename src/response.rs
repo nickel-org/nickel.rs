@@ -140,7 +140,7 @@ impl<D: Send + 'static + Sync> Response<D> {
             Ok(file) => {
                 let stream = FramedRead::new(file, BytesCodec::new());
                 let body = Body::wrap_stream(stream);
-                self.set_body(body);
+                self.set(StatusCode::OK).set_body(body);
                 Ok(Halt(self))
             },
             Err(e) => {
