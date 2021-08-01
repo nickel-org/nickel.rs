@@ -3,10 +3,9 @@ use reqwest::blocking::{get, Client, Response};
 
 use std::collections::HashSet;
 use std::process::{Child, Command, Stdio};
-use std::thread;
+use std::{env, thread, time};
 use std::io::{BufReader, BufRead, Read};
 use std::sync::Mutex;
-use std::env;
 
 struct Bomb(Child);
 
@@ -62,6 +61,7 @@ where F: FnOnce(u16) {
                         .spawn()
                         .unwrap();
 
+    //thread::sleep(time::Duration::from_secs(5));
     let mut bomb = Bomb(child);
     let port = parse_port(&mut bomb);
 
