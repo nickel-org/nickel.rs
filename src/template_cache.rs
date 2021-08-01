@@ -1,11 +1,11 @@
-use mustache::{Error, Template, compile_str};
+use mustache::{Error, Template, compile_path};
 use serde::Serialize;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 use tokio::fs::{read_to_string, metadata};
 use tokio::sync::RwLock;
-
+use tokio::task;
 
 struct TemplateEntry {
     template: Template,       // Compiled template
@@ -16,10 +16,10 @@ struct TemplateEntry {
 impl TemplateEntry {
     // Loads a template from the given filename
     async fn from_template_file<P: AsRef<Path>>(filename: P) -> Result<TemplateEntry, Error> {
-        let path = filename.as_ref();
-        let buf = read_to_string(&path).await?;
-        let template = compile_str(&buf)?;
-
+        let path: PathBuf = filename.as_ref().to_path_buf();
+        let path2 = path.clone();
+        let template = task::spawn_blocking(|| compile_path(path2)).await
+            .map_err(|_| Error::Io(std::io::Error::new(std::io::ErrorKind::Other, "thread join error")))??;
         let attr = metadata(path).await?;
         Ok(TemplateEntry{template: template, mtime: attr.modified()?, last_checked: SystemTime::now()})
     }
