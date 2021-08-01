@@ -56,10 +56,29 @@ where F: FnOnce(u16) {
 
     let command = format!("target/debug/examples/{}", name);
     let child = Command::new(&command)
-                        .env("NICKEL_TEST_HARNESS", "1")
-                        .stdout(Stdio::piped())
-                        .spawn()
-                        .unwrap();
+        .env("NICKEL_TEST_HARNESS", "1")
+        .stdout(Stdio::piped())
+        .spawn()
+        .unwrap();
+
+    //thread::sleep(time::Duration::from_secs(5));
+    let mut bomb = Bomb(child);
+    let port = parse_port(&mut bomb);
+
+    f(port);
+}
+
+pub fn run_example_with_env<F>(name: &str, env_var: &str, env_val: &str, f: F)
+where F: FnOnce(u16) {
+    cargo_build(name);
+
+    let command = format!("target/debug/examples/{}", name);
+    let child = Command::new(&command)
+        .env("NICKEL_TEST_HARNESS", "1")
+        .env(env_var, env_val)
+        .stdout(Stdio::piped())
+        .spawn()
+        .unwrap();
 
     //thread::sleep(time::Duration::from_secs(5));
     let mut bomb = Bomb(child);
