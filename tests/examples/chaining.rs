@@ -11,7 +11,7 @@ where F: Fn(Response),
 
         run_example("chaining", |port| {
             let url = format!("http://localhost:{}{}", port, path.as_ref());
-            let mut res = response_for_method(method, &url);
+            let res = response_for_method(method, &url);
             f(res)
         })
     }

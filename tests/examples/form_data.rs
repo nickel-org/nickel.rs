@@ -16,7 +16,7 @@ fn display_form() {
 fn post_with_data() {
     run_example("form_data", |port| {
         let url = format!("http://localhost:{}/confirmation", port);
-        let mut res = Client::new()
+        let res = Client::new()
             .post(&url)
             .header(CONTENT_TYPE, "application/x-www-form-urlencoded")
             .body(r#"firstname=John&lastname=Doe&phone=911&email=john@doe.com"#)
@@ -31,7 +31,7 @@ fn post_with_data() {
 fn post_without_data() {
     run_example("form_data", |port| {
         let url = format!("http://localhost:{}/confirmation", port);
-        let mut res = Client::new()
+        let res = Client::new()
             .post(&url)
             .header(CONTENT_TYPE, "application/x-www-form-urlencoded")
             .send()

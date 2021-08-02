@@ -5,6 +5,8 @@ use reqwest::{header, StatusCode};
 use serde_json::Value;
 use std::{thread, time};
 
+// TODO: migration cleanup - figure out why these tests only pass under linux
+
 fn get_hits_after_delay(port: u16) -> u32 {
     // let other tests hit the server
     thread::sleep(time::Duration::from_secs(1));
@@ -15,7 +17,7 @@ fn get_hits_after_delay(port: u16) -> u32 {
     response.parse().unwrap()
 }
 
-/// This test has a Server instance all to itself.
+// This test has a Server instance all to itself.
 #[test]
 fn non_shared_server() {
     run_example("integration_testing", |port| {
@@ -53,7 +55,7 @@ fn run_sequence(port: u16) {
 }
 
 fn root_responds_with_hello_world(port: u16) {
-    let mut response = get(port, "/");
+    let response = get(port, "/");
 
     assert_eq!(response.status(), StatusCode::OK);
     assert_eq!(response.text().unwrap(), "Hello World");
@@ -65,7 +67,7 @@ fn server_is_shared_with_other_tests(port: u16) {
 }
 
 fn root_responds_with_modified_json(port: u16) {
-    let mut response = post(port, "/", r#"{ "name": "Rust", "age": 1 }"#);
+    let response = post(port, "/", r#"{ "name": "Rust", "age": 1 }"#);
 
     assert_eq!(response.status(), StatusCode::OK);
     assert_eq!(
@@ -79,7 +81,7 @@ fn root_responds_with_modified_json(port: u16) {
 }
 
 fn accepts_json_with_missing_fields(port: u16) {
-    let mut response = post(port, "/", r#"{ "name": "Rust" }"#);
+    let response = post(port, "/", r#"{ "name": "Rust" }"#);
 
     assert_eq!(response.status(), StatusCode::OK);
     assert_eq!(
@@ -97,7 +99,7 @@ fn doesnt_accept_bad_inputs(port: u16) {
 }
 
 fn has_no_users_by_default(port: u16) {
-    let mut response = get(port, "/users");
+    let response = get(port, "/users");
 
     assert_eq!(response.status(), StatusCode::OK);
     assert_eq!(
@@ -112,7 +114,7 @@ fn has_no_users_by_default(port: u16) {
 #[test]
 fn non_shared_server_with_different_database() {
     run_example_with_env("integration_testing", "ALT_USERS", "1", |port| {
-        let mut response = get(port, "/users");
+        let response = get(port, "/users");
 
         assert_eq!(response.status(), StatusCode::OK);
         assert_eq!(

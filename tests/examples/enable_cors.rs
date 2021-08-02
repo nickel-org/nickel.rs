@@ -10,7 +10,7 @@ fn sets_headers() {
 
         for path in &paths {
             let url = format!("http://localhost:{}/{}", port, path);
-            let mut res = response_for_method(Method::GET, &url);
+            let res = response_for_method(Method::GET, &url);
 
             assert_eq!(
                 res.headers().get(ACCESS_CONTROL_ALLOW_ORIGIN).unwrap(),

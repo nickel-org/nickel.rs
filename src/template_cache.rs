@@ -3,7 +3,7 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
-use tokio::fs::{read_to_string, metadata};
+use tokio::fs::metadata;
 use tokio::sync::RwLock;
 use tokio::task;
 

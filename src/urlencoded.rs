@@ -76,7 +76,6 @@ fn parses_urlencoded_characters() {
 
 #[test]
 fn splits_and_parses_an_url() {
-    use url::Url;
     let t = |url| {
         let store = parse_uri(&url);
         assert_eq!(store.get("foo"), Some("bar"));

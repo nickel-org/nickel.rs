@@ -5,7 +5,7 @@ use reqwest::blocking::Response;
 fn with_path<F>(path: &str, f: F) where F: FnOnce(Response) {
     run_example("json", |port| {
         let url = format!("http://localhost:{}{}", port, path);
-        let mut res = response_for(&url);
+        let res = response_for(&url);
         f(res)
     })
 }
@@ -19,7 +19,7 @@ mod incoming {
     fn send_body<F>(body: &str, f: F) where F: FnOnce(Response) {
         run_example("json", |port| {
             let url = format!("http://localhost:{}", port);
-            let mut res = response_for_post(&url, body);
+            let res = response_for_post(&url, body);
             f(res)
         })
     }

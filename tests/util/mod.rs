@@ -3,7 +3,7 @@ use reqwest::blocking::{get, Client, Response};
 
 use std::collections::HashSet;
 use std::process::{Child, Command, Stdio};
-use std::{env, thread, time};
+use std::{env, thread};
 use std::io::{BufReader, BufRead, Read};
 use std::sync::Mutex;
 
@@ -28,12 +28,12 @@ impl Drop for Bomb {
 }
 
 pub fn response_for_post(url: &str, body: &str) -> Response {
-    let client = reqwest::blocking::Client::new();
+    let client = Client::new();
     client.post(url).body(body.to_string()).send().unwrap()
 }
 
 pub fn response_for_method(method: Method, url: &str) -> Response {
-    let client = reqwest::blocking::Client::new();
+    let client = Client::new();
     client.request(method, url).send().unwrap()
 }
 
@@ -41,12 +41,12 @@ pub fn response_for(url: &str) -> Response {
     get(url).unwrap()
 }
 
-pub fn read_body_to_string(mut res: Response) -> String {
+pub fn read_body_to_string(res: Response) -> String {
     res.text().unwrap()
 }
 
 pub fn read_url(url: &str) -> String {
-    let mut res = response_for(url);
+    let res = response_for(url);
     read_body_to_string(res)
 }
 
