@@ -1,6 +1,5 @@
 use crate::util::{run_example, read_url};
 
-// TODO: when did this stop being correct, and why?
 static EXPECTED : &'static str ="
 <html>
     <head>
@@ -14,12 +13,6 @@ static EXPECTED : &'static str ="
     </h1>
     </body>
 </html>";
-
-// static EXPECTED : &'static str ="
-// <h1>
-//         Hello user!
-//     </h1>
-// ";
 
 #[test]
 fn renders_data() {
