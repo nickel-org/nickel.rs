@@ -19,7 +19,10 @@ pub struct Route<D=()> {
 /// A RouteResult is what the router returns when `match_route` is called.
 /// It contains the matched `route` and also a `params` property holding
 /// a HashMap with the keys being the variable names and the value being the
-/// evaluated string
+/// evaluated string.
+///
+/// Note that `params` here is for route paramters, not query parameters. See
+/// the `query_string` module to get the query parameters.
 pub struct RouteResult {
     // pub route: &'r Route<D>,
     params: Vec<(String, String)>
@@ -237,7 +240,7 @@ fn can_match_var_routes () {
     assert!(route_result.is_some());
 
     let route_result = route_result.unwrap().0;
-    // NOTE: `.param` doesn't cover query params currently
+    // NOTE: `.param` is for route params, not query params
     assert_eq!(route_result.param("userid"), Some("5490,1234"));
     assert_eq!(route_result.param("format"), Some("csv"));
 

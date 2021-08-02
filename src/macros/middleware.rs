@@ -45,7 +45,8 @@
 /// code to remain with minimal annotations.
 ///
 /// # ignoring this, since the middleware macro needs work
-/// # TODO: migration cleanup
+/// # TODO: migration cleanup - fix middleware macro, or remove it if closures
+/// #       can be made to take its place
 /// ```rust,ignore
 /// # #[macro_use] extern crate nickel;
 /// # fn main() {

@@ -227,7 +227,7 @@ impl<D: Send + 'static + Sync> Response<D> {
         }
     }
 
-    // Todo: migration cleanup
+    // TODO: migration cleanup
     //
     // hyper::Response no longer has a start() method. The api has
     // changed a lot, so this may not longer be necessary.
