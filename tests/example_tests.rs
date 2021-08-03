@@ -2,7 +2,7 @@
 // and this import helps that resolve rather than requiring `self::nickel::foo`
 // which is an oddity due to the include method, which is used as tests in examples
 // don't get executed otherwise.
-#[macro_use]
+
 extern crate nickel;
 
 #[macro_use] extern crate lazy_static;

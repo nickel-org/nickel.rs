@@ -63,7 +63,7 @@ impl<D: Sync + Send + 'static> Server<D> {
         });
         let server = HyperServer::bind(&socket_addr).serve(make_svc);
 
-        println!("Listening on http://{}", socket_addr);
+        println!("Listening on http://{}", server.local_addr());
         
         server.await?;
         

@@ -14,26 +14,26 @@ pub trait HttpRouter<D: Send + 'static + Sync> {
     /// extern crate regex;
     ///
     /// use nickel::{Nickel, HttpRouter};
-    /// use hyper::method::Method::{GET, POST, PUT, DELETE};
+    /// use hyper::Method;
     /// use regex::Regex;
     ///
     /// fn main() {
     ///     let mut server = Nickel::new();
     ///
-    ///     server.add_route(Get, "/foo", middleware! { "Get request! "});
-    ///     server.add_route(Post, "/foo", middleware! { |request|
-    ///         format!("Method is: {}", request.origin.method)
+    ///     server.add_route(Method::GET, "/foo", middleware! { "Get request! "});
+    ///     server.add_route(Method::POST, "/foo", middleware! { |request|
+    ///         format!("Method is: {}", request.origin.method())
     ///     });
-    ///     server.add_route(Put, "/foo", middleware! { |request|
-    ///         format!("Method is: {}", request.origin.method)
+    ///     server.add_route(Method::PUT, "/foo", middleware! { |request|
+    ///         format!("Method is: {}", request.origin.method())
     ///     });
-    ///     server.add_route(Delete, "/foo", middleware! { |request|
-    ///         format!("Method is: {}", request.origin.method)
+    ///     server.add_route(Method::DELETE, "/foo", middleware! { |request|
+    ///         format!("Method is: {}", request.origin.method())
     ///     });
     ///
     ///     // Regex path
     ///     let regex = Regex::new("/(foo|bar)").unwrap();
-    ///     server.add_route(Get, regex, middleware! { "Regex Get request! "});
+    ///     server.add_route(Method::GET, regex, middleware! { "Regex Get request! "});
     /// }
     /// ```
     fn add_route<M: Into<Matcher>, H: Middleware<D>>(&mut self, _: Method, _: M, _: H) -> &mut Self;

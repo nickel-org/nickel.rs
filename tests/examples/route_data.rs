@@ -18,7 +18,7 @@ fn returns_incrementing_number() {
         let arc = Arc::new(urls);
 
         // FIXME: Use a pool instead of spawning so many threads!
-        const THREADS_TO_SPAWN: usize = 100;
+        const THREADS_TO_SPAWN: usize = 10;
 
         let threads = (0..THREADS_TO_SPAWN).map(|i| {
             let urls = arc.clone();
@@ -28,7 +28,10 @@ fn returns_incrementing_number() {
                 let url = &urls[i % 2];
 
                 let s = read_url(url);
-                s.parse::<usize>().unwrap()
+                println!{"url: '{}'", s};
+                let val = s.parse::<usize>().unwrap();
+                println!{"value: {}", val};
+                val
             })
         }).collect::<Vec<_>>();
 

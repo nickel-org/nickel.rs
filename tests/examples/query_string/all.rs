@@ -1,9 +1,9 @@
 use super::with_path;
 use crate::util::*;
 
-use hyper::client::Response;
+use reqwest::blocking::Response;
 
-fn with_query<F>(query: &str, f: F) where F: FnOnce(&mut Response) {
+fn with_query<F>(query: &str, f: F) where F: FnOnce(Response) {
     with_path(&format!("/all?{}", query), f)
 }
 

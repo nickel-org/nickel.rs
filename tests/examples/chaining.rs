@@ -1,17 +1,17 @@
 use crate::util::*;
 
-use hyper::client::Response;
-use hyper::method::Method;
+use reqwest::Method;
+use reqwest::blocking::Response;
 
 fn with_paths_and_method<F, S>(paths: &[S], method: Method, f: F)
-where F: Fn(&mut Response),
+where F: Fn(Response),
       S: AsRef<str> {
     for path in paths {
         let method = method.clone();
 
         run_example("chaining", |port| {
             let url = format!("http://localhost:{}{}", port, path.as_ref());
-            let ref mut res = response_for_method(method, &url);
+            let res = response_for_method(method, &url);
             f(res)
         })
     }
@@ -20,11 +20,11 @@ where F: Fn(&mut Response),
 mod expect_200 {
     use super::with_paths_and_method;
     use crate::util::*;
-    use hyper::method::Method::*;
+    use reqwest::Method;
 
     #[test]
     fn root() {
-        with_paths_and_method(&["/"], Get, |res| {
+        with_paths_and_method(&["/"], Method::GET, |res| {
             let s = read_body_to_string(res);
             assert_eq!(s, "Hello World");
         });
@@ -54,20 +54,18 @@ mod expect_200 {
 
 mod expect_404 {
     use super::with_paths_and_method;
-    use hyper::method::Method;
-    use hyper::method::Method::*;
-    use hyper::status::StatusCode;
+    use reqwest::{Method, StatusCode};
 
-    static TEST_METHODS: &'static [Method] = &[Get, Post, Put, Patch, Delete];
+    static TEST_METHODS: &'static [Method] = &[Method::GET, Method::POST, Method::PUT, Method::PATCH, Method::DELETE];
 
     #[test]
     fn root() {
         let methods = TEST_METHODS.iter()
-                                  .filter(|m| *m != &Method::Get);
+                                  .filter(|m| *m != &Method::GET);
 
         for method in methods {
             with_paths_and_method(&["/"], method.clone(), |res| {
-                assert_eq!(res.status, StatusCode::NotFound);
+                assert_eq!(res.status(), StatusCode::NOT_FOUND);
             })
         }
     }
@@ -87,7 +85,7 @@ mod expect_404 {
                                             .collect::<Vec<_>>();
 
                     with_paths_and_method(&paths, method, |res| {
-                        assert_eq!(res.status, StatusCode::NotFound);
+                        assert_eq!(res.status(), StatusCode::NOT_FOUND);
                     })
                 }
             )+

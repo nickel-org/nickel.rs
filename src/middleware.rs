@@ -86,7 +86,7 @@ impl<D: Send + 'static + Sync> MiddlewareStack<D> {
                                 error!("Error without Response struct");
                                 // Create a new Response with an InternalServerError
 
-                                panic!("Error without Response struct"); // Todo: migration cleanup - return error
+                                panic!("Error without Response struct"); // TODO: migration cleanup - return error
                             }
                         }
                     }
@@ -97,12 +97,12 @@ impl<D: Send + 'static + Sync> MiddlewareStack<D> {
                           req.origin.uri(),
                           err.message,
                           err.stream.map(|s| s.status()));
-                    panic!("Unhandled Error"); // Todo: migration cleanup - return error
+                    panic!("Unhandled Error"); // TODO: migration cleanup - return error
                 }
             }
         }
         // No middleware returned Halt, go with the last one in the train
-        res.origin // Todo: migration cleanup - return 404
+        res.origin // TODO: migration cleanup - return 404
     }
 
     pub fn new () -> MiddlewareStack<D> {

@@ -56,7 +56,7 @@ impl FaviconHandler {
 
     #[inline]
     pub fn is_favicon_request<D>(req: &Request<D>) -> bool {
-        // Todo: migration cleanup
+        // TODO: migration cleanup
         // do we need to check req.origin.uri.is_absolute here?
         // would just req.origin.uri.path() work?
         req.origin.uri().path() == "/favicon.ico"

@@ -76,7 +76,6 @@ fn parses_urlencoded_characters() {
 
 #[test]
 fn splits_and_parses_an_url() {
-    use url::Url;
     let t = |url| {
         let store = parse_uri(&url);
         assert_eq!(store.get("foo"), Some("bar"));
@@ -87,13 +86,11 @@ fn splits_and_parses_an_url() {
         assert_eq!(store.all("car"), None);
     };
 
-    let raw = "http://www.foo.bar/query/test?foo=bar&message=hello&message=world";
-    t(AbsoluteUri(Url::parse(raw).unwrap()));
+    t(Uri::from_static("http://www.foo.bar/query/test?foo=bar&message=hello&message=world"));
 
-    t(AbsolutePath("/query/test?foo=bar&message=hello&message=world".to_string()));
+    t(Uri::from_static("/query/test?foo=bar&message=hello&message=world"));
 
-    assert_eq!(parse_uri(&Star), Params(HashMap::new()));
-
-    let store = parse_uri(&Authority("host.com".to_string()));
+    let uri = Uri::builder().authority("host.com").build().unwrap();
+    let store = parse_uri(&uri);
     assert_eq!(store, Params(HashMap::new()));
 }

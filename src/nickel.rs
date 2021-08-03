@@ -102,7 +102,7 @@ impl Nickel<()> {
 
 impl<D: Sync + Send + 'static> Nickel<D> {
     /// Creates an instance of Nickel with default error handling,
-    /// default Ooptions, and custom data.
+    /// custom options, and custom data.
     pub fn with_data_and_options(data: D, options: Options) -> Nickel<D> {
         let mut middleware_stack = MiddlewareStack::new();
 
@@ -121,7 +121,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     }
 
     /// Creates an instance of Nickel with default error handling,
-    /// default Ooptions, and custom data.
+    /// default options, and custom data.
     pub fn with_data(data: D) -> Nickel<D> {
         Nickel::with_data_and_options(data, Options::default())
     }
@@ -143,7 +143,7 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     /// use nickel::Nickel;
     /// let mut server = Nickel::new();
     /// server.utilize(middleware! { |req|
-    ///     println!("logging request: {:?}", req.origin.uri);
+    ///     println!("logging request: {:?}", req.origin.uri());
     /// });
     /// # }
     /// ```
@@ -162,15 +162,14 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     /// ```{rust}
     /// # extern crate nickel;
     /// # fn main() {
-    /// use std::io::Write;
     /// use nickel::{Nickel, Request, Continue, Halt};
     /// use nickel::{NickelError, Action};
-    /// use nickel::status::StatusCode::NOT_FOUND;
+    /// use nickel::status::StatusCode;
     ///
-    /// fn error_handler<D>(err: &mut NickelError<D>, _req: &mut Request<D>) -> Action {
+    /// fn error_handler<D: Send + Sync + 'static>(err: &mut NickelError<D>, _req: &mut Request<D>) -> Action {
     ///    if let Some(ref mut res) = err.stream {
-    ///        if res.status() == NotFound {
-    ///            let _ = res.write_all(b"<h1>Call the police!</h1>");
+    ///        if res.status() == StatusCode::NOT_FOUND {
+    ///            let _ = res.set_body("<h1>Call the police!</h1>");
     ///            return Halt(())
     ///        }
     ///    }
@@ -215,14 +214,14 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     /// Bind and listen for connections on the given host and port.
     ///
     /// # Examples
-    /// ```rust
+    /// ```rust,no_run
     /// use nickel::Nickel;
     ///
-    /// let server = Nickel::new();
-    /// let listening = server.listen("127.0.0.1:6767").expect("Failed to launch server");
-    /// println!("Listening on: {:?}", listening.socket());
-    /// # // unblock the server so the test doesn't block forever
-    /// # listening.detach();
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let server = Nickel::new();
+    ///     server.listen("127.0.0.1:6767").await.expect("Failed to launch server");
+    /// }
     /// ```
     pub async fn listen<T: ToSocketAddrs>(mut self, addr: T) -> Result<(), Box<dyn StdError>> {
         self.middleware_stack.add_middleware(middleware! {
@@ -236,9 +235,6 @@ impl<D: Sync + Send + 'static> Nickel<D> {
         if is_test_harness {
             // If we're under a test harness, we'll pass zero to get assigned a random
             // port. See http://doc.rust-lang.org/std/net/struct.TcpListener.html#method.bind
-            if self.options.output_on_listen {
-                println!("Listening on http://{}", "localhost:0");
-            }
             server.serve("localhost:0",
                          self.keep_alive_timeout,
                          self.options.thread_count).await?
@@ -341,31 +337,37 @@ impl<D: Sync + Send + 'static> Nickel<D> {
     // }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::Nickel;
-    use std::str::FromStr;
-    use std::net::SocketAddr;
+// The first test here is just testing the standard library. The other two
+// aren't currently supported. The second is kind of just a std lib test too.
 
-    #[test]
-    #[should_panic(expected = "invalid socket address")]
-    fn invalid_listen_addr() {
-        Nickel::new().listen("127.0.0.1.6667").unwrap();
-    }
+// TODO: migration cleanup - The last two tests are commented out since we no
+// longer provide access to the underlying server. Do we need to?
 
-    #[test]
-    fn can_get_server_address() {
-        let server = Nickel::new().listen("127.0.0.1:12345").unwrap();
+// #[cfg(test)]
+// mod tests {
+//     use crate::Nickel;
+//     use std::str::FromStr;
+//     use std::net::SocketAddr;
 
-        assert_eq!(server.socket(), SocketAddr::from_str("127.0.0.1:12345").unwrap());
-        server.detach();
-    }
+//     #[tokio::test]
+//     #[should_panic(expected = "invalid socket address")]
+//     async fn invalid_listen_addr() {
+//         Nickel::new().listen("127.0.0.1.6667").await.unwrap();
+//     }
 
-    #[test]
-    fn can_get_server_address_with_random_port() {
-        let server = Nickel::new().listen("127.0.0.1:0").unwrap();
+//     // #[test]
+//     // fn can_get_server_address() {
+//     //     let server = Nickel::new().listen("127.0.0.1:12345").await.unwrap();
 
-        assert_eq!(server.socket().ip().to_string(), "127.0.0.1");
-        server.detach();
-    }
-}
+//     //     assert_eq!(server.socket(), SocketAddr::from_str("127.0.0.1:12345").unwrap());
+//     //     server.detach();
+//     // }
+
+//     // #[test]
+//     // fn can_get_server_address_with_random_port() {
+//     //     let server = Nickel::new().listen("127.0.0.1:0").await.unwrap();
+
+//     //     assert_eq!(server.socket().ip().to_string(), "127.0.0.1");
+//     //     server.detach();
+//     // }
+// }

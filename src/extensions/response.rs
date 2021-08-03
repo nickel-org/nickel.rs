@@ -14,7 +14,7 @@ pub trait Redirect: Sized {
     /// use nickel::{Nickel, HttpRouter, Request, Response, MiddlewareResult};
     /// use nickel::extensions::Redirect;
     ///
-    /// fn redirect<'mw, 'conn>(_: &mut Request<'mw, 'conn>, res: Response<'mw>) -> MiddlewareResult<'mw> {
+    /// fn redirect(_: &mut Request, res: Response) -> MiddlewareResult {
     ///     return res.redirect("http://nickel.rs")
     /// }
     ///
