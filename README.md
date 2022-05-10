@@ -1,6 +1,6 @@
-# [nickel.rs](http://nickel-org.github.io) [![Build Status](https://travis-ci.org/nickel-org/nickel.rs.svg?branch=master)](https://travis-ci.org/nickel-org/nickel.rs) [![](http://meritbadge.herokuapp.com/nickel)](https://crates.io/crates/nickel) [![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/nickel-org/nickel.rs/master/LICENSE) [![Join the chat at https://gitter.im/nickel-org/nickel.rs](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nickel-org/nickel.rs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+# [nickel.rs](https://nickel-org.github.io) [![Build Status](https://travis-ci.org/nickel-org/nickel.rs.svg?branch=master)](https://travis-ci.org/nickel-org/nickel.rs) [![](http://meritbadge.herokuapp.com/nickel)](https://crates.io/crates/nickel) [![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/nickel-org/nickel.rs/master/LICENSE) [![Join the chat at https://gitter.im/nickel-org/nickel.rs](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nickel-org/nickel.rs?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-[nickel.rs](http://nickel-org.github.io) is a simple and lightweight foundation for web applications written in Rust. Its API is inspired by the popular express framework for JavaScript.
+[nickel.rs](https://nickel-org.github.io) is a simple and lightweight foundation for web applications written in Rust. Its API is inspired by the popular express framework for JavaScript.
 
 ## Hello world
 
@@ -47,7 +47,7 @@ More examples can be found [in the examples directory](/examples/) and the full 
 
 ## Contributing
 
-[nickel.rs](http://nickel-org.github.io) is a community effort. We welcome new contributors with open arms. Please read the [contributing guide here](/contributing.md) first.
+[nickel.rs](https://nickel-org.github.io) is a community effort. We welcome new contributors with open arms. Please read the [contributing guide here](/contributing.md) first.
 
 If you're looking for inspiration, there's list of [open issues](https://github.com/nickel-org/nickel/issues?state=open) right here on github.
 
